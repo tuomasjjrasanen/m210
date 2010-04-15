@@ -29,10 +29,53 @@ struct notetaker_version_info {
     uint16_t pad_version;
 };
 
+/**
+   Opaque object representing a NoteTaker device.
+*/
 typedef struct notetaker notetaker_t;
 
+/**
+   Open a hid connetion to a NoteTaker device and return an object
+   representing it.
+
+   On error, NULL is returned and errno or *notetaker_errno is set
+   appropriately. *notetaker_errno should be set to zero before
+   calling notetaker_open() to distinguish between a notetaker error
+   and a syscall error.
+
+   NOTETAKER_ERRNOs
+     NOTETAKER_ERRNO_UNKNOWN_DEVICE
+       One of the hidraw_paths did not belong to a NoteTaker device.
+
+   @hidraw_paths a list of two null-terminated paths of hidraw device
+   nodes for interface 0 and 1 respectively.
+
+   @notetaker_errno an address of an integer variable where a
+   notetaker errno will be stored in a case of an error.
+ */
 notetaker_t *notetaker_open(char **hidraw_paths, int *notetaker_errno);
+
+/**
+   Close a NoteTaker device connection and free all resources.
+
+   On error, -1 is returned and errno is set appropriately.
+
+   @notetaker an address of the object represeting the NoteTaker
+   device.
+ */
 int notetaker_close(notetaker_t *notetaker);
+
+/**
+   Return version information of the NoteTaker device.
+
+   On error, -1 is returned and errno is set appropriately. In this
+   case, *version_info is left unmodified.
+
+   @notetaker an address of the object represeting the NoteTaker
+   device.
+
+   @version_info an address where the version info will be stored.
+ */
 int notetaker_get_version_info(notetaker_t *notetaker,
                                struct notetaker_version_info *version_info);
 

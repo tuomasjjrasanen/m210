@@ -55,7 +55,7 @@ notetaker_t *notetaker_open(char **hidraw_paths, int *notetaker_errno) {
 
         if (memcmp(&devinfo, &DEVINFO_M210, sizeof(struct hidraw_devinfo)) != 0) {
             if (notetaker_errno != NULL)
-                *notetaker_errno = -NOTETAKER_ERRNO_UNKNOWN_DEVICE;
+                *notetaker_errno = NOTETAKER_ERRNO_UNKNOWN_DEVICE;
             goto err;
         }
 
