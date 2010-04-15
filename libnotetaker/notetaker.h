@@ -22,14 +22,11 @@
 #define NOTETAKER_SCALE_MAX NOTETAKER_SCALE_9
 
 #define NOTETAKER_ERRNO_UNKNOWN_DEVICE 2
-#define NOTETAKER_ERRNO_INCOMPLETE_WRITE 3
-#define NOTETAKER_ERRNO_INCOMPLETE_READ 4
 
 struct notetaker_version_info {
     uint16_t firmware_version;
-    uint16_t pen_version;
+    uint16_t analog_version;
     uint16_t pad_version;
-    uint8_t mode;
 };
 
 typedef struct notetaker notetaker_t;

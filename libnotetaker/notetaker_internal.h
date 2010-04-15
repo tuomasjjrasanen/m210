@@ -16,11 +16,9 @@
 #define NOTETAKER_STATUS_BATTERY_LOW  0x01
 #define NOTETAKER_STATUS_BATTERY_GOOD 0x02
 
-#define NOTETAKER_IFACE_PAD   0
-#define NOTETAKER_IFACE_PEN   1
-#define NOTETAKER_IFACE_COUNT 2
-
-static const uint8_t IFACE_PACKET_SIZES[] = {64, 8};
+#define NOTETAKER_IFACE0       0
+#define NOTETAKER_IFACE1       1
+#define NOTETAKER_IFACE_COUNT  2
 
 const struct hidraw_devinfo DEVINFO_M210 = {
     BUS_USB,
@@ -37,6 +35,6 @@ struct version_response {
     uint16_t pad_version;
     uint8_t analog_product_id;
     uint8_t tab_mode;
-};
+} __attribute__ ((packed));
 
 #endif /* NOTETAKER_INTERNAL_H */

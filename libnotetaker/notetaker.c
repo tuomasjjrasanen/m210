@@ -2,10 +2,10 @@
 #include <fcntl.h>
 #include <string.h>
 #include <stdlib.h>
-#include <sys/ioctl.h>
-#include <linux/hidraw.h>
-#include <sys/types.h>
 #include <stdint.h>
+#include <unistd.h>
+
+#include <linux/hidraw.h>
 
 #include "notetaker_internal.h"
 
@@ -74,28 +74,20 @@ notetaker_t *notetaker_open(char **hidraw_paths, int *notetaker_errno) {
 int notetaker_get_version_info(notetaker_t *notetaker,
                                struct notetaker_version_info *version_info)
 {
-    ssize_t wbytes, rbytes;
     struct version_response response;
     uint8_t request[] = {0x02, 0x01, 0x95};
-    int fd = notetaker->fds[NOTETAKER_IFACE_PAD];
+    int fd = notetaker->fds[NOTETAKER_IFACE0];
     memset(&response, 0, sizeof(struct version_response));
 
-    wbytes = write(fd, request, sizeof(request));
-    if (wbytes == -1)
+    if (write(fd, request, sizeof(request)) == -1)
         return -1;
-    if (wbytes != sizeof(request))
-        return -NOTETAKER_ERRNO_INCOMPLETE_WRITE;
 
-    rbytes = read(fd, &response, sizeof(struct version_response));
-    if (rbytes == -1)
+    if (read(fd, &response, sizeof(struct version_response)) == -1)
         return -1;
-    if (rbytes != IFACE_PACKET_SIZES[NOTETAKER_IFACE_PAD])
-        return -NOTETAKER_ERRNO_INCOMPLETE_READ;
 
     version_info->firmware_version = be16toh(response.firmware_version);
-    version_info->pen_version = be16toh(response.analog_version);
+    version_info->analog_version = be16toh(response.analog_version);
     version_info->pad_version = be16toh(response.pad_version);
-    version_info->mode = response.tab_mode;
 
     return 0;
 }
