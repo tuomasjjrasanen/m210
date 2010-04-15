@@ -23,10 +23,13 @@
 
 #define NOTETAKER_ERRNO_UNKNOWN_DEVICE 2
 
-struct notetaker_version_info {
+#define NOTETAKER_IFACE_COUNT 2
+
+struct notetaker_info {
     uint16_t firmware_version;
     uint16_t analog_version;
     uint16_t pad_version;
+    uint8_t mode;
 };
 
 /**
@@ -58,25 +61,24 @@ notetaker_t *notetaker_open(char **hidraw_paths, int *notetaker_errno);
 /**
    Close a NoteTaker device connection and free all resources.
 
-   On error, -1 is returned and errno is set appropriately.
-
    @notetaker an address of the object represeting the NoteTaker
    device.
  */
-int notetaker_close(notetaker_t *notetaker);
+void notetaker_close(notetaker_t *notetaker);
 
 /**
-   Return version information of the NoteTaker device.
+   Return information about the NoteTaker device.
 
    On error, -1 is returned and errno is set appropriately. In this
-   case, *version_info is left unmodified.
+   case, *info is left unmodified.
 
    @notetaker an address of the object represeting the NoteTaker
    device.
 
-   @version_info an address where the version info will be stored.
+   @info an address where the info will be stored.
  */
-int notetaker_get_version_info(notetaker_t *notetaker,
-                               struct notetaker_version_info *version_info);
+int notetaker_get_info(notetaker_t *notetaker, struct notetaker_info *info);
+
+int notetaker_delete_notes(notetaker_t *notetaker);
 
 #endif /* NOTETAKER_H */
