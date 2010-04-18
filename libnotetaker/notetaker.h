@@ -35,6 +35,8 @@ struct notetaker_info {
 */
 typedef struct notetaker notetaker_t;
 
+notetaker_t *notetaker_open(void);
+
 /**
    Open a hid connetion to a NoteTaker device and return an object
    representing it.

@@ -1,3 +1,4 @@
+#include <stdio.h>
 #include <errno.h>
 #include <fcntl.h>
 #include <string.h>
@@ -6,7 +7,10 @@
 #include <unistd.h>
 
 #include <linux/hidraw.h>
-#include <linux/input.h>
+#include <linux/input.h>  /* BUS_USB */
+#include <linux/limits.h> /* PATH_MAX */
+
+#include <libudev.h>
 
 #include "notetaker.h"
 
@@ -114,7 +118,8 @@ void notetaker_close(notetaker_t *notetaker)
     free(notetaker);
 }
 
-notetaker_t *notetaker_open_from_hidraw_paths(char **hidraw_paths) {
+notetaker_t *notetaker_open_from_hidraw_paths(char **hidraw_paths)
+{
     int i;
     int original_errno;
     notetaker_t *notetaker;
@@ -156,6 +161,85 @@ notetaker_t *notetaker_open_from_hidraw_paths(char **hidraw_paths) {
     return NULL;
 }
 
+int nt_find_hidraw_devnode(int iface, char *path, size_t path_size)
+{
+    int retval = -1;
+    struct udev_list_entry *list_entry = NULL;
+    struct udev_enumerate *enumerate = NULL;
+    struct udev *udev = NULL;
+
+    udev = udev_new();
+    if (udev == NULL)
+        goto out;
+
+    enumerate = udev_enumerate_new(udev);
+    if (enumerate == NULL)
+        goto out;
+
+    if (udev_enumerate_add_match_subsystem(enumerate, "hidraw"))
+        goto out;
+
+    if (udev_enumerate_scan_devices(enumerate))
+        goto out;
+
+    list_entry = udev_enumerate_get_list_entry(enumerate);
+
+    while (list_entry != NULL) {
+        int ifc;
+        uint16_t vendor;
+        uint16_t product;
+        const char *syspath = udev_list_entry_get_name(list_entry);
+        struct udev_device *dev = udev_device_new_from_syspath(udev, syspath);
+        const char *devnode = udev_device_get_devnode(dev);
+        struct udev_device *parent = udev_device_get_parent(dev);
+
+        parent = udev_device_get_parent(parent); /* Second parent: usb */
+        ifc = atoi(udev_device_get_sysattr_value(parent, "bInterfaceNumber"));
+        parent = udev_device_get_parent(parent);
+        vendor = strtol(udev_device_get_sysattr_value(parent, "idVendor"), NULL, 16);
+        product = strtol(udev_device_get_sysattr_value(parent, "idProduct"), NULL, 16);
+        if (vendor == DEVINFO_M210.vendor
+            && product == DEVINFO_M210.product
+            && iface == ifc) {
+            /* Found! */
+            retval = 1;
+            strncpy(path, devnode, path_size);
+            udev_device_unref(dev);
+            goto out;
+        }
+        list_entry = udev_list_entry_get_next(list_entry);
+        udev_device_unref(dev);
+    }
+    retval = 0;
+  out:
+    if (enumerate)
+        udev_enumerate_unref(enumerate);
+    if (udev)
+        udev_unref(udev);
+    return retval;
+}
+
+notetaker_t *notetaker_open(void)
+{
+    int i;
+    char iface0_path[PATH_MAX];
+    char iface1_path[PATH_MAX];
+    char *paths[NOTETAKER_IFACE_COUNT] = {iface0_path, iface1_path};
+    for (i = 0; i < NOTETAKER_IFACE_COUNT; ++i) {
+        memset(paths[i], 0, PATH_MAX);
+        switch (nt_find_hidraw_devnode(i, paths[i], PATH_MAX)) {
+        case -1:
+            return NULL;
+        case 0:
+            errno = ENODEV;
+            return NULL;
+        default:
+            break;
+        }
+    }
+    return notetaker_open_from_hidraw_paths(paths);
+}
+
 int notetaker_get_info(notetaker_t *notetaker, struct notetaker_info *info)
 {
     uint8_t rpt[] = {NT_RPT_INFO};
@@ -164,7 +248,7 @@ int notetaker_get_info(notetaker_t *notetaker, struct notetaker_info *info)
     if (nt_write_rpt(notetaker, rpt, sizeof(rpt)) == -1)
         return -1;
 
-    if (nt_read_rpt(notetaker, &response, sizeof(info_response)) == -1)
+    if (nt_read_rpt(notetaker, &response, sizeof(struct info_response)) == -1)
         return -1;
 
     info->firmware_version = be16toh(response.firmware_version);

@@ -1,7 +1,2 @@
 libnotetaker:
-* Use libudev to find proper hidraw devnodes:
-  * int notetaker_open(char **hidraw_paths, int *notetaker_errno);
-    ->
-    int notetaker_open(void);
-
 * Fully implement doc/xy.html and doc/mem.html.
