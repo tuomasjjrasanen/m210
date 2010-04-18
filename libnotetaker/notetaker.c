@@ -114,7 +114,7 @@ void notetaker_close(notetaker_t *notetaker)
     free(notetaker);
 }
 
-notetaker_t *notetaker_open(char **hidraw_paths, int *notetaker_errno) {
+notetaker_t *notetaker_open_from_hidraw_paths(char **hidraw_paths) {
     int i;
     int original_errno;
     notetaker_t *notetaker;
@@ -140,8 +140,7 @@ notetaker_t *notetaker_open(char **hidraw_paths, int *notetaker_errno) {
             goto err;
 
         if (memcmp(&devinfo, &DEVINFO_M210, sizeof(struct hidraw_devinfo)) != 0) {
-            if (notetaker_errno != NULL)
-                *notetaker_errno = NOTETAKER_ERRNO_UNKNOWN_DEVICE;
+            errno = EINVAL;
             goto err;
         }
 

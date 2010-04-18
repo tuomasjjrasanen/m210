@@ -21,8 +21,6 @@
 #define NOTETAKER_SCALE_MIN NOTETAKER_SCALE_0
 #define NOTETAKER_SCALE_MAX NOTETAKER_SCALE_9
 
-#define NOTETAKER_ERRNO_UNKNOWN_DEVICE 2
-
 #define NOTETAKER_IFACE_COUNT 2
 
 struct notetaker_info {
@@ -41,22 +39,17 @@ typedef struct notetaker notetaker_t;
    Open a hid connetion to a NoteTaker device and return an object
    representing it.
 
-   On error, NULL is returned and errno or *notetaker_errno is set
-   appropriately. *notetaker_errno should be set to zero before
-   calling notetaker_open() to distinguish between a notetaker error
-   and a syscall error.
+   On error, NULL is returned and errno is set appropriately.
 
-   NOTETAKER_ERRNOs
-     NOTETAKER_ERRNO_UNKNOWN_DEVICE
-       One of the hidraw_paths did not belong to a NoteTaker device.
+   ERRORS
+     EINVAL
+       hidraw_paths did not represent interfaces 0 and 1 of
+       a NoteTaker device.
 
    @hidraw_paths a list of two null-terminated paths of hidraw device
    nodes for interface 0 and 1 respectively.
-
-   @notetaker_errno an address of an integer variable where a
-   notetaker errno will be stored in a case of an error.
  */
-notetaker_t *notetaker_open(char **hidraw_paths, int *notetaker_errno);
+notetaker_t *notetaker_open_from_hidraw_paths(char **hidraw_paths);
 
 /**
    Close a NoteTaker device connection and free all resources.
