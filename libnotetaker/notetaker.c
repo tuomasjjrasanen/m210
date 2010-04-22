@@ -58,7 +58,7 @@ struct notetaker {
     int fds[NOTETAKER_IFACE_COUNT];
 };
 
-static notetaker_err_t nt_write_rpt(notetaker_t *notetaker, uint8_t *rpt,
+static notetaker_err_t nt_write_rpt(struct notetaker *notetaker, uint8_t *rpt,
                                     size_t rpt_size)
 {
     notetaker_err_t retval = err_sys;
@@ -86,7 +86,7 @@ static notetaker_err_t nt_write_rpt(notetaker_t *notetaker, uint8_t *rpt,
     return retval;
 }
 
-static notetaker_err_t nt_read_rpt(notetaker_t *notetaker, void *response,
+static notetaker_err_t nt_read_rpt(struct notetaker *notetaker, void *response,
                                    size_t response_size)
 {
     uint8_t buf[NT_MAX_RESPONSE_SIZE];
@@ -104,7 +104,7 @@ static notetaker_err_t nt_read_rpt(notetaker_t *notetaker, void *response,
     return err_ok;
 }
 
-notetaker_err_t notetaker_free(notetaker_t *notetaker)
+notetaker_err_t notetaker_free(struct notetaker *notetaker)
 {
     int i;
 
@@ -119,14 +119,14 @@ notetaker_err_t notetaker_free(notetaker_t *notetaker)
     return err_ok;
 }
 
-notetaker_err_t notetaker_open_from_hidraw_paths(notetaker_t **notetaker,
+notetaker_err_t notetaker_open_from_hidraw_paths(struct notetaker **notetaker,
                                                  char **hidraw_paths)
 {
     int retval = err_sys;
     int i;
     int original_errno;
 
-    *notetaker = (notetaker_t *) malloc(sizeof(notetaker_t));
+    *notetaker = (struct notetaker *) malloc(sizeof(struct notetaker));
     if (*notetaker == NULL)
         return err_sys;
 
@@ -229,7 +229,7 @@ notetaker_err_t nt_find_hidraw_devnode(char *found, int iface, char *path,
     return retval;
 }
 
-notetaker_err_t notetaker_open(notetaker_t **notetaker)
+notetaker_err_t notetaker_open(struct notetaker **notetaker)
 {
     int i;
     char iface0_path[PATH_MAX];
@@ -255,7 +255,7 @@ notetaker_err_t notetaker_open(notetaker_t **notetaker)
     return notetaker_open_from_hidraw_paths(notetaker, paths);
 }
 
-notetaker_err_t notetaker_get_info(notetaker_t *notetaker,
+notetaker_err_t notetaker_get_info(struct notetaker *notetaker,
                                    struct notetaker_info *info)
 {
     notetaker_err_t err;
@@ -278,7 +278,7 @@ notetaker_err_t notetaker_get_info(notetaker_t *notetaker,
     return err_ok;
 }
 
-notetaker_err_t notetaker_delete_notes(notetaker_t *notetaker)
+notetaker_err_t notetaker_delete_notes(struct notetaker *notetaker)
 {
     notetaker_err_t err;
     uint8_t rpt[] = {NT_RPT_ERASE};
@@ -289,7 +289,7 @@ notetaker_err_t notetaker_delete_notes(notetaker_t *notetaker)
     return err_ok;
 }
 
-notetaker_err_t notetaker_wait_ready(notetaker_t *notetaker,
+notetaker_err_t notetaker_wait_ready(struct notetaker *notetaker,
                                      const struct timeval *timeout,
                                      char *ready)
 {
@@ -337,7 +337,7 @@ notetaker_err_t notetaker_wait_ready(notetaker_t *notetaker,
     return err_ok;
 }
 
-/* int notetaker_upload_reject(notetaker_t *notetaker) */
+/* int notetaker_upload_reject(struct notetaker *notetaker) */
 /* { */
 /*     uint8_t rpt[] = {NT_RPT_NACK}; */
 /*     if (nt_write_rpt(notetaker, rpt, sizeof(rpt)) == -1) */
@@ -345,7 +345,7 @@ notetaker_err_t notetaker_wait_ready(notetaker_t *notetaker,
 /*     return 0; */
 /* } */
 
-/* int notetaker_upload_get_size(notetaker_t *notetaker) */
+/* int notetaker_upload_get_size(struct notetaker *notetaker) */
 /* { */
 /*     int i; */
 /*     uint8_t rpt[] = {NT_RPT_UPLOAD}; */
