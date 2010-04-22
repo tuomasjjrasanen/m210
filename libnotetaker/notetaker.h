@@ -30,58 +30,104 @@ struct notetaker_info {
     uint8_t mode;
 };
 
+enum notetaker_err_t {
+    err_ok,
+    err_sys,
+    err_baddev,
+    err_nodev
+};
+
 /**
    Opaque object representing a NoteTaker device.
 */
 typedef struct notetaker notetaker_t;
 
-notetaker_t *notetaker_open(void);
+typedef enum notetaker_err_t notetaker_err_t;
+
+/**
+   Open a hid connetion to a first found NoteTaker device and return
+   an object representing it.
+
+   Return values:
+
+   - err_ok - success
+
+   - err_sys - system call failed and errno is set appropriately
+
+   - err_nodev - a NoteTaker device was not found
+
+   @notetaker an address of a pointer which will point to the object
+   representing NoteTaker device if notetaker_open() is called
+   succesfully
+
+*/
+notetaker_err_t notetaker_open(notetaker_t **notetaker);
 
 /**
    Open a hid connetion to a NoteTaker device and return an object
    representing it.
 
-   On error, NULL is returned and errno is set appropriately.
+   Return values:
 
-   ERRORS
-     EINVAL
-       hidraw_paths did not represent interfaces 0 and 1 of
-       a NoteTaker device.
+   - err_ok - success
+
+   - err_sys - system call failed and errno is set appropriately
+
+   - err_baddev - hidraw_paths did not represent interfaces 0 and 1 of
+                  a NoteTaker device.
+
+   @notetaker an address of a pointer which will point to the object
+   representing NoteTaker device if notetaker_open_from_hidraw_paths()
+   is called succesfully
 
    @hidraw_paths a list of two null-terminated paths of hidraw device
    nodes for interface 0 and 1 respectively.
- */
-notetaker_t *notetaker_open_from_hidraw_paths(char **hidraw_paths);
+*/
+notetaker_err_t notetaker_open_from_hidraw_paths(notetaker_t **notetaker,
+                                                 char **hidraw_paths);
 
 /**
    Close the NoteTaker device connection and free all resources.
 
+   Return values:
+
+   - err_ok - success
+
+   - err_sys - system call failed and errno is set
+     appropriately. Memory is not freed!
+
    @notetaker an address of the object represeting the NoteTaker
    device.
- */
-void notetaker_close(notetaker_t *notetaker);
+   */
+notetaker_err_t notetaker_free(notetaker_t *notetaker);
 
 /**
    Return information about the NoteTaker device.
 
-   On error, -1 is returned and errno is set appropriately. In this
-   case, *info is left unmodified.
+   Return values:
+
+   - err_ok - success
+
+   - err_sys - system call failed and errno is set appropriately
 
    @notetaker an address of the object represeting the NoteTaker
    device.
 
    @info an address where the info will be stored.
- */
-int notetaker_get_info(notetaker_t *notetaker, struct notetaker_info *info);
+*/
+notetaker_err_t notetaker_get_info(notetaker_t *notetaker,
+                                   struct notetaker_info *info);
 
 /**
    Wait until the NoteTaker device is ready or until the time limit is
    reached. If timeout is NULL, notetaker_wait_ready() blocks until
    the NoteTaker device becomes ready.
 
-   Return 0 if the time limit is reached and the device is not
-   ready. Return 1 when the device is ready. On error, -1 is returned
-   and errno is set appropriately.
+   Return values:
+
+   - err_ok - success
+
+   - err_sys - system call failed and errno is set appropriately
 
    @notetaker an address of the object represeting the NoteTaker
    device.
@@ -89,17 +135,26 @@ int notetaker_get_info(notetaker_t *notetaker, struct notetaker_info *info);
    @timeout an address of the maximum time value to wait before giving
    up. Can be NULL in which case notetaker_wait_ready() blocks
    forever.
- */
-int notetaker_wait_ready(notetaker_t *notetaker, const struct timeval *timeout);
+
+   @ready an address where a value describing readiness will be
+   stored, 1 if ready, 0 otherwise.
+  */
+notetaker_err_t notetaker_wait_ready(notetaker_t *notetaker,
+                                     const struct timeval *timeout,
+                                     char *ready);
 
 /**
    Requests the NoteTaker device to delete all notes.
 
-   On error, -1 is returned and errno is set appropriately.
+   Return values:
+
+   - err_ok - success
+
+   - err_sys - system call failed and errno is set appropriately
 
    @notetaker an address of the object represeting the NoteTaker
    device.
- */
-int notetaker_delete_notes(notetaker_t *notetaker);
+*/
+notetaker_err_t notetaker_delete_notes(notetaker_t *notetaker);
 
 #endif /* NOTETAKER_H */

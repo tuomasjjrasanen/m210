@@ -58,15 +58,16 @@ struct notetaker {
     int fds[NOTETAKER_IFACE_COUNT];
 };
 
-static int nt_write_rpt(notetaker_t *notetaker, uint8_t *rpt, size_t rpt_size)
+static notetaker_err_t nt_write_rpt(notetaker_t *notetaker, uint8_t *rpt,
+                                    size_t rpt_size)
 {
-    int retval = -1;
+    notetaker_err_t retval = err_sys;
     uint8_t *request;
     size_t request_size = rpt_size + 3;
 
     request = (uint8_t *) malloc(request_size);
     if (request == NULL)
-        return -1;
+        return retval;
 
     request[0] = 0x00;     /* Without this, response is not sent. Why?? */
     request[1] = 0x02;     /* report id */
@@ -79,57 +80,58 @@ static int nt_write_rpt(notetaker_t *notetaker, uint8_t *rpt, size_t rpt_size)
     if (write(notetaker->fds[0], request, request_size) == -1)
         goto err;
 
-    retval = 0;
+    retval = err_ok;
   err:
     free(request);
     return retval;
 }
 
-static int nt_read_rpt(notetaker_t *notetaker, void *response, size_t response_size)
+static notetaker_err_t nt_read_rpt(notetaker_t *notetaker, void *response,
+                                   size_t response_size)
 {
     uint8_t buf[NT_MAX_RESPONSE_SIZE];
     memset(buf, 0, NT_MAX_RESPONSE_SIZE);
     memset(response, 0, response_size);
 
     if (read(notetaker->fds[0], buf, NT_MAX_RESPONSE_SIZE) == -1)
-        return -1;
+        return err_sys;
 
     if (response_size > NT_MAX_RESPONSE_SIZE)
         memcpy(response, buf, NT_MAX_RESPONSE_SIZE);
     else
         memcpy(response, buf, response_size);
 
-    return 0;
+    return err_ok;
 }
 
-void notetaker_close(notetaker_t *notetaker)
+notetaker_err_t notetaker_free(notetaker_t *notetaker)
 {
     int i;
-
-    if (notetaker == NULL)
-        return;
 
     for (i = 0; i < NOTETAKER_IFACE_COUNT; ++i) {
         int fd = notetaker->fds[i];
         if (fd != -1) {
-            close(fd);
+            if (close(fd) == -1)
+                return err_sys;
         }
     }
     free(notetaker);
+    return err_ok;
 }
 
-notetaker_t *notetaker_open_from_hidraw_paths(char **hidraw_paths)
+notetaker_err_t notetaker_open_from_hidraw_paths(notetaker_t **notetaker,
+                                                 char **hidraw_paths)
 {
+    int retval = err_sys;
     int i;
     int original_errno;
-    notetaker_t *notetaker;
 
-    notetaker = (notetaker_t *) malloc(sizeof(notetaker_t));
-    if (notetaker == NULL)
-        return NULL;
+    *notetaker = (notetaker_t *) malloc(sizeof(notetaker_t));
+    if (*notetaker == NULL)
+        return err_sys;
 
     for (i = 0; i < NOTETAKER_IFACE_COUNT; ++i) {
-        notetaker->fds[i] = -1;
+        (*notetaker)->fds[i] = -1;
     }
 
     for (i = 0; i < NOTETAKER_IFACE_COUNT; ++i) {
@@ -145,25 +147,32 @@ notetaker_t *notetaker_open_from_hidraw_paths(char **hidraw_paths)
             goto err;
 
         if (memcmp(&devinfo, &DEVINFO_M210, sizeof(struct hidraw_devinfo)) != 0) {
-            errno = EINVAL;
+            retval = err_baddev;
             goto err;
         }
 
-        notetaker->fds[i] = fd;
+        (*notetaker)->fds[i] = fd;
     }
 
-    return notetaker;
+    return err_ok;
 
   err:
     original_errno = errno;
-    notetaker_close(notetaker);
+    switch (notetaker_free(*notetaker)) {
+    case err_sys:
+        free(*notetaker);
+        break;
+    default:
+        break;
+    }
     errno = original_errno;
-    return NULL;
+    return retval;
 }
 
-int nt_find_hidraw_devnode(int iface, char *path, size_t path_size)
+notetaker_err_t nt_find_hidraw_devnode(char *found, int iface, char *path,
+                                       size_t path_size)
 {
-    int retval = -1;
+    int retval = err_sys;
     struct udev_list_entry *list_entry = NULL;
     struct udev_enumerate *enumerate = NULL;
     struct udev *udev = NULL;
@@ -201,8 +210,8 @@ int nt_find_hidraw_devnode(int iface, char *path, size_t path_size)
         if (vendor == DEVINFO_M210.vendor
             && product == DEVINFO_M210.product
             && iface == ifc) {
-            /* Found! */
-            retval = 1;
+            retval = err_ok;
+            *found = 1;
             strncpy(path, devnode, path_size);
             udev_device_unref(dev);
             goto out;
@@ -210,7 +219,8 @@ int nt_find_hidraw_devnode(int iface, char *path, size_t path_size)
         list_entry = udev_list_entry_get_next(list_entry);
         udev_device_unref(dev);
     }
-    retval = 0;
+    retval = err_ok;
+    *found = 0;
   out:
     if (enumerate)
         udev_enumerate_unref(enumerate);
@@ -219,55 +229,69 @@ int nt_find_hidraw_devnode(int iface, char *path, size_t path_size)
     return retval;
 }
 
-notetaker_t *notetaker_open(void)
+notetaker_err_t notetaker_open(notetaker_t **notetaker)
 {
     int i;
     char iface0_path[PATH_MAX];
     char iface1_path[PATH_MAX];
     char *paths[NOTETAKER_IFACE_COUNT] = {iface0_path, iface1_path};
     for (i = 0; i < NOTETAKER_IFACE_COUNT; ++i) {
+        notetaker_err_t err;
+        char found;
+
         memset(paths[i], 0, PATH_MAX);
-        switch (nt_find_hidraw_devnode(i, paths[i], PATH_MAX)) {
-        case -1:
-            return NULL;
-        case 0:
-            errno = ENODEV;
-            return NULL;
-        default:
+
+        err = nt_find_hidraw_devnode(&found, i, paths[i], PATH_MAX);
+        switch (err) {
+        case err_ok:
             break;
+        default:
+            return err;
         }
+
+        if (!found)
+            return err_nodev;
     }
-    return notetaker_open_from_hidraw_paths(paths);
+    return notetaker_open_from_hidraw_paths(notetaker, paths);
 }
 
-int notetaker_get_info(notetaker_t *notetaker, struct notetaker_info *info)
+notetaker_err_t notetaker_get_info(notetaker_t *notetaker,
+                                   struct notetaker_info *info)
 {
+    notetaker_err_t err;
     uint8_t rpt[] = {NT_RPT_INFO};
     struct info_response response;
 
-    if (nt_write_rpt(notetaker, rpt, sizeof(rpt)) == -1)
-        return -1;
+    err = nt_write_rpt(notetaker, rpt, sizeof(rpt));
+    if (err)
+        return err;
 
-    if (nt_read_rpt(notetaker, &response, sizeof(struct info_response)) == -1)
-        return -1;
+    err = nt_read_rpt(notetaker, &response, sizeof(struct info_response));
+    if (err)
+        return err;
 
     info->firmware_version = be16toh(response.firmware_version);
     info->analog_version = be16toh(response.analog_version);
     info->pad_version = be16toh(response.pad_version);
     info->mode = response.mode;
 
-    return 0;
+    return err_ok;
 }
 
-int notetaker_delete_notes(notetaker_t *notetaker)
+notetaker_err_t notetaker_delete_notes(notetaker_t *notetaker)
 {
+    notetaker_err_t err;
     uint8_t rpt[] = {NT_RPT_ERASE};
-    if (nt_write_rpt(notetaker, rpt, sizeof(rpt)) == -1)
-        return -1;
-    return 0;
+
+    err = nt_write_rpt(notetaker, rpt, sizeof(rpt));
+    if (err)
+        return err;
+    return err_ok;
 }
 
-int notetaker_wait_ready(notetaker_t *notetaker, const struct timeval *timeout)
+notetaker_err_t notetaker_wait_ready(notetaker_t *notetaker,
+                                     const struct timeval *timeout,
+                                     char *ready)
 {
     uint8_t rpt[] = {NT_RPT_INFO};
     int fd = notetaker->fds[0];
@@ -275,7 +299,7 @@ int notetaker_wait_ready(notetaker_t *notetaker, const struct timeval *timeout)
     struct timeval end_time;
 
     if (gettimeofday(&now, NULL) == -1)
-        return -1;
+        return err_sys;
 
     if (timeout != NULL)
         timeradd(&now, timeout, &end_time);
@@ -284,6 +308,7 @@ int notetaker_wait_ready(notetaker_t *notetaker, const struct timeval *timeout)
         fd_set readfds;
         struct timeval select_interval;
         int nfds;
+        notetaker_err_t err;
 
         memset(&select_interval, 0, sizeof(struct timeval));
         FD_ZERO(&readfds);
@@ -291,23 +316,25 @@ int notetaker_wait_ready(notetaker_t *notetaker, const struct timeval *timeout)
 
         select_interval.tv_usec = 100000;
 
-        if (nt_write_rpt(notetaker, rpt, sizeof(rpt)) == -1)
-            return -1;
+        err = nt_write_rpt(notetaker, rpt, sizeof(rpt));
+        if (err)
+            return err;
 
         nfds = select(fd + 1, &readfds, NULL, NULL, &select_interval);
         if (nfds == 0) {
             /* Not ready yet. */
             if (gettimeofday(&now, NULL) == -1)
-                return -1;
+                return err_sys;
             continue;
         } else if (nfds == -1) {
-            return -1;
+            return err_sys;
         } else {
-            /* Ready! */
-            return 1;
+            *ready = 1;
+            return err_ok;
         }
     }
-    return 0;
+    *ready = 0;
+    return err_ok;
 }
 
 /* int notetaker_upload_reject(notetaker_t *notetaker) */
