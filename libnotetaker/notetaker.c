@@ -267,6 +267,49 @@ int notetaker_delete_notes(notetaker_t *notetaker)
     return 0;
 }
 
+int notetaker_wait_ready(notetaker_t *notetaker, const struct timeval *timeout)
+{
+    uint8_t rpt[] = {NT_RPT_INFO};
+    int fd = notetaker->fds[0];
+    struct timeval now;
+    struct timeval end_time;
+
+    if (gettimeofday(&now, NULL) == -1)
+        return -1;
+
+    if (timeout != NULL)
+        timeradd(&now, timeout, &end_time);
+
+    while (timeout == NULL || timercmp(&now, &end_time, <=)) {
+        fd_set readfds;
+        struct timeval select_interval;
+        int nfds;
+
+        memset(&select_interval, 0, sizeof(struct timeval));
+        FD_ZERO(&readfds);
+        FD_SET(fd, &readfds);
+
+        select_interval.tv_usec = 100000;
+
+        if (nt_write_rpt(notetaker, rpt, sizeof(rpt)) == -1)
+            return -1;
+
+        nfds = select(fd + 1, &readfds, NULL, NULL, &select_interval);
+        if (nfds == 0) {
+            /* Not ready yet. */
+            if (gettimeofday(&now, NULL) == -1)
+                return -1;
+            continue;
+        } else if (nfds == -1) {
+            return -1;
+        } else {
+            /* Ready! */
+            return 1;
+        }
+    }
+    return 0;
+}
+
 /* int notetaker_upload_reject(notetaker_t *notetaker) */
 /* { */
 /*     uint8_t rpt[] = {NT_RPT_NACK}; */

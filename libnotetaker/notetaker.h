@@ -54,7 +54,7 @@ notetaker_t *notetaker_open(void);
 notetaker_t *notetaker_open_from_hidraw_paths(char **hidraw_paths);
 
 /**
-   Close a NoteTaker device connection and free all resources.
+   Close the NoteTaker device connection and free all resources.
 
    @notetaker an address of the object represeting the NoteTaker
    device.
@@ -74,6 +74,32 @@ void notetaker_close(notetaker_t *notetaker);
  */
 int notetaker_get_info(notetaker_t *notetaker, struct notetaker_info *info);
 
+/**
+   Wait until the NoteTaker device is ready or until the time limit is
+   reached. If timeout is NULL, notetaker_wait_ready() blocks until
+   the NoteTaker device becomes ready.
+
+   Return 0 if the time limit is reached and the device is not
+   ready. Return 1 when the device is ready. On error, -1 is returned
+   and errno is set appropriately.
+
+   @notetaker an address of the object represeting the NoteTaker
+   device.
+
+   @timeout an address of the maximum time value to wait before giving
+   up. Can be NULL in which case notetaker_wait_ready() blocks
+   forever.
+ */
+int notetaker_wait_ready(notetaker_t *notetaker, const struct timeval *timeout);
+
+/**
+   Requests the NoteTaker device to delete all notes.
+
+   On error, -1 is returned and errno is set appropriately.
+
+   @notetaker an address of the object represeting the NoteTaker
+   device.
+ */
 int notetaker_delete_notes(notetaker_t *notetaker);
 
 #endif /* NOTETAKER_H */
