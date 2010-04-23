@@ -1,26 +1,6 @@
 #ifndef M210_H
 #define M210_H
 
-#define M210_MODE_XY     0x01
-#define M210_MODE_TABLET 0x02
-
-#define M210_ORIENTATION_TOP   0x00
-#define M210_ORIENTATION_LEFT  0x01
-#define M210_ORIENTATION_RIGHT 0x02
-
-#define M210_SCALE_0   0x00
-#define M210_SCALE_1   0x01
-#define M210_SCALE_2   0x02
-#define M210_SCALE_3   0x03
-#define M210_SCALE_4   0x04
-#define M210_SCALE_5   0x05
-#define M210_SCALE_6   0x06
-#define M210_SCALE_7   0x07
-#define M210_SCALE_8   0x08
-#define M210_SCALE_9   0x09
-#define M210_SCALE_MIN M210_SCALE_0
-#define M210_SCALE_MAX M210_SCALE_9
-
 #define M210_IFACE_COUNT 2
 
 struct m210_info {

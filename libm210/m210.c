@@ -14,26 +14,7 @@
 
 #include "m210.h"
 
-/* #define M210_MODE_NONE   0x00 */
-/* #define M210_MODE_MOBILE 0x03 */
-
-/* #define M210_LED_NONE  0x00 */
-/* #define M210_LED_PEN   0x01 */
-/* #define M210_LED_MOUSE 0x02 */
-
-/* #define M210_STATUS_NONE         0x00 */
-/* #define M210_STATUS_BATTERY_LOW  0x01 */
-/* #define M210_STATUS_BATTERY_GOOD 0x02 */
-
-#define M210_RPT_INFO     0x95
-#define M210_RPT_ERASE    0xB0
-#define M210_RPT_UPLOAD   0xB5
-#define M210_RPT_ACK      0xB6
-#define M210_RPT_NACK     0xB7
-#define M210_RPT_MODE1    0x80
-#define M210_RPT_MODE2    0xB5
-#define M210_RPT_SCALE1   0x80
-#define M210_RPT_SCALE2   0xB6
+#define WAIT_INTERVAL 100000 /* Microseconds. */
 
 static const struct hidraw_devinfo DEVINFO_M210 = {
     BUS_USB,
@@ -61,7 +42,7 @@ struct m210 {
   Values: 0x00 0x02 rpt_size rpt[0] rpt[1] ... rpt[rpt_size - 1]
 */
 static m210_err_t m210_write_rpt(struct m210 *m210,
-                               const uint8_t *rpt, size_t rpt_size)
+                                 const uint8_t *rpt, size_t rpt_size)
 {
     m210_err_t err = err_sys;
     uint8_t *request;
@@ -90,7 +71,7 @@ static m210_err_t m210_write_rpt(struct m210 *m210,
 
 #define M210_RESP_SIZE 64
 static m210_err_t m210_read_rpt(struct m210 *m210, void *response,
-                              size_t response_size)
+                                size_t response_size)
 {
     uint8_t buf[M210_RESP_SIZE];
     memset(buf, 0, M210_RESP_SIZE);
@@ -98,20 +79,17 @@ static m210_err_t m210_read_rpt(struct m210 *m210, void *response,
     if (read(m210->fds[0], buf, M210_RESP_SIZE) == -1)
         return err_sys;
 
-    if (response != NULL) {
-        memset(response, 0, response_size);
-        if (response_size > M210_RESP_SIZE) {
-            memcpy(response, buf, M210_RESP_SIZE);
-        } else {
-            memcpy(response, buf, response_size);
-        }
-    }
+    memset(response, 0, response_size);
+    if (response_size > M210_RESP_SIZE)
+        memcpy(response, buf, M210_RESP_SIZE);
+    else
+        memcpy(response, buf, response_size);
 
     return err_ok;
 }
 
 static m210_err_t m210_find_hidraw_devnode(char *found, int iface,
-                                         char *path, size_t path_size)
+                                           char *path, size_t path_size)
 {
     int err = err_sys;
     struct udev_list_entry *list_entry = NULL;
@@ -135,7 +113,7 @@ static m210_err_t m210_find_hidraw_devnode(char *found, int iface,
     list_entry = udev_enumerate_get_list_entry(enumerate);
 
     while (list_entry != NULL) {
-        int ifc;
+        int ifn;
         uint16_t vendor;
         uint16_t product;
         const char *syspath = udev_list_entry_get_name(list_entry);
@@ -144,7 +122,7 @@ static m210_err_t m210_find_hidraw_devnode(char *found, int iface,
         struct udev_device *parent = udev_device_get_parent(dev);
 
         parent = udev_device_get_parent(parent); /* Second parent: usb */
-        ifc = atoi(udev_device_get_sysattr_value(parent, "bInterfaceNumber"));
+        ifn = atoi(udev_device_get_sysattr_value(parent, "bInterfaceNumber"));
         parent = udev_device_get_parent(parent);
         vendor = strtol(udev_device_get_sysattr_value(parent, "idVendor"),
                         NULL, 16);
@@ -152,7 +130,7 @@ static m210_err_t m210_find_hidraw_devnode(char *found, int iface,
                          NULL, 16);
         if (vendor == DEVINFO_M210.vendor
             && product == DEVINFO_M210.product
-            && iface == ifc) {
+            && iface == ifn) {
             err = err_ok;
             *found = 1;
             strncpy(path, devnode, path_size);
@@ -172,8 +150,23 @@ static m210_err_t m210_find_hidraw_devnode(char *found, int iface,
     return err;
 }
 
-m210_err_t m210_wait_info(struct m210 *m210,
-                        struct m210_info *info)
+/*
+  Get info request:
+  Bytes:  0
+  Values: 0x95
+
+  Info response:
+  Bytes:  0    1    2    3   4   5   6   7   8   9   10
+  Values: 0x80 0xa9 0x28 fvh fvl avh avl pvh pvl 0xe mode
+
+  fvh = Firmware version high
+  fvl = Firmware version low
+  avh = Analog version high
+  avl = Analog version low
+  pvh = Pad version high
+  pvl = Pad version low
+*/
+m210_err_t m210_get_info(struct m210 *m210, struct m210_info *info)
 {
     uint8_t rpt[] = {0x95};
     int fd = m210->fds[0];
@@ -188,7 +181,7 @@ m210_err_t m210_wait_info(struct m210 *m210,
         FD_ZERO(&readfds);
         FD_SET(fd, &readfds);
 
-        select_interval.tv_usec = 100000;
+        select_interval.tv_usec = WAIT_INTERVAL;
 
         err = m210_write_rpt(m210, rpt, sizeof(rpt));
         if (err)
@@ -201,18 +194,23 @@ m210_err_t m210_wait_info(struct m210 *m210,
         } else if (nfds == -1) {
             return err_sys;
         } else {
+            struct info_resp resp;
+            memset(&resp, 0, sizeof(resp));
+            err = m210_read_rpt(m210, &resp, sizeof(resp));
+            if (err)
+                return err;
+            if (info != NULL) {
+                /* Fill in only if caller is interested in the info. */
+                info->firmware_version = be16toh(resp.firmware_version);
+                info->analog_version = be16toh(resp.analog_version);
+                info->pad_version = be16toh(resp.pad_version);
+                info->mode = resp.mode;
+            }
             break;
         }
     }
-    return m210_read_rpt(m210, info, sizeof(struct m210_info));
+    return err_ok;
 }
-
-/* static m210_err_t m210_accept(m210_t m210) */
-/* { */
-/*     uint8_t rpt[] = {0xb6}; */
-
-/*     return m210_write_rpt(m210, rpt, sizeof(rpt)); */
-/* } */
 
 static m210_err_t m210_reject(m210_t m210)
 {
@@ -223,9 +221,9 @@ static m210_err_t m210_reject(m210_t m210)
 
 #define M210_PACKET_SIZE M210_RESP_SIZE
 /*
-  Download request can be used for two cases:
+  Download request can be used for two purposes:
 
-  Case: Request just packet count.
+  1: Request just packet count.
 
   HOST       DEVICE
   =======================
@@ -233,7 +231,7 @@ static m210_err_t m210_reject(m210_t m210)
            < PACKET_COUNT
   REJECT   >
 
-  Case: Download packets.
+  2: Download packets.
 
   HOST        DEVICE
   ========================
@@ -293,8 +291,7 @@ static m210_err_t m210_download(m210_t m210, size_t *size)
     return err_ok;
 }
 
-m210_err_t m210_open_from_hidraw_paths(struct m210 **m210,
-                                     char **hidraw_paths)
+m210_err_t m210_open_from_hidraw_paths(struct m210 **m210, char **hidraw_paths)
 {
     int err = err_sys;
     int i;
@@ -388,12 +385,6 @@ m210_err_t m210_free(struct m210 *m210)
     return err_ok;
 }
 
-m210_err_t m210_get_info(struct m210 *m210,
-                         struct m210_info *info)
-{
-    return m210_wait_info(m210, info);
-}
-
 m210_err_t m210_delete_notes(struct m210 *m210)
 {
     m210_err_t err;
@@ -403,7 +394,7 @@ m210_err_t m210_delete_notes(struct m210 *m210)
     if (err)
         return err;
 
-    return m210_wait_info(m210, NULL);
+    return m210_get_info(m210, NULL);
 }
 
 m210_err_t m210_get_data_size(m210_t m210, size_t *size)
@@ -419,6 +410,5 @@ m210_err_t m210_get_data_size(m210_t m210, size_t *size)
     if (err)
         return err;
 
-    /* Every public function must ensure that the device is left ready. */
-    return m210_wait_info(m210, NULL);
+    return m210_get_info(m210, NULL);
 }
