@@ -22,17 +22,6 @@ static const struct hidraw_devinfo DEVINFO_M210 = {
     0x0101,
 };
 
-struct info_resp {
-    uint8_t special_command;
-    uint8_t command_version;
-    uint8_t product_id;
-    uint16_t firmware_version;
-    uint16_t analog_version;
-    uint16_t pad_version;
-    uint8_t analog_product_id;
-    uint8_t mode;
-} __attribute__ ((packed));
-
 struct m210 {
     int fds[M210_IFACE_COUNT];
 };
@@ -156,8 +145,8 @@ static m210_err_t m210_find_hidraw_devnode(char *found, int iface,
   Values: 0x95
 
   Info response:
-  Bytes:  0    1    2    3   4   5   6   7   8   9   10
-  Values: 0x80 0xa9 0x28 fvh fvl avh avl pvh pvl 0xe mode
+  Bytes:  0    1    2    3   4   5   6   7   8   9    10
+  Values: 0x80 0xa9 0x28 fvh fvl avh avl pvh pvl 0x0e mode
 
   fvh = Firmware version high
   fvl = Firmware version low
@@ -194,17 +183,33 @@ m210_err_t m210_get_info(struct m210 *m210, struct m210_info *info)
         } else if (nfds == -1) {
             return err_sys;
         } else {
-            struct info_resp resp;
+            uint8_t resp[11];
             memset(&resp, 0, sizeof(resp));
             err = m210_read_rpt(m210, &resp, sizeof(resp));
             if (err)
                 return err;
+
+            /* Check that the received packet is correct. */
+            if (resp[0] != 0x80
+                || resp[1] != 0xa9
+                || resp[2] != 0x28
+                || resp[9] != 0x0e)
+                return err_badmsg;
+
             if (info != NULL) {
                 /* Fill in only if caller is interested in the info. */
-                info->firmware_version = be16toh(resp.firmware_version);
-                info->analog_version = be16toh(resp.analog_version);
-                info->pad_version = be16toh(resp.pad_version);
-                info->mode = resp.mode;
+                uint16_t firmware_version;
+                uint16_t analog_version;
+                uint16_t pad_version;
+
+                memcpy(&firmware_version, resp + 3, 2);
+                memcpy(&analog_version, resp + 5, 2);
+                memcpy(&pad_version, resp + 7, 2);
+
+                info->firmware_version = be16toh(firmware_version);
+                info->analog_version = be16toh(analog_version);
+                info->pad_version = be16toh(pad_version);
+                info->mode = resp[10];
             }
             break;
         }
