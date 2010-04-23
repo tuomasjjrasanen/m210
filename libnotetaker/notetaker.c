@@ -146,8 +146,10 @@ static notetaker_err_t nt_find_hidraw_devnode(char *found, int iface,
         parent = udev_device_get_parent(parent); /* Second parent: usb */
         ifc = atoi(udev_device_get_sysattr_value(parent, "bInterfaceNumber"));
         parent = udev_device_get_parent(parent);
-        vendor = strtol(udev_device_get_sysattr_value(parent, "idVendor"), NULL, 16);
-        product = strtol(udev_device_get_sysattr_value(parent, "idProduct"), NULL, 16);
+        vendor = strtol(udev_device_get_sysattr_value(parent, "idVendor"),
+                        NULL, 16);
+        product = strtol(udev_device_get_sysattr_value(parent, "idProduct"),
+                         NULL, 16);
         if (vendor == DEVINFO_M210.vendor
             && product == DEVINFO_M210.product
             && iface == ifc) {
@@ -291,34 +293,8 @@ static notetaker_err_t nt_download(notetaker_t notetaker, size_t *size)
     return err_ok;
 }
 
-notetaker_err_t notetaker_open(struct notetaker **notetaker)
-{
-    int i;
-    char iface0_path[PATH_MAX];
-    char iface1_path[PATH_MAX];
-    char *paths[NOTETAKER_IFACE_COUNT] = {iface0_path, iface1_path};
-    for (i = 0; i < NOTETAKER_IFACE_COUNT; ++i) {
-        notetaker_err_t err;
-        char found;
-
-        memset(paths[i], 0, PATH_MAX);
-
-        err = nt_find_hidraw_devnode(&found, i, paths[i], PATH_MAX);
-        switch (err) {
-        case err_ok:
-            break;
-        default:
-            return err;
-        }
-
-        if (!found)
-            return err_nodev;
-    }
-    return notetaker_open_from_hidraw_paths(notetaker, paths);
-}
-
-notetaker_err_t notetaker_open_from_hidraw_paths(struct notetaker **notetaker,
-                                                 char **hidraw_paths)
+notetaker_err_t nt_open_from_hidraw_paths(struct notetaker **notetaker,
+                                          char **hidraw_paths)
 {
     int err = err_sys;
     int i;
@@ -344,7 +320,8 @@ notetaker_err_t notetaker_open_from_hidraw_paths(struct notetaker **notetaker,
         if (ioctl(fd, HIDIOCGRAWINFO, &devinfo))
             goto err;
 
-        if (memcmp(&devinfo, &DEVINFO_M210, sizeof(struct hidraw_devinfo)) != 0) {
+        if (memcmp(&devinfo, &DEVINFO_M210,
+                   sizeof(struct hidraw_devinfo)) != 0) {
             err = err_baddev;
             goto err;
         }
@@ -365,6 +342,35 @@ notetaker_err_t notetaker_open_from_hidraw_paths(struct notetaker **notetaker,
     }
     errno = original_errno;
     return err;
+}
+
+notetaker_err_t notetaker_open(struct notetaker **notetaker, char** hidraw_paths)
+{
+    if (hidraw_paths == NULL) {
+        int i;
+        char iface0_path[PATH_MAX];
+        char iface1_path[PATH_MAX];
+        char *paths[NOTETAKER_IFACE_COUNT] = {iface0_path, iface1_path};
+        for (i = 0; i < NOTETAKER_IFACE_COUNT; ++i) {
+            notetaker_err_t err;
+            char found;
+
+            memset(paths[i], 0, PATH_MAX);
+
+            err = nt_find_hidraw_devnode(&found, i, paths[i], PATH_MAX);
+            switch (err) {
+            case err_ok:
+                break;
+            default:
+                return err;
+            }
+
+            if (!found)
+                return err_nodev;
+        }
+        return nt_open_from_hidraw_paths(notetaker, paths);
+    }
+    return nt_open_from_hidraw_paths(notetaker, hidraw_paths);
 }
 
 notetaker_err_t notetaker_free(struct notetaker *notetaker)
