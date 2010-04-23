@@ -35,8 +35,7 @@ enum notetaker_err {
     err_sys,
     err_baddev,
     err_nodev,
-    err_badmsg,
-    err_timeout
+    err_badmsg
 };
 
 /**

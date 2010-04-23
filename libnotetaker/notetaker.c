@@ -171,21 +171,12 @@ static notetaker_err_t nt_find_hidraw_devnode(char *found, int iface,
 }
 
 notetaker_err_t nt_wait_info(struct notetaker *notetaker,
-                             struct notetaker_info *info,
-                             const struct timeval *timeout)
+                             struct notetaker_info *info)
 {
     uint8_t rpt[] = {0x95};
     int fd = notetaker->fds[0];
-    struct timeval now;
-    struct timeval end_time;
 
-    if (gettimeofday(&now, NULL) == -1)
-        return err_sys;
-
-    if (timeout != NULL)
-        timeradd(&now, timeout, &end_time);
-
-    while (timeout == NULL || timercmp(&now, &end_time, <=)) {
+    while (1) {
         fd_set readfds;
         struct timeval select_interval;
         int nfds;
@@ -204,16 +195,14 @@ notetaker_err_t nt_wait_info(struct notetaker *notetaker,
         nfds = select(fd + 1, &readfds, NULL, NULL, &select_interval);
         if (nfds == 0) {
             /* Not ready yet. */
-            if (gettimeofday(&now, NULL) == -1)
-                return err_sys;
             continue;
         } else if (nfds == -1) {
             return err_sys;
         } else {
-            return nt_read_rpt(notetaker, info, sizeof(struct notetaker_info));
+            break;
         }
     }
-    return err_timeout;
+    return nt_read_rpt(notetaker, info, sizeof(struct notetaker_info));
 }
 
 /* static notetaker_err_t nt_accept(notetaker_t notetaker) */
@@ -396,7 +385,7 @@ notetaker_err_t notetaker_free(struct notetaker *notetaker)
 notetaker_err_t notetaker_get_info(struct notetaker *notetaker,
                                    struct notetaker_info *info)
 {
-    return nt_wait_info(notetaker, info, NULL);
+    return nt_wait_info(notetaker, info);
 }
 
 notetaker_err_t notetaker_delete_notes(struct notetaker *notetaker)
@@ -408,7 +397,7 @@ notetaker_err_t notetaker_delete_notes(struct notetaker *notetaker)
     if (err)
         return err;
 
-    return nt_wait_info(notetaker, NULL, NULL);
+    return nt_wait_info(notetaker, NULL);
 }
 
 notetaker_err_t notetaker_get_data_size(notetaker_t notetaker, size_t *size)
@@ -425,5 +414,5 @@ notetaker_err_t notetaker_get_data_size(notetaker_t notetaker, size_t *size)
         return err;
 
     /* Every public function must ensure that the device is left ready. */
-    return nt_wait_info(notetaker, NULL, NULL);
+    return nt_wait_info(notetaker, NULL);
 }
