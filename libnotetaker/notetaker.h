@@ -46,8 +46,10 @@ typedef struct notetaker* notetaker_t;
 typedef enum notetaker_err notetaker_err_t;
 
 /**
-   Open a hid connetion to a first found NoteTaker device and return
-   an object representing it.
+   Open a hid connetion to a NoteTaker device and return an object
+   representing it.
+
+   Succesfully opened device must be freed with notetaker_free().
 
    Return values:
 
@@ -57,22 +59,6 @@ typedef enum notetaker_err notetaker_err_t;
 
    - err_nodev - a NoteTaker device was not found
 
-   @notetaker an address of an object representing the NoteTaker
-   device.
-
-*/
-notetaker_err_t notetaker_open(notetaker_t *notetaker);
-
-/**
-   Open a hid connetion to a NoteTaker device and return an object
-   representing it.
-
-   Return values:
-
-   - err_ok - success
-
-   - err_sys - system call failed and errno is set appropriately
-
    - err_baddev - hidraw_paths did not represent interfaces 0 and 1 of
    a NoteTaker device.
 
@@ -80,11 +66,11 @@ notetaker_err_t notetaker_open(notetaker_t *notetaker);
    device.
 
    @hidraw_paths a list of two null-terminated paths of hidraw device
-   nodes for interface 0 and 1 respectively.
+   nodes for interface 0 and 1 respectively or NULL in which case
+   proper nodes are searched with udev.
 
 */
-notetaker_err_t notetaker_open_from_hidraw_paths(notetaker_t *notetaker,
-                                                 char **hidraw_paths);
+notetaker_err_t notetaker_open(notetaker_t *notetaker, char** hidraw_paths);
 
 /**
    Close the NoteTaker device connection and free all resources.
@@ -133,13 +119,15 @@ notetaker_err_t notetaker_get_info(notetaker_t notetaker,
 notetaker_err_t notetaker_delete_notes(notetaker_t notetaker);
 
 /**
-   Return data size required for full download.
+   Return size of stored notes.
 
    Return values:
 
    - err_ok - success
 
    - err_sys - system call failed and errno is set appropriately
+
+   - err_badmsg - device sent unexpected message
 
    @notetaker an object represeting the NoteTaker device.
 
