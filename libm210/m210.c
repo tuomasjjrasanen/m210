@@ -12,28 +12,28 @@
 
 #include <libudev.h>
 
-#include "notetaker.h"
+#include "m210.h"
 
-/* #define NOTETAKER_MODE_NONE   0x00 */
-/* #define NOTETAKER_MODE_MOBILE 0x03 */
+/* #define M210_MODE_NONE   0x00 */
+/* #define M210_MODE_MOBILE 0x03 */
 
-/* #define NOTETAKER_LED_NONE  0x00 */
-/* #define NOTETAKER_LED_PEN   0x01 */
-/* #define NOTETAKER_LED_MOUSE 0x02 */
+/* #define M210_LED_NONE  0x00 */
+/* #define M210_LED_PEN   0x01 */
+/* #define M210_LED_MOUSE 0x02 */
 
-/* #define NOTETAKER_STATUS_NONE         0x00 */
-/* #define NOTETAKER_STATUS_BATTERY_LOW  0x01 */
-/* #define NOTETAKER_STATUS_BATTERY_GOOD 0x02 */
+/* #define M210_STATUS_NONE         0x00 */
+/* #define M210_STATUS_BATTERY_LOW  0x01 */
+/* #define M210_STATUS_BATTERY_GOOD 0x02 */
 
-#define NT_RPT_INFO     0x95
-#define NT_RPT_ERASE    0xB0
-#define NT_RPT_UPLOAD   0xB5
-#define NT_RPT_ACK      0xB6
-#define NT_RPT_NACK     0xB7
-#define NT_RPT_MODE1    0x80
-#define NT_RPT_MODE2    0xB5
-#define NT_RPT_SCALE1   0x80
-#define NT_RPT_SCALE2   0xB6
+#define M210_RPT_INFO     0x95
+#define M210_RPT_ERASE    0xB0
+#define M210_RPT_UPLOAD   0xB5
+#define M210_RPT_ACK      0xB6
+#define M210_RPT_NACK     0xB7
+#define M210_RPT_MODE1    0x80
+#define M210_RPT_MODE2    0xB5
+#define M210_RPT_SCALE1   0x80
+#define M210_RPT_SCALE2   0xB6
 
 static const struct hidraw_devinfo DEVINFO_M210 = {
     BUS_USB,
@@ -52,18 +52,18 @@ struct info_resp {
     uint8_t mode;
 } __attribute__ ((packed));
 
-struct notetaker {
-    int fds[NOTETAKER_IFACE_COUNT];
+struct m210 {
+    int fds[M210_IFACE_COUNT];
 };
 
 /*
   Bytes:  0    1    2        3      4          rpt_size
   Values: 0x00 0x02 rpt_size rpt[0] rpt[1] ... rpt[rpt_size - 1]
- */
-static notetaker_err_t nt_write_rpt(struct notetaker *notetaker,
-                                    const uint8_t *rpt, size_t rpt_size)
+*/
+static m210_err_t m210_write_rpt(struct m210 *m210,
+                               const uint8_t *rpt, size_t rpt_size)
 {
-    notetaker_err_t err = err_sys;
+    m210_err_t err = err_sys;
     uint8_t *request;
     size_t request_size = rpt_size + 3;
 
@@ -79,7 +79,7 @@ static notetaker_err_t nt_write_rpt(struct notetaker *notetaker,
     memcpy(request + 3, rpt, rpt_size);
 
     /* Send request to the interface 0. */
-    if (write(notetaker->fds[0], request, request_size) == -1)
+    if (write(m210->fds[0], request, request_size) == -1)
         goto err;
 
     err = err_ok;
@@ -88,20 +88,20 @@ static notetaker_err_t nt_write_rpt(struct notetaker *notetaker,
     return err;
 }
 
-#define NT_RESP_SIZE 64
-static notetaker_err_t nt_read_rpt(struct notetaker *notetaker, void *response,
-                                   size_t response_size)
+#define M210_RESP_SIZE 64
+static m210_err_t m210_read_rpt(struct m210 *m210, void *response,
+                              size_t response_size)
 {
-    uint8_t buf[NT_RESP_SIZE];
-    memset(buf, 0, NT_RESP_SIZE);
+    uint8_t buf[M210_RESP_SIZE];
+    memset(buf, 0, M210_RESP_SIZE);
 
-    if (read(notetaker->fds[0], buf, NT_RESP_SIZE) == -1)
+    if (read(m210->fds[0], buf, M210_RESP_SIZE) == -1)
         return err_sys;
 
     if (response != NULL) {
         memset(response, 0, response_size);
-        if (response_size > NT_RESP_SIZE) {
-            memcpy(response, buf, NT_RESP_SIZE);
+        if (response_size > M210_RESP_SIZE) {
+            memcpy(response, buf, M210_RESP_SIZE);
         } else {
             memcpy(response, buf, response_size);
         }
@@ -110,8 +110,8 @@ static notetaker_err_t nt_read_rpt(struct notetaker *notetaker, void *response,
     return err_ok;
 }
 
-static notetaker_err_t nt_find_hidraw_devnode(char *found, int iface,
-                                              char *path, size_t path_size)
+static m210_err_t m210_find_hidraw_devnode(char *found, int iface,
+                                         char *path, size_t path_size)
 {
     int err = err_sys;
     struct udev_list_entry *list_entry = NULL;
@@ -172,17 +172,17 @@ static notetaker_err_t nt_find_hidraw_devnode(char *found, int iface,
     return err;
 }
 
-notetaker_err_t nt_wait_info(struct notetaker *notetaker,
-                             struct notetaker_info *info)
+m210_err_t m210_wait_info(struct m210 *m210,
+                        struct m210_info *info)
 {
     uint8_t rpt[] = {0x95};
-    int fd = notetaker->fds[0];
+    int fd = m210->fds[0];
 
     while (1) {
         fd_set readfds;
         struct timeval select_interval;
         int nfds;
-        notetaker_err_t err;
+        m210_err_t err;
 
         memset(&select_interval, 0, sizeof(struct timeval));
         FD_ZERO(&readfds);
@@ -190,7 +190,7 @@ notetaker_err_t nt_wait_info(struct notetaker *notetaker,
 
         select_interval.tv_usec = 100000;
 
-        err = nt_write_rpt(notetaker, rpt, sizeof(rpt));
+        err = m210_write_rpt(m210, rpt, sizeof(rpt));
         if (err)
             return err;
 
@@ -204,24 +204,24 @@ notetaker_err_t nt_wait_info(struct notetaker *notetaker,
             break;
         }
     }
-    return nt_read_rpt(notetaker, info, sizeof(struct notetaker_info));
+    return m210_read_rpt(m210, info, sizeof(struct m210_info));
 }
 
-/* static notetaker_err_t nt_accept(notetaker_t notetaker) */
+/* static m210_err_t m210_accept(m210_t m210) */
 /* { */
 /*     uint8_t rpt[] = {0xb6}; */
 
-/*     return nt_write_rpt(notetaker, rpt, sizeof(rpt)); */
+/*     return m210_write_rpt(m210, rpt, sizeof(rpt)); */
 /* } */
 
-static notetaker_err_t nt_reject(notetaker_t notetaker)
+static m210_err_t m210_reject(m210_t m210)
 {
     uint8_t rpt[] = {0xb7};
 
-    return nt_write_rpt(notetaker, rpt, sizeof(rpt));
+    return m210_write_rpt(m210, rpt, sizeof(rpt));
 }
 
-#define NT_PACKET_SIZE NT_RESP_SIZE
+#define M210_PACKET_SIZE M210_RESP_SIZE
 /*
   Download request can be used for two cases:
 
@@ -242,9 +242,9 @@ static notetaker_err_t nt_reject(notetaker_t notetaker)
   ACCEPT    >
             < PACKET #1
             < PACKET #2
-                .
-                .
-                .
+            .
+            .
+            .
             < PACKET #N
   RESEND #X >
             < PACKET #X
@@ -260,22 +260,22 @@ static notetaker_err_t nt_reject(notetaker_t notetaker)
   Bytes:  0    1    2    3    4    5          6         7    8
   Values: 0xaa 0xaa 0xaa 0xaa 0xaa count_high count_low 0x55 0x55
 */
-static notetaker_err_t nt_download(notetaker_t notetaker, size_t *size)
+static m210_err_t m210_download(m210_t m210, size_t *size)
 {
     static const uint8_t sig1[] = {0xaa, 0xaa, 0xaa, 0xaa, 0xaa};
     static const uint8_t sig2[] = {0x55, 0x55};
     static const uint8_t rpt[] = {0xb5};
     uint8_t resp[9];
-    notetaker_err_t err;
+    m210_err_t err;
     uint16_t packet_count;
 
     memset(resp, 0, sizeof(resp));
 
-    err = nt_write_rpt(notetaker, rpt, sizeof(rpt));
+    err = m210_write_rpt(m210, rpt, sizeof(rpt));
     if (err)
         return err;
 
-    err = nt_read_rpt(notetaker, resp, sizeof(resp));
+    err = m210_read_rpt(m210, resp, sizeof(resp));
     if (err)
         return err;
 
@@ -288,27 +288,27 @@ static notetaker_err_t nt_download(notetaker_t notetaker, size_t *size)
     /* Packet count is reported in big-endian format. */
     memcpy(&packet_count, resp + sizeof(sig1), 2);
     packet_count = be16toh(packet_count);
-    *size = packet_count * NT_PACKET_SIZE;
+    *size = packet_count * M210_PACKET_SIZE;
 
     return err_ok;
 }
 
-notetaker_err_t nt_open_from_hidraw_paths(struct notetaker **notetaker,
-                                          char **hidraw_paths)
+m210_err_t m210_open_from_hidraw_paths(struct m210 **m210,
+                                     char **hidraw_paths)
 {
     int err = err_sys;
     int i;
     int original_errno;
 
-    *notetaker = (struct notetaker *) malloc(sizeof(struct notetaker));
-    if (*notetaker == NULL)
+    *m210 = (struct m210 *) malloc(sizeof(struct m210));
+    if (*m210 == NULL)
         return err_sys;
 
-    for (i = 0; i < NOTETAKER_IFACE_COUNT; ++i) {
-        (*notetaker)->fds[i] = -1;
+    for (i = 0; i < M210_IFACE_COUNT; ++i) {
+        (*m210)->fds[i] = -1;
     }
 
-    for (i = 0; i < NOTETAKER_IFACE_COUNT; ++i) {
+    for (i = 0; i < M210_IFACE_COUNT; ++i) {
         int fd;
         const char *path = hidraw_paths[i];
         struct hidraw_devinfo devinfo;
@@ -326,16 +326,16 @@ notetaker_err_t nt_open_from_hidraw_paths(struct notetaker **notetaker,
             goto err;
         }
 
-        (*notetaker)->fds[i] = fd;
+        (*m210)->fds[i] = fd;
     }
 
     return err_ok;
 
   err:
     original_errno = errno;
-    switch (notetaker_free(*notetaker)) {
+    switch (m210_free(*m210)) {
     case err_sys:
-        free(*notetaker);
+        free(*m210);
         break;
     default:
         break;
@@ -344,20 +344,20 @@ notetaker_err_t nt_open_from_hidraw_paths(struct notetaker **notetaker,
     return err;
 }
 
-notetaker_err_t notetaker_open(struct notetaker **notetaker, char** hidraw_paths)
+m210_err_t m210_open(struct m210 **m210, char** hidraw_paths)
 {
     if (hidraw_paths == NULL) {
         int i;
         char iface0_path[PATH_MAX];
         char iface1_path[PATH_MAX];
-        char *paths[NOTETAKER_IFACE_COUNT] = {iface0_path, iface1_path};
-        for (i = 0; i < NOTETAKER_IFACE_COUNT; ++i) {
-            notetaker_err_t err;
+        char *paths[M210_IFACE_COUNT] = {iface0_path, iface1_path};
+        for (i = 0; i < M210_IFACE_COUNT; ++i) {
+            m210_err_t err;
             char found;
 
             memset(paths[i], 0, PATH_MAX);
 
-            err = nt_find_hidraw_devnode(&found, i, paths[i], PATH_MAX);
+            err = m210_find_hidraw_devnode(&found, i, paths[i], PATH_MAX);
             switch (err) {
             case err_ok:
                 break;
@@ -368,57 +368,57 @@ notetaker_err_t notetaker_open(struct notetaker **notetaker, char** hidraw_paths
             if (!found)
                 return err_nodev;
         }
-        return nt_open_from_hidraw_paths(notetaker, paths);
+        return m210_open_from_hidraw_paths(m210, paths);
     }
-    return nt_open_from_hidraw_paths(notetaker, hidraw_paths);
+    return m210_open_from_hidraw_paths(m210, hidraw_paths);
 }
 
-notetaker_err_t notetaker_free(struct notetaker *notetaker)
+m210_err_t m210_free(struct m210 *m210)
 {
     int i;
 
-    for (i = 0; i < NOTETAKER_IFACE_COUNT; ++i) {
-        int fd = notetaker->fds[i];
+    for (i = 0; i < M210_IFACE_COUNT; ++i) {
+        int fd = m210->fds[i];
         if (fd != -1) {
             if (close(fd) == -1)
                 return err_sys;
         }
     }
-    free(notetaker);
+    free(m210);
     return err_ok;
 }
 
-notetaker_err_t notetaker_get_info(struct notetaker *notetaker,
-                                   struct notetaker_info *info)
+m210_err_t m210_get_info(struct m210 *m210,
+                         struct m210_info *info)
 {
-    return nt_wait_info(notetaker, info);
+    return m210_wait_info(m210, info);
 }
 
-notetaker_err_t notetaker_delete_notes(struct notetaker *notetaker)
+m210_err_t m210_delete_notes(struct m210 *m210)
 {
-    notetaker_err_t err;
+    m210_err_t err;
     uint8_t rpt[] = {0xb0};
 
-    err = nt_write_rpt(notetaker, rpt, sizeof(rpt));
+    err = m210_write_rpt(m210, rpt, sizeof(rpt));
     if (err)
         return err;
 
-    return nt_wait_info(notetaker, NULL);
+    return m210_wait_info(m210, NULL);
 }
 
-notetaker_err_t notetaker_get_data_size(notetaker_t notetaker, size_t *size)
+m210_err_t m210_get_data_size(m210_t m210, size_t *size)
 {
-    notetaker_err_t err;
+    m210_err_t err;
 
-    err = nt_download(notetaker, size);
+    err = m210_download(m210, size);
     if (err)
         return err;
 
     /* Reject download, we are only interested in data size. */
-    err = nt_reject(notetaker);
+    err = m210_reject(m210);
     if (err)
         return err;
 
     /* Every public function must ensure that the device is left ready. */
-    return nt_wait_info(notetaker, NULL);
+    return m210_wait_info(m210, NULL);
 }
