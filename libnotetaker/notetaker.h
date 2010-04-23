@@ -34,7 +34,9 @@ enum notetaker_err {
     err_ok,
     err_sys,
     err_baddev,
-    err_nodev
+    err_nodev,
+    err_badmsg,
+    err_timeout
 };
 
 /**
@@ -118,31 +120,6 @@ notetaker_err_t notetaker_get_info(notetaker_t notetaker,
                                    struct notetaker_info *info);
 
 /**
-   Wait until the NoteTaker device is ready or until the time limit is
-   reached. If timeout is NULL, notetaker_wait_ready() blocks until
-   the NoteTaker device becomes ready.
-
-   Return values:
-
-   - err_ok - success
-
-   - err_sys - system call failed and errno is set appropriately
-
-   @notetaker an object represeting the NoteTaker device.
-
-   @timeout an address of the maximum time value to wait before giving
-   up. Can be NULL in which case notetaker_wait_ready() blocks
-   forever.
-
-   @ready an address where a value describing readiness will be
-   stored, 1 if ready, 0 otherwise.
-
-*/
-notetaker_err_t notetaker_wait_ready(notetaker_t notetaker,
-                                     const struct timeval *timeout,
-                                     char *ready);
-
-/**
    Requests the NoteTaker device to delete all notes.
 
    Return values:
@@ -155,5 +132,21 @@ notetaker_err_t notetaker_wait_ready(notetaker_t notetaker,
 
 */
 notetaker_err_t notetaker_delete_notes(notetaker_t notetaker);
+
+/**
+   Return data size required for full download.
+
+   Return values:
+
+   - err_ok - success
+
+   - err_sys - system call failed and errno is set appropriately
+
+   @notetaker an object represeting the NoteTaker device.
+
+   @size an address where the size will be stored.
+
+*/
+notetaker_err_t notetaker_get_data_size(notetaker_t notetaker, size_t *size);
 
 #endif /* NOTETAKER_H */
