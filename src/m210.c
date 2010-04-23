@@ -372,7 +372,7 @@ m210_err_t m210_open(struct m210 **m210, char** hidraw_paths)
         char *paths[M210_IFACE_COUNT] = {iface0_path, iface1_path};
         for (i = 0; i < M210_IFACE_COUNT; ++i) {
             m210_err_t err;
-            char found;
+            char found = 0;
 
             memset(paths[i], 0, PATH_MAX);
 

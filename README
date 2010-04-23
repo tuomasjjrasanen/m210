@@ -1,6 +1,6 @@
-====================================================================
- notetaker - Tools for communicating with Pegasus Tablet NoteTakers
-====================================================================
+=================================================
+ libm210 - API for Pegasus Mobile NoteTaker M210
+=================================================
 
 .. contents::
 
@@ -12,7 +12,7 @@ General information
 ===================
 
 - **Author**: Tuomas Räsänen (tuos) <tuos@codegrove.org>
-- **Homepage**: http://codegrove.org/notetaker/
+- **Homepage**: http://codegrove.org/libm210/
 - **License**: GPLv3+ (see COPYING for details)
 - **Version**: 0.1
 
@@ -22,20 +22,15 @@ Runtime requirements
 Build requirements
 ==================
 
-Supported devices
-=================
-
-- Pegasus Tablet Mobile NoteTaker M210
-
 Downloading
 ===========
 
-- Ubuntu package: https://launchpad.net/~tuos/+archive/notetaker
-- Tarball is available at: http://codegrove.org/notetaker/releases/notetaker-0.1.tar.gz
-- Tarballs of every release at: http://codegrove.org/notetaker/releases/
-- Latest sources from public git-repository: http://github.com/tuos/notetaker/ ::
+- Ubuntu package: https://launchpad.net/~tuos/+archive/libm210
+- Tarball is available at: http://codegrove.org/libm210/releases/libm210-0.1.tar.gz
+- Tarballs of every release at: http://codegrove.org/libm210/releases/
+- Latest sources from public git-repository: http://github.com/tuos/libm210/ ::
 
-    git clone git://github.com/tuos/notetaker.git
+    git clone git://github.com/tuos/libm210.git
 
 Installing
 ==========
@@ -43,9 +38,9 @@ Installing
 Ubuntu
 ------
 
-The recommended way to install notetaker is to
+The recommended way to install libm210 is to
 `add it's PPA to your system <https://launchpad.net/~tuos/+archive/codegrove>`_.
-This allows you to treat notetaker as any other Ubuntu package.
+This allows you to treat libm210 as any other Ubuntu package.
 
 Other systems
 -------------
@@ -62,4 +57,4 @@ Bug reporting
 =============
 
 Report bugs by sending email to tuos@codegrove.org or by opening an issue
-at http://github.com/tuos/notetaker/issues .
+at http://github.com/tuos/libm210/issues .
