@@ -32,13 +32,45 @@ enum m210_err {
     err_sys,
     err_baddev,
     err_nodev,
-    err_badmsg
+    err_badmsg,
+    err_packets,
+    err_timeout
 };
+
+struct m210_note_data {
+    uint16_t x;
+    uint16_t y;
+} __attribute__((packed));
+
+int m210_note_data_is_pen_up(const struct m210_note_data *data);
+
+enum m210_note_state {
+    empty = 0x9f,
+    unfinished = 0x5f,
+    finished_by_user = 0x3f,
+    finished_by_software = 0x1f
+};
+
+struct m210_note {
+    uint8_t number;
+    uint8_t max_number;
+    enum m210_note_state state;
+    struct m210_note_data *datav;
+    ssize_t datac;
+};
+
+struct m210_note_header {
+    uint8_t next_note_addr[3];
+    uint8_t state;
+    uint8_t note_num;
+    uint8_t max_note_num;
+    uint8_t reserved[8];
+} __attribute__((packed));
 
 /**
    An opaque object representing a M210 device.
 */
-typedef struct m210* m210_t;
+typedef struct m210 m210_t;
 
 typedef enum m210_err m210_err_t;
 
@@ -66,7 +98,7 @@ typedef enum m210_err m210_err_t;
    proper nodes are searched with udev.
 
 */
-m210_err_t m210_open(m210_t *m210, char** hidraw_paths);
+m210_err_t m210_open(m210_t **m210, char** hidraw_paths);
 
 /**
    Close the M210 device connection and free all resources.
@@ -81,7 +113,7 @@ m210_err_t m210_open(m210_t *m210, char** hidraw_paths);
    @m210 an object represeting the M210 device.
 
 */
-m210_err_t m210_free(m210_t m210);
+m210_err_t m210_free(m210_t *m210);
 
 /**
    Return information about the M210 device.
@@ -97,10 +129,10 @@ m210_err_t m210_free(m210_t m210);
    @info an address where the info will be stored.
 
 */
-m210_err_t m210_get_info(m210_t m210, struct m210_info *info);
+m210_err_t m210_get_info(m210_t *m210, struct m210_info *info);
 
 /**
-   Requests the M210 device to delete all notes.
+   Requests the M210 device to delete all notes stored in it's memory.
 
    Return values:
 
@@ -111,24 +143,18 @@ m210_err_t m210_get_info(m210_t m210, struct m210_info *info);
    @m210 an object represeting the M210 device.
 
 */
-m210_err_t m210_delete_notes(m210_t m210);
+m210_err_t m210_delete_notes(m210_t *m210);
 
-/**
-   Return size of stored notes.
+m210_err_t m210_get_packet_count(m210_t *m210, uint16_t *packet_count);
 
-   Return values:
+m210_err_t m210_fwrite_packets(m210_t *m210, FILE *stream);
 
-   - err_ok - success
+/* m210_err_t m210_get_notes(m210_t *m210, struct m210_note **notev, uint8_t *notec); */
 
-   - err_sys - system call failed and errno is set appropriately
+/* m210_err_t m210_fwrite_notes(m210_t *m210, FILE *stream); */
 
-   - err_badmsg - device sent unexpected message
+/* m210_err_t m210_get_packets(m210_t *m210, struct m210_packet *packetv, uint16_t packetc); */
 
-   @m210 an object represeting the M210 device.
 
-   @size an address where the size will be stored.
-
-*/
-m210_err_t m210_get_data_size(m210_t m210, size_t *size);
 
 #endif /* M210_H */
