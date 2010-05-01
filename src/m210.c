@@ -246,14 +246,14 @@ enum m210_err m210_get_info(const struct m210 *m210, struct m210_info *info)
     return err_ok;
 }
 
-static enum m210_err m210_upload_accept(const struct m210 *m210)
+static enum m210_err m210_write_accept(const struct m210 *m210)
 {
     uint8_t rpt[] = {0xb6};
 
     return m210_write_rpt(m210, rpt, sizeof(rpt));
 }
 
-static enum m210_err m210_upload_reject(const struct m210 *m210)
+static enum m210_err m210_write_reject_and_wait(const struct m210 *m210)
 {
     uint8_t rpt[] = {0xb7};
     enum m210_err err;
@@ -442,7 +442,7 @@ enum m210_err m210_upload_begin(const struct m210 *m210, uint16_t *packetc_ptr)
 
   err:
     /* Try to leave the device as it was before the error. */
-    m210_upload_reject(m210);
+    m210_write_reject_and_wait(m210);
     return err;
 }
 
@@ -465,7 +465,7 @@ enum m210_err m210_upload_begin(const struct m210 *m210, uint16_t *packetc_ptr)
   +-----+------------+-+-+-+-+-+-+-+-+
 
 */
-enum m210_err m210_upload_read(const struct m210 *m210, struct m210_packet *packet)
+enum m210_err m210_read_packet(const struct m210 *m210, struct m210_packet *packet)
 {
     enum m210_err err;
 
@@ -476,24 +476,6 @@ enum m210_err m210_upload_read(const struct m210 *m210, struct m210_packet *pack
     packet->num = be16toh(packet->num);
 
     return err_ok;
-}
-/*
-  Resend packet:
-  +-----+------------+-+-+-+-+-+-+-+-+
-  |Byte#|Description |7|6|5|4|3|2|1|0|
-  +-----+------------+-+-+-+-+-+-+-+-+
-  |  1  |NACK        |1|0|1|1|0|1|1|1|
-  +-----+------------+-+-+-+-+-+-+-+-+
-  |  2  |Packet# HIGH|N|N|N|N|N|N|N|N|
-  +-----+------------+-+-+-+-+-+-+-+-+
-  |  3  |Packet# LOW |n|n|n|n|n|n|n|n|
-  +-----+------------+-+-+-+-+-+-+-+-+
-*/
-enum m210_err m210_upload_resend(const struct m210 *m210, uint16_t packet_num)
-{
-    uint8_t rpt[] = {0xb7, htobe16(packet_num)};
-
-    return m210_write_rpt(m210, rpt, sizeof(rpt));
 }
 
 enum m210_err m210_get_notes_size(const struct m210 *m210, ssize_t *size)
@@ -507,7 +489,7 @@ enum m210_err m210_get_notes_size(const struct m210 *m210, ssize_t *size)
 
     *size = packet_count * M210_PACKET_DATA_LEN;
 
-    return m210_upload_reject(m210);
+    return m210_write_reject_and_wait(m210);
 }
 
 enum m210_err m210_fwrite_notes(const struct m210 *m210, FILE *f)
@@ -524,17 +506,17 @@ enum m210_err m210_fwrite_notes(const struct m210 *m210, FILE *f)
         return err;
 
     if (packetc == 0)
-        return m210_upload_reject(m210);
+        return m210_write_reject_and_wait(m210);
 
     lost_packet_numv = (uint16_t *)calloc(packetc, sizeof(uint16_t));
     if (lost_packet_numv == NULL) {
         original_errno = errno;
-        m210_upload_reject(m210);
+        m210_write_reject_and_wait(m210);
         errno = original_errno;
         return err_sys;
     }
 
-    err = m210_upload_accept(m210);
+    err = m210_write_accept(m210);
     if (err)
         goto err;
 
@@ -542,7 +524,7 @@ enum m210_err m210_fwrite_notes(const struct m210 *m210, FILE *f)
         struct m210_packet packet;
         uint16_t expected_packet_number = i + 1;
 
-        err = m210_upload_read(m210, &packet);
+        err = m210_read_packet(m210, &packet);
         if (err) {
             if (err == err_timeout) {
                 /*
@@ -577,14 +559,37 @@ enum m210_err m210_fwrite_notes(const struct m210 *m210, FILE *f)
   resend:
     while (lost_packet_numc > 0) {
         struct m210_packet packet;
+        uint16_t lost_packet_num = lost_packet_numv[0];
+        /*
+          Resend packet:
+          +-----+------------+-+-+-+-+-+-+-+-+
+          |Byte#|Description |7|6|5|4|3|2|1|0|
+          +-----+------------+-+-+-+-+-+-+-+-+
+          |  1  |NACK        |1|0|1|1|0|1|1|1|
+          +-----+------------+-+-+-+-+-+-+-+-+
+          |  2  |Packet# HIGH|N|N|N|N|N|N|N|N|
+          +-----+------------+-+-+-+-+-+-+-+-+
+          |  3  |Packet# LOW |n|n|n|n|n|n|n|n|
+          +-----+------------+-+-+-+-+-+-+-+-+
+        */
+        uint8_t resend_request[] = {0xb7, htobe16(lost_packet_num)};
 
-        err = m210_upload_resend(m210, lost_packet_numv[0]);
+        err = m210_write_rpt(m210, resend_request, sizeof(resend_request));
         if (err)
             goto err;
 
-        err = m210_upload_read(m210, &packet);
-        if (err)
-            goto err;
+        err = m210_read_packet(m210, &packet);
+        if (err) {
+            if (err == err_timeout)
+                /*
+                  Request resend as many times as needed to get the
+                  expected packet. The M210 device has made a promise
+                  and we blindly believe that it's going to keep it.
+                */
+                continue;
+            else
+                goto err;
+        }
 
         if (packet.num == lost_packet_numv[0]) {
             lost_packet_numv[0] = lost_packet_numv[--lost_packet_numc];
@@ -599,7 +604,7 @@ enum m210_err m210_fwrite_notes(const struct m210 *m210, FILE *f)
       All packets have been received, time to thank the device for
       cooperation.
     */
-    err = m210_upload_accept(m210);
+    err = m210_write_accept(m210);
 
   err:
     free(lost_packet_numv);
