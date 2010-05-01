@@ -46,18 +46,14 @@ static const struct hidraw_devinfo DEVINFO_M210 = {
     0x0101,
 };
 
-struct m210 {
-    int fds[M210_IFACE_COUNT];
-};
-
 /*
   Bytes:  0    1    2        3      4          rpt_size
   Values: 0x00 0x02 rpt_size rpt[0] rpt[1] ... rpt[rpt_size - 1]
 */
-static m210_err_t m210_write_rpt(struct m210 *m210,
-                                 const uint8_t *rpt, size_t rpt_size)
+static enum m210_err m210_write_rpt(const struct m210 *m210,
+                                    const uint8_t *rpt, size_t rpt_size)
 {
-    m210_err_t err;
+    enum m210_err err;
     uint8_t *request;
     size_t request_size = rpt_size + 3;
 
@@ -85,8 +81,8 @@ static m210_err_t m210_write_rpt(struct m210 *m210,
 }
 
 #define M210_RESPONSE_SIZE 64
-static m210_err_t m210_read_rpt(struct m210 *m210, void *response,
-                                size_t response_size)
+static enum m210_err m210_read_rpt(const struct m210 *m210, void *response,
+                                   size_t response_size)
 {
     fd_set readfds;
     int fd = m210->fds[0];
@@ -122,8 +118,8 @@ static m210_err_t m210_read_rpt(struct m210 *m210, void *response,
     return err_ok;
 }
 
-static m210_err_t m210_find_hidraw_devnode(uint8_t *found, int iface,
-                                           char *path, size_t path_size)
+static enum m210_err m210_find_hidraw_devnode(uint8_t *found, int iface,
+                                              char *path, size_t path_size)
 {
     int err = err_sys;
     struct udev_list_entry *list_entry = NULL;
@@ -201,13 +197,13 @@ static m210_err_t m210_find_hidraw_devnode(uint8_t *found, int iface,
   pvl = Pad version low
 */
 #define m210_wait_ready m210_get_info
-m210_err_t m210_get_info(struct m210 *m210, struct m210_info *info)
+enum m210_err m210_get_info(const struct m210 *m210, struct m210_info *info)
 {
     uint8_t rpt[] = {0x95};
     uint8_t resp[11];
 
     while (1) {
-        m210_err_t err = err_sys;
+        enum m210_err err = err_sys;
 
         memset(&resp, 0, sizeof(resp));
 
@@ -250,17 +246,17 @@ m210_err_t m210_get_info(struct m210 *m210, struct m210_info *info)
     return err_ok;
 }
 
-static m210_err_t m210_upload_accept(m210_t *m210)
+static enum m210_err m210_upload_accept(const struct m210 *m210)
 {
     uint8_t rpt[] = {0xb6};
 
     return m210_write_rpt(m210, rpt, sizeof(rpt));
 }
 
-static m210_err_t m210_upload_reject(m210_t *m210)
+static enum m210_err m210_upload_reject(const struct m210 *m210)
 {
     uint8_t rpt[] = {0xb7};
-    m210_err_t err;
+    enum m210_err err;
 
     err = m210_write_rpt(m210, rpt, sizeof(rpt));
     if (err)
@@ -269,18 +265,14 @@ static m210_err_t m210_upload_reject(m210_t *m210)
     return m210_wait_ready(m210, NULL);
 }
 
-static m210_err_t m210_open_from_hidraw_paths(struct m210 **m210, char **hidraw_paths)
+static enum m210_err m210_open_from_hidraw_paths(struct m210 *m210, char **hidraw_paths)
 {
     int err = err_sys;
     int i;
     int original_errno;
 
-    *m210 = (struct m210 *) calloc(1, sizeof(struct m210));
-    if (*m210 == NULL)
-        return err_sys;
-
     for (i = 0; i < M210_IFACE_COUNT; ++i) {
-        (*m210)->fds[i] = -1;
+        m210->fds[i] = -1;
     }
 
     for (i = 0; i < M210_IFACE_COUNT; ++i) {
@@ -301,25 +293,19 @@ static m210_err_t m210_open_from_hidraw_paths(struct m210 **m210, char **hidraw_
             goto err;
         }
 
-        (*m210)->fds[i] = fd;
+        m210->fds[i] = fd;
     }
 
     return err_ok;
 
   err:
     original_errno = errno;
-    switch (m210_free(*m210)) {
-    case err_sys:
-        free(*m210);
-        break;
-    default:
-        break;
-    }
+    m210_close(m210);
     errno = original_errno;
     return err;
 }
 
-m210_err_t m210_open(struct m210 **m210, char** hidraw_paths)
+enum m210_err m210_open(struct m210 *m210, char** hidraw_paths)
 {
     if (hidraw_paths == NULL) {
         int i;
@@ -327,7 +313,7 @@ m210_err_t m210_open(struct m210 **m210, char** hidraw_paths)
         char iface1_path[PATH_MAX];
         char *paths[M210_IFACE_COUNT] = {iface0_path, iface1_path};
         for (i = 0; i < M210_IFACE_COUNT; ++i) {
-            m210_err_t err = err_sys;
+            enum m210_err err = err_sys;
             uint8_t found = 0;
 
             memset(paths[i], 0, PATH_MAX);
@@ -348,7 +334,7 @@ m210_err_t m210_open(struct m210 **m210, char** hidraw_paths)
     return m210_open_from_hidraw_paths(m210, hidraw_paths);
 }
 
-m210_err_t m210_free(struct m210 *m210)
+enum m210_err m210_close(struct m210 *m210)
 {
     int i;
 
@@ -359,13 +345,12 @@ m210_err_t m210_free(struct m210 *m210)
             m210->fds[i] = -1;
         }
     }
-    free(m210);
     return err_ok;
 }
 
-m210_err_t m210_delete_notes(struct m210 *m210)
+enum m210_err m210_delete_notes(const struct m210 *m210)
 {
-    m210_err_t err;
+    enum m210_err err;
     uint8_t rpt[] = {0xb0};
 
     err = m210_write_rpt(m210, rpt, sizeof(rpt));
@@ -383,7 +368,7 @@ m210_err_t m210_delete_notes(struct m210 *m210)
   HOST             DEVICE
   =============================
   GET_PACKET_COUNT >
-                   < PACKET_COUNT
+  < PACKET_COUNT
   REJECT           >
 
   2: Download packets.
@@ -391,18 +376,18 @@ m210_err_t m210_delete_notes(struct m210 *m210)
   HOST              DEVICE
   ==============================
   GET_PACKET_COUNT  >
-                    < PACKET_COUNT
+  < PACKET_COUNT
   ACCEPT            >
-                    < PACKET #1
-                    < PACKET #2
-                    .
-                    .
-                    .
-                    < PACKET #N
+  < PACKET #1
+  < PACKET #2
+  .
+  .
+  .
+  < PACKET #N
   RESEND #X         >
-                    < PACKET #X
+  < PACKET #X
   RESEND #Y         >
-                    < PACKET #Y
+  < PACKET #Y
   ACCEPT            >
 
   Packet count request:
@@ -413,14 +398,13 @@ m210_err_t m210_delete_notes(struct m210 *m210)
   Bytes:  0    1    2    3    4    5          6         7    8
   Values: 0xaa 0xaa 0xaa 0xaa 0xaa count_high count_low 0x55 0x55
 */
-m210_err_t m210_upload_begin(m210_t *m210, uint16_t *packetc_ptr)
+enum m210_err m210_upload_begin(const struct m210 *m210, uint16_t *packetc_ptr)
 {
     static const uint8_t sig1[] = {0xaa, 0xaa, 0xaa, 0xaa, 0xaa};
     static const uint8_t sig2[] = {0x55, 0x55};
     static const uint8_t rpt[] = {0xb5};
     uint8_t resp[9];
-    m210_err_t err = err_sys;
-    int i;
+    enum m210_err err;
 
     memset(resp, 0, sizeof(resp));
 
@@ -440,16 +424,14 @@ m210_err_t m210_upload_begin(m210_t *m210, uint16_t *packetc_ptr)
     case err_ok:
         break;
     default:
-        return err;
+        goto err;
     }
 
     /* Check that the packet we received is correct. */
     if (memcmp(resp, sig1, sizeof(sig1))
         || memcmp(resp + sizeof(sig1) + 2, sig2, sizeof(sig2))) {
-        for (i = 0; i < 9; ++i) {
-            printf("%d %d\n", i, resp[i]);
-        }
-        return err_badmsg;
+        err = err_badmsg;
+        goto err;
     }
 
     /* Packet count is reported in big-endian format. */
@@ -457,6 +439,11 @@ m210_err_t m210_upload_begin(m210_t *m210, uint16_t *packetc_ptr)
     *packetc_ptr = be16toh(*packetc_ptr);
 
     return err_ok;
+
+  err:
+    /* Try to leave the device as it was before the error. */
+    m210_upload_reject(m210);
+    return err;
 }
 
 /*
@@ -478,9 +465,9 @@ m210_err_t m210_upload_begin(m210_t *m210, uint16_t *packetc_ptr)
   +-----+------------+-+-+-+-+-+-+-+-+
 
 */
-m210_err_t m210_upload_read(m210_t *m210, struct m210_packet *packet)
+enum m210_err m210_upload_read(const struct m210 *m210, struct m210_packet *packet)
 {
-    m210_err_t err;
+    enum m210_err err;
 
     err = m210_read_rpt(m210, packet, sizeof(struct m210_packet));
     if (err)
@@ -501,29 +488,32 @@ m210_err_t m210_upload_read(m210_t *m210, struct m210_packet *packet)
   +-----+------------+-+-+-+-+-+-+-+-+
   |  3  |Packet# LOW |n|n|n|n|n|n|n|n|
   +-----+------------+-+-+-+-+-+-+-+-+
- */
-m210_err_t m210_upload_resend(m210_t *m210, uint16_t packet_num)
+*/
+enum m210_err m210_upload_resend(const struct m210 *m210, uint16_t packet_num)
 {
     uint8_t rpt[] = {0xb7, htobe16(packet_num)};
 
     return m210_write_rpt(m210, rpt, sizeof(rpt));
 }
 
-m210_err_t m210_get_packet_count(m210_t *m210, uint16_t *packet_count)
+enum m210_err m210_get_notes_size(const struct m210 *m210, ssize_t *size)
 {
-    m210_err_t err;
+    enum m210_err err;
+    uint16_t packet_count;
 
-    err = m210_upload_begin(m210, packet_count);
+    err = m210_upload_begin(m210, &packet_count);
     if (err)
         return err;
+
+    *size = packet_count * M210_PACKET_DATA_LEN;
 
     return m210_upload_reject(m210);
 }
 
-m210_err_t m210_fwrite_packets(m210_t *m210, FILE *f)
+enum m210_err m210_fwrite_notes(const struct m210 *m210, FILE *f)
 {
     int i;
-    m210_err_t err;
+    enum m210_err err;
     uint16_t *lost_packet_numv;
     uint16_t lost_packet_numc = 0;
     int original_errno;
@@ -532,6 +522,9 @@ m210_err_t m210_fwrite_packets(m210_t *m210, FILE *f)
     err = m210_upload_begin(m210, &packetc);
     if (err)
         return err;
+
+    if (packetc == 0)
+        return m210_upload_reject(m210);
 
     lost_packet_numv = (uint16_t *)calloc(packetc, sizeof(uint16_t));
     if (lost_packet_numv == NULL) {
@@ -557,7 +550,7 @@ m210_err_t m210_fwrite_packets(m210_t *m210, FILE *f)
                   read. However, the M210 has promised to send more,
                   so we mark all the rest packet numbers as lost and
                   proceed with resending.
-                 */
+                */
                 int j;
                 for (j = i; j < packetc; ++j) {
                     uint16_t lost_packet_num = j + 1;
@@ -616,19 +609,6 @@ m210_err_t m210_fwrite_packets(m210_t *m210, FILE *f)
 /*
   Note data:
 
-  Position data:
-  +-----+-----------+-+-+-+-+-+-+-+-+
-  |Byte#|Description|7|6|5|4|3|2|1|0|
-  +-----+-----------+-+-+-+-+-+-+-+-+
-  |  1  |X LOW      |x|x|x|x|x|x|x|x|
-  +-----+-----------+-+-+-+-+-+-+-+-+
-  |  2  |X HIGH     |X|X|X|X|X|X|X|X|
-  +-----+-----------+-+-+-+-+-+-+-+-+
-  |  3  |Y LOW      |y|y|y|y|y|y|y|y|
-  +-----+-----------+-+-+-+-+-+-+-+-+
-  |  4  |Y HIGH     |Y|Y|Y|Y|Y|Y|Y|Y|
-  +-----+-----------+-+-+-+-+-+-+-+-+
-
   Pen up data:
   +-----+-----------+-+-+-+-+-+-+-+-+
   |Byte#|Description|7|6|5|4|3|2|1|0|
@@ -641,43 +621,13 @@ m210_err_t m210_fwrite_packets(m210_t *m210, FILE *f)
   +-----+-----------+-+-+-+-+-+-+-+-+
   |  4  |           |1|0|0|0|0|0|0|0|
   +-----+-----------+-+-+-+-+-+-+-+-+
- */
-int m210_note_data_is_pen_up(const struct m210_note_data *data)
+*/
+static const struct m210_note_data penup = {
+    {0x00, 0x00},
+    {0x00, 0x80}
+};
+
+inline int m210_note_data_is_pen_up(const struct m210_note_data *data)
 {
-    return (data->x == 0x0000) && (data->y == 0x8000);
+    return memcmp(data, &penup, sizeof(struct m210_note_data));
 }
-
-/* m210_err_t m210_get_notes(m210_t *m210, struct m210_note **notev, uint8_t *notec) */
-/* { */
-/*     int i; */
-/*     m210_err_t err; */
-/*     uint16_t packetc; */
-/*     struct m210_packet *packetv; */
-
-/*     err = m210_get_packet_count(m210, &packetc); */
-/*     if (err) */
-/*         return err; */
-
-/*     if (packetc == 0) { */
-/*         *notec = 0; */
-/*         return err_ok; */
-/*     } */
-
-/*     packetv = (struct m210_packet *)calloc(packetc, sizeof(struct m210_packet)); */
-/*     if (packetv == NULL) */
-/*         return err_sys; */
-
-/*     err = m210_get_packets(m210, packetv, packetc); */
-/*     if (err) */
-/*         goto err; */
-
-/*     for (i = 0; i < packetc; ++i) { */
-/*         struct m210_packet *packet = packetv[i]; */
-/*     } */
-
-/*     err = err_ok; */
-
-/*   err: */
-/*     free(packetv); */
-/*     return err; */
-/* } */
