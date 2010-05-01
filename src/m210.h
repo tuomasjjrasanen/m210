@@ -89,7 +89,7 @@ struct m210_note_header {
     uint8_t reserved[M210_NOTE_HEADER_RESERVED_LEN];
 } __attribute__((packed));
 
-ssize_t m210_note_data_len(struct m210_note_header *header);
+uint32_t m210_note_data_len(struct m210_note_header *header);
 
 /**
    An opaque object representing a M210 device.

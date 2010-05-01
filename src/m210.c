@@ -559,7 +559,7 @@ enum m210_err m210_fwrite_notes(const struct m210 *m210, FILE *f)
   resend:
     while (lost_packet_numc > 0) {
         struct m210_packet packet;
-        uint16_t lost_packet_num = lost_packet_numv[0];
+
         /*
           Resend packet:
           +-----+------------+-+-+-+-+-+-+-+-+
@@ -572,7 +572,7 @@ enum m210_err m210_fwrite_notes(const struct m210 *m210, FILE *f)
           |  3  |Packet# LOW |n|n|n|n|n|n|n|n|
           +-----+------------+-+-+-+-+-+-+-+-+
         */
-        uint8_t resend_request[] = {0xb7, htobe16(lost_packet_num)};
+        uint8_t resend_request[] = {0xb7, htobe16(lost_packet_numv[0])};
 
         err = m210_write_rpt(m210, resend_request, sizeof(resend_request));
         if (err)
@@ -627,12 +627,18 @@ enum m210_err m210_fwrite_notes(const struct m210 *m210, FILE *f)
   |  4  |           |1|0|0|0|0|0|0|0|
   +-----+-----------+-+-+-+-+-+-+-+-+
 */
-static const struct m210_note_data penup = {
-    {0x00, 0x00},
-    {0x00, 0x80}
-};
-
 inline int m210_note_data_is_pen_up(const struct m210_note_data *data)
 {
+    static struct m210_note_data penup = {{0x00, 0x00}, {0x00, 0x80}};
     return memcmp(data, &penup, sizeof(struct m210_note_data));
+}
+
+uint32_t m210_note_data_len(struct m210_note_header *header)
+{
+    uint32_t len;
+    uint8_t bytes[1 + M210_NOTE_HEADER_NEXT_NOTE_ADDR_LEN];
+    memcpy(bytes + 1, header->next_note_addr,
+           M210_NOTE_HEADER_NEXT_NOTE_ADDR_LEN);
+    memcpy(&len, bytes, sizeof(bytes));
+    return le32toh(len);
 }
