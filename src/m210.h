@@ -18,6 +18,7 @@
 #ifndef M210_H
 #define M210_H
 
+#include <stdio.h>
 #include <stdint.h>
 
 #define M210_IFACE_COUNT 2
