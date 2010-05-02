@@ -631,11 +631,11 @@ inline int m210_note_data_is_pen_up(const struct m210_note_data *data)
     return memcmp(data, &penup, sizeof(struct m210_note_data));
 }
 
-uint32_t m210_note_data_len(struct m210_note_header *header)
+inline uint32_t m210_note_header_next_note_pos(const struct m210_note_header *header)
 {
-    uint32_t len = 0;
-    memcpy(&len, header->next_note_addr, M210_NOTE_HEADER_NEXT_NOTE_ADDR_LEN);
-    return le32toh(len);
+    uint32_t pos = 0;
+    memcpy(&pos, header->next_note_pos, M210_NOTE_HEADER_NEXT_NOTE_POS_LEN);
+    return le32toh(pos);
 }
 
 const char *m210_err_str(enum m210_err err)
@@ -657,21 +657,24 @@ int m210_err_printf(enum m210_err err, const char *s)
 {
     int original_errno = errno;
     const char *m210_errstr = m210_err_str(err);
-    size_t progname_len = strlen(program_invocation_name);
-    size_t s_len = strlen(s);
+    /* +2 == a colon and a blank */
+    size_t progname_len = strlen(program_invocation_name) + 2;
+    /* +2 == a colon and a blank */
+    size_t s_len = s == NULL ? 0 : strlen(s) + 2;
     size_t m210_errstr_len = strlen(m210_errstr);
-    /*
-      +5 == two colons, two spaces and a terminating null byte.
-      See snprintf-call below.
-    */
-    size_t total_len = progname_len + s_len + m210_errstr_len + 5;
+
+    /* +1 == a terminating null byte. */
+    size_t total_len = progname_len + s_len + m210_errstr_len + 1;
     char *errstr;
 
     errstr = (char *)calloc(total_len, sizeof(char));
     if (errstr == NULL)
         return -1;
 
-    snprintf(errstr, total_len, "%s: %s: %s", program_invocation_name, s, m210_errstr);
+    if (s == NULL)
+        snprintf(errstr, total_len, "%s: %s", program_invocation_name, m210_errstr);
+    else
+        snprintf(errstr, total_len, "%s: %s: %s", program_invocation_name, s, m210_errstr);
 
     if (err == err_sys) {
         errno = original_errno;
@@ -682,4 +685,14 @@ int m210_err_printf(enum m210_err err, const char *s)
 
     free(errstr);
     return 0;
+}
+
+inline uint16_t m210_note_data_get_x(const struct m210_note_data *data)
+{
+    return le16toh(data->x[0] + data->x[1] * 0x100);
+}
+
+inline uint16_t m210_note_data_get_y(const struct m210_note_data *data)
+{
+    return le16toh(data->y[0] + data->y[1] * 0x100);
 }

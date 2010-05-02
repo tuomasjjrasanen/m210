@@ -21,8 +21,6 @@
 #include <stdio.h>
 #include <stdint.h>
 
-#define M210_IFACE_COUNT 2
-
 struct m210_info {
     uint16_t firmware_version;
     uint16_t analog_version;
@@ -39,64 +37,140 @@ enum m210_err {
     err_timeout
 };
 
+/**
+   Return an error message describing the error code.
+
+   @err a m210 error code
+ */
 const char *m210_err_str(enum m210_err err);
+
+/**
+   Produce an error message on the standard error output describing
+   the error code. First program_invocation_name is printed, followed
+   by a colon and a blank. Then the message (if it is not NULL),
+   followed by a colon and a blank. Then a string describing the error
+   code as returned by m210_err_str() and if the error code was
+   err_sys, a message as printed by perror(). A new line is printed at
+   the end.
+
+   @err a m210 error code
+   @s error message
+ */
 int m210_err_printf(enum m210_err err, const char *s);
 
-/*
-  Position data:
-  +-----+-----------+-+-+-+-+-+-+-+-+
-  |Byte#|Description|7|6|5|4|3|2|1|0|
-  +-----+-----------+-+-+-+-+-+-+-+-+
-  |  1  |X LOW      |x|x|x|x|x|x|x|x|
-  +-----+-----------+-+-+-+-+-+-+-+-+
-  |  2  |X HIGH     |X|X|X|X|X|X|X|X|
-  +-----+-----------+-+-+-+-+-+-+-+-+
-  |  3  |Y LOW      |y|y|y|y|y|y|y|y|
-  +-----+-----------+-+-+-+-+-+-+-+-+
-  |  4  |Y HIGH     |Y|Y|Y|Y|Y|Y|Y|Y|
-  +-----+-----------+-+-+-+-+-+-+-+-+
-
-*/
-
-/*
-  Note stream:
-
-  note1          ...          noteN
-  +----------------------+    +----------------------+
-  |                      |    |                      |
-  header data1 ... dataN      header data1 ... dataN
-*/
-
 #define M210_NOTE_DATA_COMPONENT_LEN 2
-#define M210_NOTE_DATA_HIGH 1
-#define M210_NOTE_DATA_LOW 0
+/**
+   An object representing note data block in a stream.
+
+   +-----+-----------+-+-+-+-+-+-+-+-+
+   |Byte#|Description|7|6|5|4|3|2|1|0|
+   +-----+-----------+-+-+-+-+-+-+-+-+
+   |  1  |X LOW      |x|x|x|x|x|x|x|x|
+   +-----+-----------+-+-+-+-+-+-+-+-+
+   |  2  |X HIGH     |X|X|X|X|X|X|X|X|
+   +-----+-----------+-+-+-+-+-+-+-+-+
+   |  3  |Y LOW      |y|y|y|y|y|y|y|y|
+   +-----+-----------+-+-+-+-+-+-+-+-+
+   |  4  |Y HIGH     |Y|Y|Y|Y|Y|Y|Y|Y|
+   +-----+-----------+-+-+-+-+-+-+-+-+
+
+   X and y components are defined as byte arrays to emphasize the need
+   to consider byte ordering when accessing these values.
+
+   m210_note_data_get_x() and m210_note_data_get_y() take care of byte ordering.
+
+ */
 struct m210_note_data {
     uint8_t x[M210_NOTE_DATA_COMPONENT_LEN];
     uint8_t y[M210_NOTE_DATA_COMPONENT_LEN];
 } __attribute__((packed));
 
+/**
+   Return the value of x in host byte order.
+
+   @data an address of data block object
+ */
+uint16_t m210_note_data_get_x(const struct m210_note_data *data);
+
+/**
+   Return the value of y in host byte order.
+
+   @data an address of data block object
+ */
+uint16_t m210_note_data_get_y(const struct m210_note_data *data);
+
+/**
+   Return 1 if the data block represents a pen up-event, 0 otherwise.
+
+   @data an address of data block object
+ */
 int m210_note_data_is_pen_up(const struct m210_note_data *data);
 
+/**
+   The only four possible state values.
+ */
 #define M210_NOTE_HEADER_STATE_EMPTY 0x9f
 #define M210_NOTE_HEADER_STATE_UNFINISHED 0x5f
 #define M210_NOTE_HEADER_STATE_FINISHED_BY_USER 0x3f
 #define M210_NOTE_HEADER_STATE_FINISHED_BY_SOFTWARE 0x1f
 
-#define M210_NOTE_HEADER_NEXT_NOTE_ADDR_LEN 3
+#define M210_NOTE_HEADER_NEXT_NOTE_POS_LEN 3
 #define M210_NOTE_HEADER_RESERVED_LEN 8
 
+/**
+   +-----+------------------+-+-+-+-+-+-+-+-+
+   |Byte#|Description       |7|6|5|4|3|2|1|0|
+   +-----+------------------+-+-+-+-+-+-+-+-+
+   |  1  |Next note pos LOW |x|x|x|x|x|x|x|x|
+   +-----+------------------+-+-+-+-+-+-+-+-+
+   |  2  |Next note pos MID |x|x|x|x|x|x|x|x|
+   +-----+------------------+-+-+-+-+-+-+-+-+
+   |  3  |Next note pos HIGH|x|x|x|x|x|x|x|x|
+   +-----+------------------+-+-+-+-+-+-+-+-+
+   |  4  |State             |x|x|x|1|1|1|1|1|
+   +-----+------------------+-+-+-+-+-+-+-+-+
+   |  5  |Note num          |x|x|x|x|x|x|x|x|
+   +-----+------------------+-+-+-+-+-+-+-+-+
+   |  6  |Max note num      |x|x|x|x|x|x|x|x|
+   +-----+------------------+-+-+-+-+-+-+-+-+
+   |  7  |Reserved          |x|x|x|x|x|x|x|x|
+   +-----+------------------+-+-+-+-+-+-+-+-+
+   |  8  |Reserved          |x|x|x|x|x|x|x|x|
+   +-----+------------------+-+-+-+-+-+-+-+-+
+   |  9  |Reserved          |x|x|x|x|x|x|x|x|
+   +-----+------------------+-+-+-+-+-+-+-+-+
+   |  10 |Reserved          |x|x|x|x|x|x|x|x|
+   +-----+------------------+-+-+-+-+-+-+-+-+
+   |  11 |Reserved          |x|x|x|x|x|x|x|x|
+   +-----+------------------+-+-+-+-+-+-+-+-+
+   |  12 |Reserved          |x|x|x|x|x|x|x|x|
+   +-----+------------------+-+-+-+-+-+-+-+-+
+   |  13 |Reserved          |x|x|x|x|x|x|x|x|
+   +-----+------------------+-+-+-+-+-+-+-+-+
+   |  14 |Reserved          |x|x|x|x|x|x|x|x|
+   +-----+------------------+-+-+-+-+-+-+-+-+
+
+ */
 struct m210_note_header {
-    uint8_t next_note_addr[M210_NOTE_HEADER_NEXT_NOTE_ADDR_LEN];
+    uint8_t next_note_pos[M210_NOTE_HEADER_NEXT_NOTE_POS_LEN];
     uint8_t state;
     uint8_t note_number;
     uint8_t max_note_number;
     uint8_t reserved[M210_NOTE_HEADER_RESERVED_LEN];
 } __attribute__((packed));
 
-uint32_t m210_note_data_len(struct m210_note_header *header);
-
 /**
-   An opaque object representing a M210 device.
+   Return the position of a next note in a stream in host byte
+   order. The position is defined as a byte offset from the beginning
+   of a stream.
+
+   @header an address of a header block object
+ */
+uint32_t m210_note_header_next_note_pos(const struct m210_note_header *header);
+
+#define M210_IFACE_COUNT 2
+/**
+   An object representing a M210 device.
 */
 struct m210 {
     int fds[M210_IFACE_COUNT];
@@ -177,7 +251,18 @@ enum m210_err m210_get_info(const struct m210 *m210, struct m210_info *info);
 enum m210_err m210_delete_notes(const struct m210 *m210);
 
 /**
-   Return the total size of notes in bytes.
+   Return the total size of notes in bytes. Theoretical maximum size
+   is 4063232:
+
+      * Packets are numbered with 16 bit integers.
+        => Maximum number of packets: 2**16 = 65536
+
+      * Each packet is 64 bytes wide, last 62 bytes represent bytes in memory.
+        The first two bytes represent the packet sequence number.
+        => Maximum number of bytes in memory: 2**16 * 62 = 4063232
+
+      * A 32bit integer can address 2**32 different bytes which is way more
+        than maximum number of bytes in m210 memory.
 
    Return values:
 
@@ -195,7 +280,22 @@ enum m210_err m210_delete_notes(const struct m210 *m210);
 enum m210_err m210_get_notes_size(const struct m210 *m210, uint32_t *size);
 
 /**
-   Read notes from a M210 device and write them to a stream.
+   Read notes from a M210 device and write them to a stream. Each note
+   consist of a 14 byte wide header block and an arbitrary number of 4
+   byte wide data blocks. Stream consist of an arbitrary number of
+   notes.
+
+   Note stream:
+
+            note1          ...          noteN
+   +----------------------+    +----------------------+
+   | 14      4         4  |    | 14      4         4  |
+    header data1 ... dataN      header data1 ... dataN
+
+   struct m210_note_header and struct m210_note_data are defined to
+   represent header and data block respectively. Data block can
+   represent a position or a pen up -event. m210_note_data_is_pen_up()
+   can be used to determine if a data block represents the latter.
 
    Return values:
 
