@@ -32,13 +32,13 @@ void help_and_exit(void)
     exit(EXIT_FAILURE);
 }
 
-#define PRINT_MODE     0x01
-#define PRINT_FIRMWARE 0x02
-#define PRINT_ANALOG   0x04
-#define PRINT_PAD      0x08
-#define PRINT_SIZE     0x10
+#define OUTPUT_MODE     0x01
+#define OUTPUT_FIRMWARE 0x02
+#define OUTPUT_ANALOG   0x04
+#define OUTPUT_PAD      0x08
+#define OUTPUT_SIZE     0x10
 
-int prints = 0;
+int outputs = 0;
 
 void parse_args(int argc, char **argv)
 {
@@ -63,19 +63,19 @@ void parse_args(int argc, char **argv)
 
         switch (option) {
         case 'p':
-            prints |= PRINT_PAD;
+            outputs |= OUTPUT_PAD;
             break;
         case 'a':
-            prints |= PRINT_ANALOG;
+            outputs |= OUTPUT_ANALOG;
             break;
         case 'f':
-            prints |= PRINT_FIRMWARE;
+            outputs |= OUTPUT_FIRMWARE;
             break;
         case 's':
-            prints |= PRINT_SIZE;
+            outputs |= OUTPUT_SIZE;
             break;
         case 'm':
-            prints |= PRINT_MODE;
+            outputs |= OUTPUT_MODE;
             break;
         case 'V':
             printf("%s %s\n"
@@ -87,14 +87,14 @@ void parse_args(int argc, char **argv)
             exit(EXIT_SUCCESS);
         case 'h':
             printf("Usage: %s [OPTION]...\n"
-                   "Print device version and mode information\n"
+                   "Output device information\n"
                    "\n"
                    "Options:\n"
-                   " -p, --pad                  print pad version\n"
-                   " -a, --analog               print analog version\n"
-                   " -f, --firmware             print firmware version\n"
-                   " -m, --mode                 print current operating mode\n"
-                   " -s, --size                 print size of stored notes\n"
+                   " -p, --pad                  output pad version\n"
+                   " -a, --analog               output analog version\n"
+                   " -f, --firmware             output firmware version\n"
+                   " -m, --mode                 output current operating mode\n"
+                   " -s, --size                 output size of stored notes\n"
                    " -h, --help                 display this help and exit\n"
                    " -V, --version              output version infromation and exit\n"
                    "\n"
@@ -112,8 +112,8 @@ void parse_args(int argc, char **argv)
         }
     }
 
-    if (!prints)
-        prints = (PRINT_PAD | PRINT_ANALOG | PRINT_FIRMWARE | PRINT_SIZE | PRINT_MODE);
+    if (!outputs)
+        outputs = (OUTPUT_PAD | OUTPUT_ANALOG | OUTPUT_FIRMWARE | OUTPUT_SIZE | OUTPUT_MODE);
 
     if (optind != argc) {
         fprintf(stderr, "%s: wrong number of arguments\n",
@@ -168,7 +168,7 @@ int main(int argc, char **argv)
         goto err;
     }
 
-    if (prints & PRINT_SIZE) {
+    if (outputs & OUTPUT_SIZE) {
         ssize_t data_size;
         err = m210_get_notes_size(&m210, &data_size);
         switch (err) {
@@ -189,13 +189,13 @@ int main(int argc, char **argv)
         printf("Size of stored notes: %ld\n", data_size);
     }
 
-    if (prints & PRINT_FIRMWARE)
+    if (outputs & OUTPUT_FIRMWARE)
         printf("Firmware version: %d\n", info.firmware_version);
-    if (prints & PRINT_ANALOG)
+    if (outputs & OUTPUT_ANALOG)
         printf("Analog version: %d\n", info.analog_version);
-    if (prints & PRINT_PAD)
+    if (outputs & OUTPUT_PAD)
         printf("Pad version: %d\n", info.pad_version);
-    if (prints & PRINT_MODE)
+    if (outputs & OUTPUT_MODE)
         printf("Operating mode: %d\n", info.mode);
 
     exitval = EXIT_SUCCESS;

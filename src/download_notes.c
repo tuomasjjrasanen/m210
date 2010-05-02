@@ -68,7 +68,7 @@ void parse_args(int argc, char **argv)
                    "Download stored notes\n"
                    "\n"
                    "Options:\n"
-                   " -o, --outfile              file to store downloaded notes\n"
+                   " -o, --outfile              destination file\n"
                    " -h, --help                 display this help and exit\n"
                    " -V, --version              output version infromation and exit\n"
                    "\n"

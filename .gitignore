@@ -16,5 +16,5 @@ stamp-h1
 *~
 *.o
 src/m210-delete-notes
-src/m210-get-info
-src/m210-get-notes
+src/m210-info
+src/m210-download-notes
