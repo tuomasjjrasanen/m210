@@ -1,14 +1,14 @@
-===================================================================
-m210 - Delete and download notes stored in Pegasus NoteTaker Tablet
-===================================================================
+===========================================================================
+@PACKAGE@ - @PACKAGE_DESCRIPTION@
+===========================================================================
 
 .. contents::
 
 Description
 ===========
 
-The Code Grove m210 project provides tools for downloading and
-deleting notes from Pegasus Mobile NoteTaker devices.
+The Code Grove @PACKAGE@ project provides tools for downloading and
+deleting notes from Pegasus Mobile NoteTaker Tablet.
 
 General information
 ===================
@@ -21,26 +21,17 @@ General information
 Build requirements
 ==================
 
-- udev library development files: (Ubuntu: ``apt-get install libudev-dev``)
-- libm210
-
-Runtime requirements
-====================
-
-- Linux kernel 2.6.x
-- usbhid module installed::
-
-    modprobe -i usbhid
+- `libm210 <https://codegrove.org/libm210/>`_
 
 Downloading
 ===========
 
 - Ubuntu package: https://launchpad.net/~tuos/+archive/codegrove
-- Tarball is available at: @PACKAGE_URL@releases/m210-@VERSION@.tar.gz
+- Tarball is available at: @PACKAGE_URL@releases/@PACKAGE@-@VERSION@.tar.gz
 - Tarballs of every release at: @PACKAGE_URL@releases/
-- Latest sources from public git-repository: http://github.com/tuos/m210/ ::
+- Latest sources from public git-repository: http://github.com/tuos/@PACKAGE@/ ::
 
-    git clone git://github.com/tuos/m210.git
+    git clone git://github.com/tuos/@PACKAGE@.git
 
 Installing
 ==========
@@ -48,9 +39,9 @@ Installing
 Ubuntu
 ------
 
-The recommended way to install m210 is to
+The recommended way to install @PACKAGE@ is to
 `add it's PPA to your system <https://launchpad.net/~tuos/+archive/codegrove>`_.
-This allows you to treat m210 as any other Ubuntu package.
+This allows you to treat @PACKAGE@ as any other Ubuntu package.
 
 Other systems
 -------------
@@ -64,4 +55,4 @@ Bug reporting
 =============
 
 Report bugs by sending email to @PACKAGE_BUGREPORT@ or by opening an issue
-at http://github.com/tuos/m210/issues .
+at http://github.com/tuos/@PACKAGE@/issues .

@@ -1,6 +1,6 @@
-===================================================================
-m210 - Delete and download notes stored in Pegasus NoteTaker Tablet
-===================================================================
+===========================================================================
+m210 - Delete and download notes stored in Pegasus Mobile NoteTaker Tablet.
+===========================================================================
 
 .. contents::
 
@@ -8,7 +8,7 @@ Description
 ===========
 
 The Code Grove m210 project provides tools for downloading and
-deleting notes from Pegasus Mobile NoteTaker devices.
+deleting notes from Pegasus Mobile NoteTaker Tablet.
 
 General information
 ===================
@@ -21,15 +21,7 @@ General information
 Build requirements
 ==================
 
-- udev library development files: (Ubuntu: ``apt-get install libudev-dev``)
-
-Runtime requirements
-====================
-
-- Linux kernel 2.6.x
-- usbhid module installed::
-
-    modprobe -i usbhid
+- `libm210 <https://codegrove.org/libm210/>`_
 
 Downloading
 ===========
