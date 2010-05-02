@@ -192,7 +192,7 @@ enum m210_err m210_delete_notes(const struct m210 *m210);
    @size an address where the size will be stored.
 
 */
-enum m210_err m210_get_notes_size(const struct m210 *m210, ssize_t *size);
+enum m210_err m210_get_notes_size(const struct m210 *m210, uint32_t *size);
 
 /**
    Read notes from a M210 device and write them to a stream.

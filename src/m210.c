@@ -476,7 +476,7 @@ enum m210_err m210_read_packet(const struct m210 *m210, struct m210_packet *pack
     return err_ok;
 }
 
-enum m210_err m210_get_notes_size(const struct m210 *m210, ssize_t *size)
+enum m210_err m210_get_notes_size(const struct m210 *m210, uint32_t *size)
 {
     enum m210_err err;
     uint16_t packet_count;
