@@ -29,7 +29,7 @@
 
 #include "m210.h"
 
-#define WAIT_INTERVAL 1000000 /* Microseconds. */
+#define M210_READ_INTERVAL 1000000 /* Microseconds. */
 
 #define M210_PACKET_DATA_LEN 62
 
@@ -93,7 +93,7 @@ static enum m210_err m210_read_rpt(const struct m210 *m210, void *response,
     FD_ZERO(&readfds);
     FD_SET(fd, &readfds);
 
-    select_interval.tv_usec = WAIT_INTERVAL;
+    select_interval.tv_usec = M210_READ_INTERVAL;
 
     switch (select(fd + 1, &readfds, NULL, NULL, &select_interval)) {
     case 0:
@@ -269,11 +269,11 @@ static enum m210_err m210_open_from_hidraw_paths(struct m210 *m210, char **hidra
     int i;
     int original_errno;
 
-    for (i = 0; i < M210_IFACE_COUNT; ++i) {
+    for (i = 0; i < M210_USB_INTERFACE_COUNT; ++i) {
         m210->fds[i] = -1;
     }
 
-    for (i = 0; i < M210_IFACE_COUNT; ++i) {
+    for (i = 0; i < M210_USB_INTERFACE_COUNT; ++i) {
         int fd;
         const char *path = hidraw_paths[i];
         struct hidraw_devinfo devinfo;
@@ -309,8 +309,8 @@ enum m210_err m210_open(struct m210 *m210, char** hidraw_paths)
         int i;
         char iface0_path[PATH_MAX];
         char iface1_path[PATH_MAX];
-        char *paths[M210_IFACE_COUNT] = {iface0_path, iface1_path};
-        for (i = 0; i < M210_IFACE_COUNT; ++i) {
+        char *paths[M210_USB_INTERFACE_COUNT] = {iface0_path, iface1_path};
+        for (i = 0; i < M210_USB_INTERFACE_COUNT; ++i) {
             enum m210_err err = err_sys;
             uint8_t found = 0;
 
@@ -336,7 +336,7 @@ enum m210_err m210_close(struct m210 *m210)
 {
     int i;
 
-    for (i = 0; i < M210_IFACE_COUNT; ++i) {
+    for (i = 0; i < M210_USB_INTERFACE_COUNT; ++i) {
         if (m210->fds[i] != -1) {
             if (close(m210->fds[i]) == -1)
                 return err_sys;
@@ -609,33 +609,10 @@ enum m210_err m210_fwrite_notes(const struct m210 *m210, FILE *f)
     return m210_wait_ready(m210, NULL);
 }
 
-/*
-  Note data:
-
-  Pen up data:
-  +-----+-----------+-+-+-+-+-+-+-+-+
-  |Byte#|Description|7|6|5|4|3|2|1|0|
-  +-----+-----------+-+-+-+-+-+-+-+-+
-  |  1  |           |0|0|0|0|0|0|0|0|
-  +-----+-----------+-+-+-+-+-+-+-+-+
-  |  2  |           |0|0|0|0|0|0|0|0|
-  +-----+-----------+-+-+-+-+-+-+-+-+
-  |  3  |           |0|0|0|0|0|0|0|0|
-  +-----+-----------+-+-+-+-+-+-+-+-+
-  |  4  |           |1|0|0|0|0|0|0|0|
-  +-----+-----------+-+-+-+-+-+-+-+-+
-*/
-inline int m210_note_data_is_pen_up(const struct m210_note_data *data)
-{
-    static struct m210_note_data penup = {{0x00, 0x00}, {0x00, 0x80}};
-    return memcmp(data, &penup, sizeof(struct m210_note_data));
-}
-
 inline uint32_t m210_note_header_next_note_pos(const struct m210_note_header *header)
 {
-    uint32_t pos = 0;
-    memcpy(&pos, header->next_note_pos, M210_NOTE_HEADER_NEXT_NOTE_POS_LEN);
-    return le32toh(pos);
+    return le32toh(header->next_note_pos[0] + header->next_note_pos[1] * 0x100
+                   + header->next_note_pos[2] * 0x10000);
 }
 
 const char *m210_err_str(enum m210_err err)
@@ -695,4 +672,10 @@ inline uint16_t m210_note_data_get_x(const struct m210_note_data *data)
 inline uint16_t m210_note_data_get_y(const struct m210_note_data *data)
 {
     return le16toh(data->y[0] + data->y[1] * 0x100);
+}
+
+inline int m210_note_data_is_pen_up(const struct m210_note_data *data)
+{
+    static struct m210_note_data penup = {{0x00, 0x00}, {0x00, 0x80}};
+    return memcmp(data, &penup, sizeof(struct m210_note_data));
 }

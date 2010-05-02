@@ -58,10 +58,11 @@ const char *m210_err_str(enum m210_err err);
  */
 int m210_err_printf(enum m210_err err, const char *s);
 
-#define M210_NOTE_DATA_COMPONENT_LEN 2
 /**
-   An object representing note data block in a stream.
+   An object representing note data block in a stream. A data block
+   can represent a position or a pen up -event.
 
+   Position:
    +-----+-----------+-+-+-+-+-+-+-+-+
    |Byte#|Description|7|6|5|4|3|2|1|0|
    +-----+-----------+-+-+-+-+-+-+-+-+
@@ -74,6 +75,19 @@ int m210_err_printf(enum m210_err err, const char *s);
    |  4  |Y HIGH     |Y|Y|Y|Y|Y|Y|Y|Y|
    +-----+-----------+-+-+-+-+-+-+-+-+
 
+   Pen up:
+   +-----+-----------+-+-+-+-+-+-+-+-+
+   |Byte#|Description|7|6|5|4|3|2|1|0|
+   +-----+-----------+-+-+-+-+-+-+-+-+
+   |  1  |Pen up     |0|0|0|0|0|0|0|0|
+   +-----+-----------+-+-+-+-+-+-+-+-+
+   |  2  |Pen up     |0|0|0|0|0|0|0|0|
+   +-----+-----------+-+-+-+-+-+-+-+-+
+   |  3  |Pen up     |0|0|0|0|0|0|0|0|
+   +-----+-----------+-+-+-+-+-+-+-+-+
+   |  4  |Pen up     |1|0|0|0|0|0|0|0|
+   +-----+-----------+-+-+-+-+-+-+-+-+
+
    X and y components are defined as byte arrays to emphasize the need
    to consider byte ordering when accessing these values.
 
@@ -81,8 +95,8 @@ int m210_err_printf(enum m210_err err, const char *s);
 
  */
 struct m210_note_data {
-    uint8_t x[M210_NOTE_DATA_COMPONENT_LEN];
-    uint8_t y[M210_NOTE_DATA_COMPONENT_LEN];
+    uint8_t x[2];
+    uint8_t y[2];
 } __attribute__((packed));
 
 /**
@@ -113,9 +127,6 @@ int m210_note_data_is_pen_up(const struct m210_note_data *data);
 #define M210_NOTE_HEADER_STATE_UNFINISHED 0x5f
 #define M210_NOTE_HEADER_STATE_FINISHED_BY_USER 0x3f
 #define M210_NOTE_HEADER_STATE_FINISHED_BY_SOFTWARE 0x1f
-
-#define M210_NOTE_HEADER_NEXT_NOTE_POS_LEN 3
-#define M210_NOTE_HEADER_RESERVED_LEN 8
 
 /**
    +-----+------------------+-+-+-+-+-+-+-+-+
@@ -152,11 +163,11 @@ int m210_note_data_is_pen_up(const struct m210_note_data *data);
 
  */
 struct m210_note_header {
-    uint8_t next_note_pos[M210_NOTE_HEADER_NEXT_NOTE_POS_LEN];
+    uint8_t next_note_pos[3];
     uint8_t state;
     uint8_t note_number;
     uint8_t max_note_number;
-    uint8_t reserved[M210_NOTE_HEADER_RESERVED_LEN];
+    uint8_t reserved[8];
 } __attribute__((packed));
 
 /**
@@ -168,12 +179,12 @@ struct m210_note_header {
  */
 uint32_t m210_note_header_next_note_pos(const struct m210_note_header *header);
 
-#define M210_IFACE_COUNT 2
+#define M210_USB_INTERFACE_COUNT 2
 /**
    An object representing a M210 device.
 */
 struct m210 {
-    int fds[M210_IFACE_COUNT];
+    int fds[M210_USB_INTERFACE_COUNT];
 };
 
 /**
