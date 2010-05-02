@@ -638,3 +638,49 @@ uint32_t m210_note_data_len(struct m210_note_header *header)
     memcpy(&len, header->next_note_addr, M210_NOTE_HEADER_NEXT_NOTE_ADDR_LEN);
     return le32toh(len);
 }
+
+const char *m210_err_str(enum m210_err err)
+{
+    static const char *m210_errlist[] = {
+        "no error",
+        "syscall error",
+        "device is not m210",
+        "m210 not found",
+        "unexpected response",
+        "request timeouted"
+    };
+    return m210_errlist[err];
+}
+
+extern char *program_invocation_name;
+
+int m210_err_printf(enum m210_err err, const char *s)
+{
+    int original_errno = errno;
+    const char *m210_errstr = m210_err_str(err);
+    size_t progname_len = strlen(program_invocation_name);
+    size_t s_len = strlen(s);
+    size_t m210_errstr_len = strlen(m210_errstr);
+    /*
+      +5 == two colons, two spaces and a terminating null byte.
+      See snprintf-call below.
+    */
+    size_t total_len = progname_len + s_len + m210_errstr_len + 5;
+    char *errstr;
+
+    errstr = (char *)calloc(total_len, sizeof(char));
+    if (errstr == NULL)
+        return -1;
+
+    snprintf(errstr, total_len, "%s: %s: %s", program_invocation_name, s, m210_errstr);
+
+    if (err == err_sys) {
+        errno = original_errno;
+        perror(errstr);
+    } else {
+        fprintf(stderr, "%s\n", errstr);
+    }
+
+    free(errstr);
+    return 0;
+}

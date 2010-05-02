@@ -38,6 +38,9 @@ enum m210_err {
     err_timeout
 };
 
+const char *m210_err_str(enum m210_err err);
+int m210_err_printf(enum m210_err err, const char *s);
+
 /*
   Position data:
   +-----+-----------+-+-+-+-+-+-+-+-+
