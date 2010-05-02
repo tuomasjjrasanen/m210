@@ -1,0 +1,2 @@
+ACTION=="add|change", SUBSYSTEMS=="usb", DRIVERS=="usb", ATTRS{idVendor}=="0e20", ATTRS{idProduct}=="0101"
+SUBSYSTEM=="hidraw", GROUP="plugdev"
