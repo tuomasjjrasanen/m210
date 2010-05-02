@@ -1,6 +1,6 @@
 AC_INIT(
         [libm210],
-        [0.3.1],
+        [0.1],
         [tuos@codegrove.org],
         [libm210],
         [http://codegrove.org/libm210/])
@@ -25,6 +25,7 @@ then
 fi
 AC_CONFIG_HEADERS([config.h])
 AC_CONFIG_FILES([
+        README
         Makefile
         src/Makefile
 ])
