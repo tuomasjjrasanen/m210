@@ -144,13 +144,13 @@ int main(int argc, char **argv)
     }
 
     if (outputs & OUTPUT_SIZE) {
-        ssize_t data_size;
+        uint32_t data_size;
         err = m210_get_notes_size(&m210, &data_size);
         if (err) {
             m210_err_printf(err, "m210_get_notes_size");
             goto err;
         }
-        printf("Size of stored notes: %ld\n", data_size);
+        printf("Size of stored notes: %d\n", data_size);
     }
 
     if (outputs & OUTPUT_FIRMWARE)
