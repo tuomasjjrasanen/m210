@@ -13,3 +13,7 @@ src/Makefile
 src/Makefile.am~
 src/Makefile.in
 stamp-h1
+*~
+*.o
+src/m210-delete-notes
+src/m210-get-info
