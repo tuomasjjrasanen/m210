@@ -1,0 +1,66 @@
+===================================================================
+m210 - Delete and download notes stored in Pegasus NoteTaker Tablet
+===================================================================
+
+.. contents::
+
+Description
+===========
+
+The Code Grove m210 project provides tools for downloading and
+deleting notes from Pegasus Mobile NoteTaker devices.
+
+General information
+===================
+
+- **Author**: Tuomas Räsänen (tuos) <tuos@codegrove.org>
+- **Homepage**: http://codegrove.org/m210/
+- **License**: GPLv3+ (see COPYING for details)
+- **Version**: 0.1
+
+Build requirements
+==================
+
+- udev library development files: (Ubuntu: ``apt-get install libudev-dev``)
+
+Runtime requirements
+====================
+
+- Linux kernel 2.6.x
+- usbhid module installed::
+
+    modprobe -i usbhid
+
+Downloading
+===========
+
+- Ubuntu package: https://launchpad.net/~tuos/+archive/codegrove
+- Tarball is available at: http://codegrove.org/m210/releases/m210-0.1.tar.gz
+- Tarballs of every release at: http://codegrove.org/m210/releases/
+- Latest sources from public git-repository: http://github.com/tuos/m210/ ::
+
+    git clone git://github.com/tuos/m210.git
+
+Installing
+==========
+
+Ubuntu
+------
+
+The recommended way to install m210 is to
+`add it's PPA to your system <https://launchpad.net/~tuos/+archive/codegrove>`_.
+This allows you to treat m210 as any other Ubuntu package.
+
+Other systems
+-------------
+
+The install-procedure adheres the "standard"::
+
+  ./configure
+  make && make install
+
+Bug reporting
+=============
+
+Report bugs by sending email to tuos@codegrove.org or by opening an issue
+at http://github.com/tuos/m210/issues .
