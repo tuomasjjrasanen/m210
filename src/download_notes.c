@@ -116,39 +116,14 @@ int main(int argc, char **argv)
     }
 
     err = m210_open(&m210, NULL);
-    switch (err) {
-    case err_ok:
-        break;
-    case err_sys:
-        perror("m210_open");
-        goto err;
-    case err_nodev:
-        fprintf(stderr, "%s: m210_open: m210 device not found",
-                program_invocation_name);
-        goto err;
-    case err_baddev:
-        fprintf(stderr, "%s: m210_open: device is not m210",
-                program_invocation_name);
-    default:
-        fprintf(stderr, "%s: m210_open: unexpected error %d",
-                program_invocation_name, err);
+    if (err) {
+        m210_err_printf(err, "m210_open");
         goto err;
     }
 
     err = m210_fwrite_notes(&m210, output_stream);
-    switch (err) {
-    case err_ok:
-        break;
-    case err_sys:
-        perror("m210_fwrite_notes");
-        goto err;
-    case err_badmsg:
-        fprintf(stderr, "%s: m210_fwrite_notes: unexpected response",
-                program_invocation_name);
-        goto err;
-    default:
-        fprintf(stderr, "%s: m210_fwrite_notes: unexpected error %d",
-                program_invocation_name, err);
+    if (err) {
+        m210_err_printf(err, "m210_fwrite_notes");
         goto err;
     }
 

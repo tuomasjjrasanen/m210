@@ -132,58 +132,22 @@ int main(int argc, char **argv)
     parse_args(argc, argv);
 
     err = m210_open(&m210, NULL);
-    switch (err) {
-    case err_ok:
-        break;
-    case err_sys:
-        perror("m210_open");
-        goto err;
-    case err_nodev:
-        fprintf(stderr, "%s: m210_open: m210 device not found",
-                program_invocation_name);
-        goto err;
-    case err_baddev:
-        fprintf(stderr, "%s: m210_open: device is not m210",
-                program_invocation_name);
-    default:
-        fprintf(stderr, "%s: m210_open: unexpected error %d",
-                program_invocation_name, err);
+    if (err) {
+        m210_err_printf(err, "m210_open");
         goto err;
     }
 
     err = m210_get_info(&m210, &info);
-    switch (err) {
-    case err_ok:
-        break;
-    case err_sys:
-        perror("m210_get_info");
-        goto err;
-    case err_badmsg:
-        fprintf(stderr, "%s: m210_get_info: unexpected response",
-                program_invocation_name);
-        goto err;
-    default:
-        fprintf(stderr, "%s: m210_get_info: unexpected error %d",
-                program_invocation_name, err);
+    if (err) {
+        m210_err_printf(err, "m210_get_info");
         goto err;
     }
 
     if (outputs & OUTPUT_SIZE) {
         ssize_t data_size;
         err = m210_get_notes_size(&m210, &data_size);
-        switch (err) {
-        case err_ok:
-            break;
-        case err_sys:
-            perror("m210_get_notes_size");
-            goto err;
-        case err_badmsg:
-            fprintf(stderr, "%s: m210_get_notes_size: unexpected response",
-                    program_invocation_name);
-            goto err;
-        default:
-            fprintf(stderr, "%s: m210_get_notes_size: unexpected error %d",
-                    program_invocation_name, err);
+        if (err) {
+            m210_err_printf(err, "m210_get_notes_size");
             goto err;
         }
         printf("Size of stored notes: %ld\n", data_size);
