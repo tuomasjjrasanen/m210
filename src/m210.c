@@ -20,7 +20,6 @@
 #include <fcntl.h>
 #include <string.h>
 #include <stdlib.h>
-#include <stdint.h>
 #include <unistd.h>
 
 #include <linux/hidraw.h>
@@ -635,10 +634,7 @@ inline int m210_note_data_is_pen_up(const struct m210_note_data *data)
 
 uint32_t m210_note_data_len(struct m210_note_header *header)
 {
-    uint32_t len;
-    uint8_t bytes[1 + M210_NOTE_HEADER_NEXT_NOTE_ADDR_LEN];
-    memcpy(bytes + 1, header->next_note_addr,
-           M210_NOTE_HEADER_NEXT_NOTE_ADDR_LEN);
-    memcpy(&len, bytes, sizeof(bytes));
+    uint32_t len = 0;
+    memcpy(&len, header->next_note_addr, M210_NOTE_HEADER_NEXT_NOTE_ADDR_LEN);
     return le32toh(len);
 }

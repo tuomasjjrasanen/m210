@@ -18,6 +18,8 @@
 #ifndef M210_H
 #define M210_H
 
+#include <stdint.h>
+
 #define M210_IFACE_COUNT 2
 
 struct m210_info {
@@ -35,8 +37,6 @@ enum m210_err {
     err_badmsg,
     err_timeout
 };
-
-const char *m210_err_str(enum m210_err err);
 
 /*
   Position data:
@@ -64,8 +64,8 @@ const char *m210_err_str(enum m210_err err);
 */
 
 #define M210_NOTE_DATA_COMPONENT_LEN 2
-#define M210_NOTE_DATA_HIGH 0
-#define M210_NOTE_DATA_LOW 1
+#define M210_NOTE_DATA_HIGH 1
+#define M210_NOTE_DATA_LOW 0
 struct m210_note_data {
     uint8_t x[M210_NOTE_DATA_COMPONENT_LEN];
     uint8_t y[M210_NOTE_DATA_COMPONENT_LEN];
