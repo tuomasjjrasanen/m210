@@ -22,6 +22,7 @@ Build requirements
 ==================
 
 - udev library development files: (Ubuntu: ``apt-get install libudev-dev``)
+- libm210
 
 Runtime requirements
 ====================
