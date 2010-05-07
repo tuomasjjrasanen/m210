@@ -78,16 +78,21 @@ static enum m210_err m210_write_rpt(const struct m210 *m210,
     return err;
 }
 
-#define M210_RESPONSE_SIZE 64
-static enum m210_err m210_read_rpt(const struct m210 *m210, void *response,
-                                   size_t response_size)
+static const size_t m210_interface_response_sizes[M210_USB_INTERFACE_COUNT] = {64, 8};
+
+static enum m210_err m210_read(const struct m210 *m210, int interface,
+                               void *response, size_t response_size)
 {
     fd_set readfds;
-    int fd = m210->fds[0];
+    int fd = m210->fds[interface];
     static struct timeval select_interval;
-    uint8_t buf[M210_RESPONSE_SIZE];
+    size_t max_response_size = m210_interface_response_sizes[interface];
+    uint8_t *buf;
+    enum m210_err err;
 
-    memset(buf, 0, M210_RESPONSE_SIZE);
+    buf = (uint8_t *) calloc(max_response_size, sizeof(uint8_t));
+    if (buf == NULL)
+        return err_sys;
 
     memset(&select_interval, 0, sizeof(struct timeval));
     FD_ZERO(&readfds);
@@ -97,23 +102,42 @@ static enum m210_err m210_read_rpt(const struct m210 *m210, void *response,
 
     switch (select(fd + 1, &readfds, NULL, NULL, &select_interval)) {
     case 0:
-        return err_timeout;
+        err = err_timeout;
+        goto err;
     case -1:
-        return err_sys;
+        err = err_sys;
+        goto err;
     default:
         break;
     }
 
-    if (read(m210->fds[0], buf, M210_RESPONSE_SIZE) == -1)
-        return err_sys;
+    if (read(m210->fds[0], buf, max_response_size) == -1) {
+        err = err_sys;
+        goto err;
+    }
 
     memset(response, 0, response_size);
-    if (response_size > M210_RESPONSE_SIZE)
-        memcpy(response, buf, M210_RESPONSE_SIZE);
+    if (response_size > max_response_size)
+        memcpy(response, buf, max_response_size);
     else
         memcpy(response, buf, response_size);
 
-    return err_ok;
+    err = err_ok;
+  err:
+    free(buf);
+    return err;
+}
+
+static enum m210_err m210_read_rpt(const struct m210 *m210, void *response,
+                                   size_t response_size)
+{
+    return m210_read(m210, 0, response, response_size);
+}
+
+static enum m210_err m210_read_tablet(const struct m210 *m210, void *response,
+                                      size_t response_size)
+{
+    return m210_read(m210, 1, response, response_size);
 }
 
 static enum m210_err m210_find_hidraw_devnode(uint8_t *found, int iface,
@@ -678,4 +702,51 @@ inline int m210_note_data_is_pen_up(const struct m210_note_data *data)
 {
     static struct m210_note_data penup = {{0x00, 0x00}, {0x00, 0x80}};
     return memcmp(data, &penup, sizeof(struct m210_note_data));
+}
+
+enum m210_err m210_set_mode(const struct m210 *m210, enum m210_led led,
+                            enum m210_mode mode)
+{
+    uint8_t rpt[] = {0x02, 0x04, 0x80, 0xb5, 0x01, 0x02};
+    enum m210_err err;
+
+    err = m210_write_rpt(m210, rpt, sizeof(rpt));
+    if (err)
+        return err;
+
+    return m210_wait_ready(m210, NULL);
+}
+
+enum m210_err m210_config_tablet(const struct m210 *m210, uint8_t scale,
+                                 enum m210_orientation orientation)
+{
+    uint8_t rpt[] = {0x02, 0x04, 0x80, 0xb6,
+                     scale > M210_SCALE_MAX ? M210_SCALE_MAX : scale,
+                     orientation};
+    enum m210_err err;
+
+    err = m210_write_rpt(m210, rpt, sizeof(rpt));
+    if (err)
+        return err;
+
+    return m210_wait_ready(m210, NULL);
+}
+
+enum m210_err m210_fwrite_tablet(const struct m210 *m210, FILE *stream)
+{
+    enum m210_err err;
+    uint8_t rpt[8];
+    int i;
+
+    memset(&rpt, 0, sizeof(rpt));
+
+    while (1) {
+        err = m210_read_tablet(m210, &rpt, sizeof(rpt));
+        if (err)
+            break;
+        for (i = 0; i < 8; ++i) {
+            printf("%d : %d\n", i, rpt[i]);
+        }
+    }
+    return err_ok;
 }

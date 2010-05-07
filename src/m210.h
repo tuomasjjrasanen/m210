@@ -191,7 +191,7 @@ struct m210 {
    Open a hid connetion to a M210 device and return an object
    representing it.
 
-   Succesfully opened device must be freed with m210_free().
+   Succesfully opened device must be closed with m210_close().
 
    Return values:
 
@@ -322,5 +322,35 @@ enum m210_err m210_get_notes_size(const struct m210 *m210, uint32_t *size);
 
  */
 enum m210_err m210_fwrite_notes(const struct m210 *m210, FILE *stream);
+
+enum m210_mode {
+    basic=1,
+    tablet=2
+};
+
+enum m210_led {
+    pen=1,
+    mouse=2
+};
+
+enum m210_err m210_set_mode(const struct m210 *m210, enum m210_led led,
+                            enum m210_mode mode);
+
+enum m210_orientation {
+    top,
+    left,
+    right
+};
+
+#define M210_SCALE_MAX 9
+
+enum m210_err m210_config_tablet(const struct m210 *m210, uint8_t scale,
+                                 enum m210_orientation orientation);
+
+/* struct m210_pen_data { */
+
+/* }; */
+
+enum m210_err m210_fwrite_tablet(const struct m210 *m210, FILE *stream);
 
 #endif /* M210_H */
