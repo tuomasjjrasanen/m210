@@ -163,7 +163,7 @@ int m210_note_data_is_pen_up(const struct m210_note_data *data);
 
  */
 struct m210_note_header {
-    uint8_t next_note_pos[3];
+    uint8_t next_header_pos[3];
     uint8_t state;
     uint8_t note_number;
     uint8_t max_note_number;
@@ -177,7 +177,7 @@ struct m210_note_header {
 
    @header an address of a header block object
  */
-uint32_t m210_note_header_next_note_pos(const struct m210_note_header *header);
+uint32_t m210_note_header_next_header_pos(const struct m210_note_header *header);
 
 #define M210_USB_INTERFACE_COUNT 2
 /**
