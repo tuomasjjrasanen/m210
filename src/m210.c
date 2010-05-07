@@ -609,10 +609,10 @@ enum m210_err m210_fwrite_notes(const struct m210 *m210, FILE *f)
     return m210_wait_ready(m210, NULL);
 }
 
-inline uint32_t m210_note_header_next_note_pos(const struct m210_note_header *header)
+inline uint32_t m210_note_header_next_header_pos(const struct m210_note_header *header)
 {
-    return le32toh(header->next_note_pos[0] + header->next_note_pos[1] * 0x100
-                   + header->next_note_pos[2] * 0x10000);
+    return le32toh(header->next_header_pos[0] + header->next_header_pos[1] * 0x100
+                   + header->next_header_pos[2] * 0x10000);
 }
 
 const char *m210_err_str(enum m210_err err)
