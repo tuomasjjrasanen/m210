@@ -25,6 +25,7 @@ then
 fi
 AC_CONFIG_HEADERS([config.h])
 AC_CONFIG_FILES([
+        Doxyfile
         README
         Makefile
         src/Makefile
