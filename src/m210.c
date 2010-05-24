@@ -701,7 +701,7 @@ inline uint16_t m210_note_data_get_y(const struct m210_note_data *data)
 inline int m210_note_data_is_pen_up(const struct m210_note_data *data)
 {
     static struct m210_note_data penup = {{0x00, 0x00}, {0x00, 0x80}};
-    return memcmp(data, &penup, sizeof(struct m210_note_data));
+    return memcmp(data, &penup, sizeof(struct m210_note_data)) == 0;
 }
 
 enum m210_err m210_set_mode(const struct m210 *m210, enum m210_led led,

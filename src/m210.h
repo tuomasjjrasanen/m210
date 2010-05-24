@@ -1,5 +1,6 @@
-/*
-  libm210 - API for Pegasus Mobile NoteTaker M210
+/**
+  \file
+  \mainpage libm210 - API for Pegasus Mobile NoteTaker M210
   Copyright © 2010 Tuomas Räsänen (tuos) <tuos@codegrove.org>
 
   This program is free software: you can redistribute it and/or modify
@@ -21,13 +22,33 @@
 #include <stdio.h>
 #include <stdint.h>
 
+/**
+   Mode values.
+ */
+enum m210_mode {
+    /**
+       Mode value when M210 is connected to host via USB.
+     */
+    tablet = 0x02
+};
+
+/**
+   An object representing miscellaneous information of a M210 device.
+ */
 struct m210_info {
     uint16_t firmware_version;
     uint16_t analog_version;
     uint16_t pad_version;
+    /**
+       Current mode, possible values defined by #m210_mode.
+     */
     uint8_t mode;
 };
 
+/**
+   Possible error codes. Functions returning these values define their
+   semantics.
+ */
 enum m210_err {
     err_ok,
     err_sys,
@@ -40,7 +61,7 @@ enum m210_err {
 /**
    Return an error message describing the error code.
 
-   @err a m210 error code
+   \param err a m210 error code
  */
 const char *m210_err_str(enum m210_err err);
 
@@ -53,16 +74,17 @@ const char *m210_err_str(enum m210_err err);
    err_sys, a message as printed by perror(). A new line is printed at
    the end.
 
-   @err a m210 error code
-   @s error message
+   \param err a m210 error code
+   \param s error message
  */
 int m210_err_printf(enum m210_err err, const char *s);
 
 /**
-   An object representing note data block in a stream. A data block
+   An object representing a note data block in a stream. A data block
    can represent a position or a pen up -event.
 
    Position:
+   \verbatim
    +-----+-----------+-+-+-+-+-+-+-+-+
    |Byte#|Description|7|6|5|4|3|2|1|0|
    +-----+-----------+-+-+-+-+-+-+-+-+
@@ -74,8 +96,10 @@ int m210_err_printf(enum m210_err err, const char *s);
    +-----+-----------+-+-+-+-+-+-+-+-+
    |  4  |Y HIGH     |Y|Y|Y|Y|Y|Y|Y|Y|
    +-----+-----------+-+-+-+-+-+-+-+-+
+   \endverbatim
 
    Pen up:
+   \verbatim
    +-----+-----------+-+-+-+-+-+-+-+-+
    |Byte#|Description|7|6|5|4|3|2|1|0|
    +-----+-----------+-+-+-+-+-+-+-+-+
@@ -87,7 +111,7 @@ int m210_err_printf(enum m210_err err, const char *s);
    +-----+-----------+-+-+-+-+-+-+-+-+
    |  4  |Pen up     |1|0|0|0|0|0|0|0|
    +-----+-----------+-+-+-+-+-+-+-+-+
-
+   \endverbatim
    X and y components are defined as byte arrays to emphasize the need
    to consider byte ordering when accessing these values.
 
@@ -95,40 +119,61 @@ int m210_err_printf(enum m210_err err, const char *s);
 
  */
 struct m210_note_data {
+    /**
+       Little endian uint16_t bytes representing x-coordinate.
+     */
     uint8_t x[2];
+    /**
+       Little endian uint16_t bytes representing y-coordinate.
+     */
     uint8_t y[2];
 } __attribute__((packed));
 
 /**
    Return the value of x in host byte order.
 
-   @data an address of data block object
+   \param data an address of data block object
  */
 uint16_t m210_note_data_get_x(const struct m210_note_data *data);
 
 /**
    Return the value of y in host byte order.
 
-   @data an address of data block object
+   \param data an address of data block object
  */
 uint16_t m210_note_data_get_y(const struct m210_note_data *data);
 
 /**
    Return 1 if the data block represents a pen up-event, 0 otherwise.
 
-   @data an address of data block object
+   \param data an address of data block object
  */
 int m210_note_data_is_pen_up(const struct m210_note_data *data);
 
 /**
-   The only four possible state values.
+   Note state values.
  */
-#define M210_NOTE_HEADER_STATE_EMPTY 0x9f
-#define M210_NOTE_HEADER_STATE_UNFINISHED 0x5f
-#define M210_NOTE_HEADER_STATE_FINISHED_BY_USER 0x3f
-#define M210_NOTE_HEADER_STATE_FINISHED_BY_SOFTWARE 0x1f
+enum m210_note_state {
+    /**
+       Note does not contain any data.
+     */
+    empty = 0x9f,
+    /**
+       Note is contains data but is not closed yet.
+     */
+    unfinished = 0x5f,
+    /**
+       Note contains data and is close by a user.
+     */
+    finished_by_user = 0x3f,
+    /**
+       Note contains data and is closed programmatically.
+     */
+    finished_by_software = 0x1f
+};
 
 /**
+   \verbatim
    +-----+------------------+-+-+-+-+-+-+-+-+
    |Byte#|Description       |7|6|5|4|3|2|1|0|
    +-----+------------------+-+-+-+-+-+-+-+-+
@@ -160,13 +205,28 @@ int m210_note_data_is_pen_up(const struct m210_note_data *data);
    +-----+------------------+-+-+-+-+-+-+-+-+
    |  14 |Reserved          |x|x|x|x|x|x|x|x|
    +-----+------------------+-+-+-+-+-+-+-+-+
-
+   \endverbatim
  */
 struct m210_note_header {
+    /**
+       Position of the first byte of the next header in the stream.
+     */
     uint8_t next_header_pos[3];
+    /**
+       State of the note, possible values defined by #m210_note_state.
+     */
     uint8_t state;
+    /**
+       Sequence number of the note.
+     */
     uint8_t note_number;
+    /**
+       Total number of notes in the stream.
+     */
     uint8_t max_note_number;
+    /**
+       Unused and undefined bytes.
+     */
     uint8_t reserved[8];
 } __attribute__((packed));
 
@@ -175,11 +235,16 @@ struct m210_note_header {
    order. The position is defined as a byte offset from the beginning
    of a stream.
 
-   @header an address of a header block object
+   \param header an address of a header block object
+   \return value
  */
 uint32_t m210_note_header_next_header_pos(const struct m210_note_header *header);
 
+/**
+   Number of M210 usb interfaces.
+ */
 #define M210_USB_INTERFACE_COUNT 2
+
 /**
    An object representing a M210 device.
 */
@@ -193,20 +258,18 @@ struct m210 {
 
    Succesfully opened device must be closed with m210_close().
 
-   Return values:
+   \retval err_ok success
 
-   - err_ok - success
+   \retval err_sys system call failed and errno is set appropriately
 
-   - err_sys - system call failed and errno is set appropriately
+   \retval err_nodev a M210 device was not found
 
-   - err_nodev - a M210 device was not found
-
-   - err_baddev - hidraw_paths did not represent interfaces 0 and 1 of
+   \retval err_baddev hidraw_paths did not represent interfaces 0 and 1 of
    a M210 device.
 
-   @m210 an address of an object representing the M210 device.
+   \param m210 an address of an object representing the M210 device.
 
-   @hidraw_paths a list of two null-terminated paths of hidraw device
+   \param hidraw_paths a list of two null-terminated paths of hidraw device
    nodes for interface 0 and 1 respectively or NULL in which case
    proper nodes are searched with udev.
 
@@ -216,13 +279,11 @@ enum m210_err m210_open(struct m210 *m210, char** hidraw_paths);
 /**
    Close the M210 device connection.
 
-   Return values:
+   \retval err_ok success
 
-   - err_ok - success
+   \retval err_sys system call failed and errno is set appropriately
 
-   - err_sys - system call failed and errno is set appropriately
-
-   @m210 an object represeting the M210 device.
+   \param m210 an object represeting the M210 device.
 
 */
 enum m210_err m210_close(struct m210 *m210);
@@ -230,17 +291,15 @@ enum m210_err m210_close(struct m210 *m210);
 /**
    Return information about the M210 device.
 
-   Return values:
+   \retval err_ok success
 
-   - err_ok - success
+   \retval err_sys system call failed and errno is set appropriately
 
-   - err_sys - system call failed and errno is set appropriately
+   \retval err_badmsg device sent unexpected message
 
-   - err_badmsg - device sent unexpected message
+   \param m210 an object represeting the M210 device.
 
-   @m210 an object represeting the M210 device.
-
-   @info an address where the info will be stored.
+   \param info an address where the info will be stored.
 
 */
 enum m210_err m210_get_info(const struct m210 *m210, struct m210_info *info);
@@ -250,13 +309,13 @@ enum m210_err m210_get_info(const struct m210 *m210, struct m210_info *info);
 
    Return values:
 
-   - err_ok - success
+   \retval err_ok success
 
-   - err_sys - system call failed and errno is set appropriately
+   \retval err_sys system call failed and errno is set appropriately
 
-   - err_badmsg - device sent unexpected message
+   \retval err_badmsg device sent unexpected message
 
-   @m210 an object represeting the M210 device.
+   \param m210 an object represeting the M210 device.
 
 */
 enum m210_err m210_delete_notes(const struct m210 *m210);
@@ -275,17 +334,15 @@ enum m210_err m210_delete_notes(const struct m210 *m210);
       * A 32bit integer can address 2**32 different bytes which is way more
         than maximum number of bytes in m210 memory.
 
-   Return values:
+   \retval err_ok success
 
-   - err_ok - success
+   \retval err_sys system call failed and errno is set appropriately
 
-   - err_sys - system call failed and errno is set appropriately
+   \retval err_badmsg device sent unexpected message
 
-   - err_badmsg - device sent unexpected message
+   \param m210 an object represeting the M210 device.
 
-   @m210 an object represeting the M210 device.
-
-   @size an address where the size will be stored.
+   \param size an address where the size will be stored.
 
 */
 enum m210_err m210_get_notes_size(const struct m210 *m210, uint32_t *size);
@@ -297,28 +354,26 @@ enum m210_err m210_get_notes_size(const struct m210 *m210, uint32_t *size);
    notes.
 
    Note stream:
-
+   \verbatim
             note1          ...          noteN
    +----------------------+    +----------------------+
    | 14      4         4  |    | 14      4         4  |
     header data1 ... dataN      header data1 ... dataN
-
-   struct m210_note_header and struct m210_note_data are defined to
+   \endverbatim
+   m210_note_header and m210_note_data are defined to
    represent header and data block respectively. Data block can
    represent a position or a pen up -event. m210_note_data_is_pen_up()
    can be used to determine if a data block represents the latter.
 
-   Return values:
+   \retval err_ok success
 
-   - err_ok - success
+   \retval err_sys system call failed and errno is set appropriately
 
-   - err_sys - system call failed and errno is set appropriately
+   \retval err_badmsg device sent unexpected message
 
-   - err_badmsg - device sent unexpected message
+   \param m210 an object represeting the M210 device.
 
-   @m210 an object represeting the M210 device.
-
-   @stream a writable destination stream.
+   \param stream a writable destination stream.
 
  */
 enum m210_err m210_fwrite_notes(const struct m210 *m210, FILE *stream);
