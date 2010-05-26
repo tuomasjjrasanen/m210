@@ -1,6 +1,6 @@
 AC_INIT(
         [libm210],
-        [0.1],
+        [0.2],
         [tuos@codegrove.org],
         [libm210],
         [http://codegrove.org/libm210/])
