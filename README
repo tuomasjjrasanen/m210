@@ -16,18 +16,18 @@ General information
 - **Author**: Tuomas Räsänen (tuos) <tuos@codegrove.org>
 - **Homepage**: http://codegrove.org/m210/
 - **License**: GPLv3+ (see COPYING for details)
-- **Version**: 0.2
+- **Version**: 0.1
 
 Build requirements
 ==================
 
-- `libm210 <https://codegrove.org/libm210/>`_
+- `libm210 0.2 <http://codegrove.org/libm210/0.2/>`_
 
 Downloading
 ===========
 
 - Ubuntu package: https://launchpad.net/~tuos/+archive/codegrove
-- Tarball is available at: http://codegrove.org/m210/releases/m210-0.2.tar.gz
+- Tarball is available at: http://codegrove.org/m210/releases/m210-0.1.tar.gz
 - Tarballs of every release at: http://codegrove.org/m210/releases/
 - Latest sources from public git-repository: http://github.com/tuos/m210/ ::
 
