@@ -23,16 +23,6 @@
 #include <stdint.h>
 
 /**
-   Mode values.
- */
-enum m210_mode {
-    /**
-       Mode value when M210 is connected to host via USB.
-     */
-    tablet = 0x02
-};
-
-/**
    An object representing miscellaneous information of a M210 device.
  */
 struct m210_info {
@@ -157,19 +147,19 @@ enum m210_note_state {
     /**
        Note does not contain any data.
      */
-    empty = 0x9f,
+    note_state_empty = 0x9f,
     /**
        Note is contains data but is not closed yet.
      */
-    unfinished = 0x5f,
+    note_state_unfinished = 0x5f,
     /**
        Note contains data and is close by a user.
      */
-    finished_by_user = 0x3f,
+    note_state_finished_by_user = 0x3f,
     /**
        Note contains data and is closed programmatically.
      */
-    finished_by_software = 0x1f
+    note_state_finished_by_software = 0x1f
 };
 
 /**
@@ -376,36 +366,81 @@ enum m210_err m210_get_notes_size(const struct m210 *m210, uint32_t *size);
    \param stream a writable destination stream.
 
  */
-enum m210_err m210_fwrite_notes(const struct m210 *m210, FILE *stream);
+enum m210_err m210_fwrite_note_data(const struct m210 *m210, FILE *stream);
+
+enum m210_mode_indicator {
+    mode_indicator_tablet=0x01,
+    mode_indicator_mouse=0x02,
+};
 
 enum m210_mode {
-    basic=1,
-    tablet=2
+    mode_mouse=0x01,
+    mode_tablet=0x02
 };
 
-enum m210_led {
-    pen=1,
-    mouse=2
-};
-
-enum m210_err m210_set_mode(const struct m210 *m210, enum m210_led led,
+enum m210_err m210_set_mode(const struct m210 *m210,
+                            enum m210_mode_indicator mode_indicator,
                             enum m210_mode mode);
 
 enum m210_orientation {
-    top,
-    left,
-    right
+    orientation_top=0x00,
+    orientation_left=0x01,
+    orientation_right=0x02
 };
 
-#define M210_SCALE_MAX 9
+enum m210_area_size {
+    area_size_min=0x00,
+    area_size0=0x00,
+    area_size1=0x01,
+    area_size2=0x02,
+    area_size3=0x03,
+    area_size4=0x04,
+    area_size5=0x05,
+    area_size6=0x06,
+    area_size7=0x07,
+    area_size8=0x08,
+    area_size9=0x09,
+    area_size_max=0x09
+};
 
-enum m210_err m210_config_tablet(const struct m210 *m210, uint8_t scale,
-                                 enum m210_orientation orientation);
+enum m210_err m210_config_tablet_mode(const struct m210 *m210,
+                                      enum m210_area_size area_size,
+                                      enum m210_orientation orientation);
 
-/* struct m210_pen_data { */
+enum m210_tablet_button {
+    tablet_button_none=0x10,
+    tablet_button_pressed=0x11
+};
 
-/* }; */
+struct m210_tablet_data {
+    uint8_t x[2];
+    uint8_t y[2];
+    uint8_t button;
+    uint8_t pressure[2];
+} __attribute__((packed));
 
-enum m210_err m210_fwrite_tablet(const struct m210 *m210, FILE *stream);
+enum m210_err m210_fwrite_tablet_data(const struct m210 *m210, FILE *stream);
+
+enum m210_mouse_battery {
+    battery_unknown=0x40,
+    battery_low=0x41,
+    battery_high=0x42
+};
+
+enum m210_mouse_button {
+    mouse_button_none=0x08,
+    mouse_button_tip=0x01,
+    mouse_button_switch=0x02,
+    mouse_button_both=0x03
+};
+
+struct m210_mouse_data {
+    uint8_t battery;
+    uint8_t button;
+    uint8_t x[2];
+    uint8_t y[2];
+} __attribute__((packed));
+
+enum m210_err m210_fwrite_mouse_data(const struct m210 *m210, FILE *stream);
 
 #endif /* M210_H */
