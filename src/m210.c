@@ -733,6 +733,13 @@ enum m210_err m210_fwrite_tablet_data(const struct m210 *m210, FILE *stream)
             return err;
         if (memcmp(rpt, sig, sizeof(sig)) != 0)
             return err_badmsg;
+        switch (rpt[6]) {
+        case tablet_button_released:
+        case tablet_button_pressed:
+            break;
+        default:
+            return err_badmsg;
+        }
         if (fwrite(rpt+sizeof(sig), sizeof(rpt)-sizeof(sig), 1, stream) != 1)
             return err_sys;
         if (fflush(stream))
