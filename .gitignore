@@ -18,3 +18,5 @@ stamp-h1
 src/m210-delete-notes
 src/m210-info
 src/m210-download-notes
+src/m210-mouse-mode
+src/m210-tablet-mode

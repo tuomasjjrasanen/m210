@@ -1,6 +1,6 @@
 AC_INIT(
         [m210],
-        [0.1],
+        [0.2],
         [tuos@codegrove.org],
         [m210],
         [http://codegrove.org/m210/])

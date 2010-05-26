@@ -68,9 +68,9 @@ void parse_args(int argc, char **argv)
                    "Download stored notes\n"
                    "\n"
                    "Options:\n"
-                   " -o, --outfile              destination file\n"
-                   " -h, --help                 display this help and exit\n"
-                   " -V, --version              output version infromation and exit\n"
+                   " -o, --outfile=FILE  destination file, default: -\n"
+                   " -h, --help          display this help and exit\n"
+                   " -V, --version       output version infromation and exit\n"
                    "\n"
                    "Report %s bugs to <%s>\n"
                    "Home page: <%s>\n",
@@ -121,9 +121,9 @@ int main(int argc, char **argv)
         goto err;
     }
 
-    err = m210_fwrite_notes(&m210, output_stream);
+    err = m210_fwrite_note_data(&m210, output_stream);
     if (err) {
-        m210_err_printf(err, "m210_fwrite_notes");
+        m210_err_printf(err, "m210_fwrite_note_data");
         goto err;
     }
 

@@ -20,10 +20,13 @@
 #include <stdlib.h>
 #include <err.h>
 #include <m210.h>
+#include <string.h>
 
 #include "config.h"
 
 extern char *program_invocation_name;
+
+char *outfile = NULL;
 
 void help_and_exit(void)
 {
@@ -35,6 +38,7 @@ void help_and_exit(void)
 void parse_args(int argc, char **argv)
 {
     const struct option options[] = {
+        {"stream", optional_argument, NULL, 's'},
         {"version", no_argument, NULL, 'V'},
         {"help", no_argument, NULL, 'h'},
         {0, 0, 0, 0}
@@ -43,12 +47,15 @@ void parse_args(int argc, char **argv)
     while (1) {
         int option;
 
-        option = getopt_long(argc, argv, "Vh", options, NULL);
+        option = getopt_long(argc, argv, "s::Vh", options, NULL);
 
         if (option == -1)
             break;
 
         switch (option) {
+        case 's':
+            outfile = optarg ? optarg : "-";
+            break;
         case 'V':
             printf("%s %s\n"
                    "Copyright © 2010 %s\n"
@@ -59,9 +66,10 @@ void parse_args(int argc, char **argv)
             exit(EXIT_SUCCESS);
         case 'h':
             printf("Usage: %s [OPTION]...\n"
-                   "Delete stored notes\n"
+                   "Set M210 device to operate in mouse mode\n"
                    "\n"
                    "Options:\n"
+                   " -s, --stream=FILE  stream tablet data to a file, default: -\n"
                    " -h, --help     display this help and exit\n"
                    " -V, --version  output version infromation and exit\n"
                    "\n"
@@ -91,6 +99,8 @@ int main(int argc, char **argv)
     struct m210 m210;
     enum m210_err err;
     int exitval = EXIT_FAILURE;
+    FILE *stream;
+    int stream_opened = 0;
 
     parse_args(argc, argv);
 
@@ -100,15 +110,35 @@ int main(int argc, char **argv)
         goto err;
     }
 
-    err = m210_delete_notes(&m210);
+    err = m210_set_mode(&m210, mode_indicator_mouse, mode_mouse);
     if (err) {
-        m210_err_printf(err, "m210_delete_notes");
+        m210_err_printf(err, "m210_set_mode");
         goto err;
+    }
+
+    if (outfile != NULL) {
+        if (strncmp(outfile, "-", 2) == 0) {
+            stream = stdout;
+        } else {
+            stream = fopen(outfile, "w");
+            if (stream == NULL) {
+                perror("fopen");
+                goto err;
+            }
+            stream_opened = 1;
+        }
+        err = m210_fwrite_mouse_data(&m210, stream);
+        if (err) {
+            m210_err_printf(err, "m210_fwrite_mouse_data");
+            goto err;
+        }
     }
 
     exitval = EXIT_SUCCESS;
 
   err:
+    if (stream_opened)
+        fclose(stream);
     m210_close(&m210);
     return exitval;
 }
