@@ -29,7 +29,7 @@
 
 #include "m210.h"
 
-#define M210_READ_INTERVAL 100000 /* Microseconds. */
+#define M210_READ_INTERVAL 1000000 /* Microseconds. */
 
 #define M210_PACKET_DATA_LEN 62
 
@@ -93,10 +93,12 @@ static enum m210_err m210_read(const struct m210 *m210, int interface,
     uint8_t *buf;
     enum m210_err err;
 
-    buf = (uint8_t *) calloc(max_response_size, sizeof(uint8_t));
+    buf = (uint8_t *) malloc(max_response_size * sizeof(uint8_t));
     if (buf == NULL)
         return err_sys;
 
+  again:
+    memset(buf, 0, max_response_size);
     memset(&select_interval, 0, sizeof(struct timeval));
     FD_ZERO(&readfds);
     FD_SET(fd, &readfds);
@@ -117,6 +119,16 @@ static enum m210_err m210_read(const struct m210 *m210, int interface,
     if (read(fd, buf, max_response_size) == -1) {
         err = err_sys;
         goto err;
+    }
+
+    if (interface == 0) {
+        uint8_t mode_button_rpt[64];
+        memset(mode_button_rpt, 0, 64);
+        mode_button_rpt[0] = 0x80;
+        mode_button_rpt[1] = 0xb5;
+        if (memcmp(mode_button_rpt, buf, 64) == 0) {
+            goto again;
+        }
     }
 
     memset(response, 0, response_size);
