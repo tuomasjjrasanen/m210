@@ -20,6 +20,7 @@
 #include <stdlib.h>
 #include <err.h>
 #include <m210.h>
+#include <string.h>
 
 #include "config.h"
 
@@ -32,9 +33,16 @@ void help_and_exit(void)
     exit(EXIT_FAILURE);
 }
 
+enum m210_orientation orientation = orientation_top;
+enum m210_area_size area_size = area_size_max;
+char *outfile = NULL;
+
 void parse_args(int argc, char **argv)
 {
     const struct option options[] = {
+        {"area-size", required_argument, NULL, 'a'},
+        {"orientation", required_argument, NULL, 'o'},
+        {"stream", optional_argument, NULL, 's'},
         {"version", no_argument, NULL, 'V'},
         {"help", no_argument, NULL, 'h'},
         {0, 0, 0, 0}
@@ -43,12 +51,30 @@ void parse_args(int argc, char **argv)
     while (1) {
         int option;
 
-        option = getopt_long(argc, argv, "Vh", options, NULL);
+        option = getopt_long(argc, argv, "a:o:s::Vh", options, NULL);
 
         if (option == -1)
             break;
 
         switch (option) {
+        case 'a':
+            break;
+        case 'o':
+            if (strncmp(optarg, "top", 4) == 0) {
+                orientation = orientation_top;
+            } else if (strncmp(optarg, "left", 5) == 0) {
+                orientation = orientation_left;
+            } else if (strncmp(optarg, "right", 6) == 0) {
+                orientation = orientation_right;
+            } else {
+                fprintf(stderr, "%s: illegal orientation argument\n",
+                        program_invocation_name);
+                help_and_exit();
+            }
+            break;
+        case 's':
+            outfile = optarg ? optarg : "-";
+            break;
         case 'V':
             printf("%s %s\n"
                    "Copyright © 2010 %s\n"
@@ -59,11 +85,14 @@ void parse_args(int argc, char **argv)
             exit(EXIT_SUCCESS);
         case 'h':
             printf("Usage: %s [OPTION]...\n"
-                   "Delete stored notes\n"
+                   "Set M210 device to operate in tablet mode\n"
                    "\n"
                    "Options:\n"
-                   " -h, --help     display this help and exit\n"
-                   " -V, --version  output version infromation and exit\n"
+                   " -a, --area-size=SIZE           set area size, 0-9, default: 9\n"
+                   " -o, --orientation=ORIENTATION  set orientation, {top, left, right}, default: top\n"
+                   " -s, --stream=FILE              stream tablet data to a file, default: -\n"
+                   " -h, --help                     display this help and exit\n"
+                   " -V, --version                  output version infromation and exit\n"
                    "\n"
                    "Report %s bugs to <%s>\n"
                    "Home page: <%s>\n",
@@ -91,6 +120,8 @@ int main(int argc, char **argv)
     struct m210 m210;
     enum m210_err err;
     int exitval = EXIT_FAILURE;
+    FILE *stream;
+    int stream_opened = 0;
 
     parse_args(argc, argv);
 
@@ -100,15 +131,41 @@ int main(int argc, char **argv)
         goto err;
     }
 
-    err = m210_delete_notes(&m210);
+    err = m210_set_mode(&m210, mode_indicator_tablet, mode_tablet);
     if (err) {
-        m210_err_printf(err, "m210_delete_notes");
+        m210_err_printf(err, "m210_set_mode");
         goto err;
+    }
+
+    err = m210_config_tablet_mode(&m210, area_size, orientation);
+    if (err) {
+        m210_err_printf(err, "m210_config_tablet_mode");
+        goto err;
+    }
+
+    if (outfile != NULL) {
+        if (strncmp(outfile, "-", 2) == 0) {
+            stream = stdout;
+        } else {
+            stream = fopen(outfile, "w");
+            if (stream == NULL) {
+                perror("fopen");
+                goto err;
+            }
+            stream_opened = 1;
+        }
+        err = m210_fwrite_tablet_data(&m210, stream);
+        if (err) {
+            m210_err_printf(err, "m210_fwrite_tablet_data");
+            goto err;
+        }
     }
 
     exitval = EXIT_SUCCESS;
 
   err:
+    if (stream_opened)
+        fclose(stream);
     m210_close(&m210);
     return exitval;
 }

@@ -90,13 +90,13 @@ void parse_args(int argc, char **argv)
                    "Output device information\n"
                    "\n"
                    "Options:\n"
-                   " -p, --pad                  output pad version\n"
-                   " -a, --analog               output analog version\n"
-                   " -f, --firmware             output firmware version\n"
-                   " -m, --mode                 output current operating mode\n"
-                   " -s, --size                 output size of stored notes\n"
-                   " -h, --help                 display this help and exit\n"
-                   " -V, --version              output version infromation and exit\n"
+                   " -p, --pad       output pad version\n"
+                   " -a, --analog    output analog version\n"
+                   " -f, --firmware  output firmware version\n"
+                   " -m, --mode      output current operating mode\n"
+                   " -s, --size      output size of stored notes\n"
+                   " -h, --help      display this help and exit\n"
+                   " -V, --version   output version infromation and exit\n"
                    "\n"
                    "Report %s bugs to <%s>\n"
                    "Home page: <%s>\n",
@@ -159,8 +159,20 @@ int main(int argc, char **argv)
         printf("Analog version: %d\n", info.analog_version);
     if (outputs & OUTPUT_PAD)
         printf("Pad version: %d\n", info.pad_version);
-    if (outputs & OUTPUT_MODE)
-        printf("Operating mode: %d\n", info.mode);
+    if (outputs & OUTPUT_MODE) {
+        printf("Operating mode: ");
+        switch (info.mode) {
+        case mode_tablet:
+            printf("tablet\n");
+            break;
+        case mode_mouse:
+            printf("mouse\n");
+            break;
+        default:
+            printf("%d\n", info.mode);
+            break;
+        }
+    }
 
     exitval = EXIT_SUCCESS;
 
