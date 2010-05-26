@@ -407,36 +407,37 @@ enum m210_err m210_config_tablet_mode(const struct m210 *m210,
                                       enum m210_area_size area_size,
                                       enum m210_orientation orientation);
 
-enum m210_tablet_button {
-    tablet_button_released=0x10,
-    tablet_button_pressed=0x11
+enum m210_tablet_pen {
+    pen_released=0x10,
+    pen_pressed=0x11
 };
 
 struct m210_tablet_data {
     uint8_t x[2];
     uint8_t y[2];
-    uint8_t button;
+    uint8_t pen;
     uint8_t pressure[2];
 } __attribute__((packed));
 
 enum m210_err m210_fwrite_tablet_data(const struct m210 *m210, FILE *stream);
 
 enum m210_mouse_battery {
-    mouse_battery_unknown=0x40,
-    mouse_battery_low=0x41,
-    mouse_battery_high=0x42
+    battery_unknown=0x40,
+    battery_low=0x41,
+    battery_high=0x42
 };
 
-enum m210_mouse_button {
-    mouse_button_none=0x08,
-    mouse_button_tip=0x01,
-    mouse_button_switch=0x02,
-    mouse_button_both=0x03
+enum m210_mouse_pen {
+    pen_out_of_range=0x00,
+    pen_hovering=0x08,
+    pen_tip_pressed=0x01,
+    pen_switch_pressed=0x02,
+    pen_both_pressed=0x03
 };
 
 struct m210_mouse_data {
     uint8_t battery;
-    uint8_t button;
+    uint8_t pen;
     uint8_t x[2];
     uint8_t y[2];
 } __attribute__((packed));
