@@ -756,8 +756,25 @@ enum m210_err m210_fwrite_mouse_data(const struct m210 *m210, FILE *stream)
         for (i = 0; i < sizeof(rpt); i = i + 6) {
             if (rpt[i] == 0x00)
                 break; /* No more mouse data in this report. */
-            if (rpt[i] != 0x40)
-                return err_badmsg; /* Mouse data blocks begin with 0x40. */
+            switch (rpt[i]) {
+            case mouse_battery_unknown:
+            case mouse_battery_low:
+            case mouse_battery_high:
+                break;
+            default:
+                /* Unexpected battery state. */
+                return err_badmsg;
+            }
+            switch (rpt[i+1]) {
+            case mouse_button_none:
+            case mouse_button_tip:
+            case mouse_button_switch:
+            case mouse_button_both:
+                break;
+            default:
+                /* Unexpected button state. */
+                return err_badmsg;
+            }
             if (fwrite(rpt+i, 6, 1, stream) != 1)
                 return err_sys;
             if (fflush(stream))
