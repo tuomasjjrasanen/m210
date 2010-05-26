@@ -408,7 +408,7 @@ enum m210_err m210_config_tablet_mode(const struct m210 *m210,
                                       enum m210_orientation orientation);
 
 enum m210_tablet_button {
-    tablet_button_none=0x10,
+    tablet_button_released=0x10,
     tablet_button_pressed=0x11
 };
 
@@ -422,9 +422,9 @@ struct m210_tablet_data {
 enum m210_err m210_fwrite_tablet_data(const struct m210 *m210, FILE *stream);
 
 enum m210_mouse_battery {
-    battery_unknown=0x40,
-    battery_low=0x41,
-    battery_high=0x42
+    mouse_battery_unknown=0x40,
+    mouse_battery_low=0x41,
+    mouse_battery_high=0x42
 };
 
 enum m210_mouse_button {
