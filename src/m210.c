@@ -722,7 +722,7 @@ enum m210_err m210_config_tablet_mode(const struct m210 *m210,
 enum m210_err m210_fwrite_tablet_data(const struct m210 *m210, FILE *stream)
 {
     enum m210_err err;
-    uint8_t rpt[M210_RESPONSE_SIZE_IFACE0];
+    uint8_t rpt[M210_RESPONSE_SIZE_IFACE1];
     uint8_t sig[] = {0x00, 0x08};
 
     memset(&rpt, 0, sizeof(rpt));
@@ -734,8 +734,8 @@ enum m210_err m210_fwrite_tablet_data(const struct m210 *m210, FILE *stream)
         if (memcmp(rpt, sig, sizeof(sig)) != 0)
             return err_badmsg;
         switch (rpt[6]) {
-        case tablet_button_released:
-        case tablet_button_pressed:
+        case pen_released:
+        case pen_pressed:
             break;
         default:
             return err_badmsg;
@@ -751,7 +751,7 @@ enum m210_err m210_fwrite_tablet_data(const struct m210 *m210, FILE *stream)
 enum m210_err m210_fwrite_mouse_data(const struct m210 *m210, FILE *stream)
 {
     enum m210_err err;
-    uint8_t rpt[M210_RESPONSE_SIZE_IFACE1];
+    uint8_t rpt[M210_RESPONSE_SIZE_IFACE0];
     int i;
 
     memset(&rpt, 0, sizeof(rpt));
@@ -764,22 +764,23 @@ enum m210_err m210_fwrite_mouse_data(const struct m210 *m210, FILE *stream)
             if (rpt[i] == 0x00)
                 break; /* No more mouse data in this report. */
             switch (rpt[i]) {
-            case mouse_battery_unknown:
-            case mouse_battery_low:
-            case mouse_battery_high:
+            case battery_unknown:
+            case battery_low:
+            case battery_high:
                 break;
             default:
                 /* Unexpected battery state. */
                 return err_badmsg;
             }
             switch (rpt[i+1]) {
-            case mouse_button_none:
-            case mouse_button_tip:
-            case mouse_button_switch:
-            case mouse_button_both:
+            case pen_out_of_range:
+            case pen_hovering:
+            case pen_tip_pressed:
+            case pen_switch_pressed:
+            case pen_both_pressed:
                 break;
             default:
-                /* Unexpected button state. */
+                /* Unexpected pen state. */
                 return err_badmsg;
             }
             if (fwrite(rpt+i, 6, 1, stream) != 1)
