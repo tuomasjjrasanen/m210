@@ -47,7 +47,7 @@ void parse_args(int argc, char **argv)
     while (1) {
         int option;
 
-        option = getopt_long(argc, argv, "s::Vh", options, NULL);
+        option = getopt_long(argc, argv, "Vh", options, NULL);
 
         if (option == -1)
             break;
@@ -69,7 +69,7 @@ void parse_args(int argc, char **argv)
                    "Set M210 device to operate in mouse mode\n"
                    "\n"
                    "Options:\n"
-                   " -s, --stream=FILE  stream tablet data to a file, default: -\n"
+                   " --stream=FILE  stream tablet data to FILE, default: -\n"
                    " -h, --help     display this help and exit\n"
                    " -V, --version  output version infromation and exit\n"
                    "\n"
