@@ -121,12 +121,30 @@ static enum m210_err m210_read(const struct m210 *m210, int interface,
         goto err;
     }
 
+    /**
+       Ignore mode button data. Otherwise it might mess up
+       then communication sequence.
+
+       TODO: Better communication handling probably based on generic
+       events and their handlers.
+
+       Mode button:
+       \verbatim
+       +-----+-----------+-+-+-+-+-+-+-+-+
+       |Byte#|Description|7|6|5|4|3|2|1|0|
+       +-----+-----------+-+-+-+-+-+-+-+-+
+       |  1  |0x80       |1|0|0|0|0|0|0|0|
+       +-----+-----------+-+-+-+-+-+-+-+-+
+       |  2  |0xB5       |1|0|1|1|0|1|0|1|
+       +-----+-----------+-+-+-+-+-+-+-+-+
+       \endverbatim
+    */
     if (interface == 0) {
-        uint8_t mode_button_rpt[64];
-        memset(mode_button_rpt, 0, 64);
+        uint8_t mode_button_rpt[M210_RESPONSE_SIZE_IFACE0];
+        memset(mode_button_rpt, 0, M210_RESPONSE_SIZE_IFACE0);
         mode_button_rpt[0] = 0x80;
         mode_button_rpt[1] = 0xb5;
-        if (memcmp(mode_button_rpt, buf, 64) == 0) {
+        if (memcmp(mode_button_rpt, buf, M210_RESPONSE_SIZE_IFACE0) == 0) {
             goto again;
         }
     }

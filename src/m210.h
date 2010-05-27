@@ -394,8 +394,21 @@ enum m210_err m210_config_tablet_mode(const struct m210 *m210,
                                       enum m210_orientation orientation);
 
 enum m210_tablet_pen {
+    /**
+       Neither the tip nor the switch is pressed.
+    */
     M210_TABLET_PEN_RELEASED=0x10,
+    /**
+       Either the tip or the switch is pressed or even both.
+    */
     M210_TABLET_PEN_PRESSED=0x11
+};
+
+enum m210_tablet_bound {
+    M210_TABLET_BOUND_X_MIN=0x03e8,
+    M210_TABLET_BOUND_X_MAX=0x2328,
+    M210_TABLET_BOUND_Y_MIN=0x0000,
+    M210_TABLET_BOUND_Y_MAX=0x1770
 };
 
 /**
@@ -430,6 +443,10 @@ enum m210_mouse_battery {
 
 enum m210_mouse_pen {
     M210_MOUSE_PEN_OUT_OF_RANGE=0x00,
+    /**
+       The pen is in the range, hovering and neither the tip nor the
+       switch is pressed.
+     */
     M210_MOUSE_PEN_HOVERING=0x08,
     M210_MOUSE_PEN_TIP_PRESSED=0x01,
     M210_MOUSE_PEN_SWITCH_PRESSED=0x02,
