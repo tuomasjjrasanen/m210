@@ -696,19 +696,9 @@ int m210_err_printf(enum m210_err err, const char *s)
     return 0;
 }
 
-inline uint16_t m210_note_data_get_x(const struct m210_note_data *data)
-{
-    return le16toh(data->x[0] + data->x[1] * 0x100);
-}
-
-inline uint16_t m210_note_data_get_y(const struct m210_note_data *data)
-{
-    return le16toh(data->y[0] + data->y[1] * 0x100);
-}
-
 inline int m210_note_data_is_pen_up(const struct m210_note_data *data)
 {
-    static struct m210_note_data penup = {{0x00, 0x00}, {0x00, 0x80}};
+    static struct m210_note_data penup = {0x0000, htole16(0x0080)};
     return memcmp(data, &penup, sizeof(struct m210_note_data)) == 0;
 }
 
@@ -746,8 +736,8 @@ enum m210_err m210_fwrite_tablet_data(const struct m210 *m210, FILE *stream)
         if (memcmp(rpt, sig, sizeof(sig)) != 0)
             return err_badmsg;
         switch (rpt[6]) {
-        case pen_released:
-        case pen_pressed:
+        case M210_TABLET_PEN_RELEASED:
+        case M210_TABLET_PEN_PRESSED:
             break;
         default:
             return err_badmsg;
@@ -776,20 +766,20 @@ enum m210_err m210_fwrite_mouse_data(const struct m210 *m210, FILE *stream)
             if (rpt[i] == 0x00)
                 break; /* No more mouse data in this report. */
             switch (rpt[i]) {
-            case battery_unknown:
-            case battery_low:
-            case battery_high:
+            case M210_MOUSE_BATTERY_UNKNOWN:
+            case M210_MOUSE_BATTERY_LOW:
+            case M210_MOUSE_BATTERY_HIGH:
                 break;
             default:
                 /* Unexpected battery state. */
                 return err_badmsg;
             }
             switch (rpt[i+1]) {
-            case pen_out_of_range:
-            case pen_hovering:
-            case pen_tip_pressed:
-            case pen_switch_pressed:
-            case pen_both_pressed:
+            case M210_MOUSE_PEN_OUT_OF_RANGE:
+            case M210_MOUSE_PEN_HOVERING:
+            case M210_MOUSE_PEN_TIP_PRESSED:
+            case M210_MOUSE_PEN_SWITCH_PRESSED:
+            case M210_MOUSE_PEN_BOTH_PRESSED:
                 break;
             default:
                 /* Unexpected pen state. */

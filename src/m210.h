@@ -112,26 +112,12 @@ struct m210_note_data {
     /**
        Little endian uint16_t bytes representing x-coordinate.
      */
-    uint8_t x[2];
+    uint16_t x;
     /**
        Little endian uint16_t bytes representing y-coordinate.
      */
-    uint8_t y[2];
+    uint16_t y;
 } __attribute__((packed));
-
-/**
-   Return the value of x in host byte order.
-
-   \param data an address of data block object
- */
-uint16_t m210_note_data_get_x(const struct m210_note_data *data);
-
-/**
-   Return the value of y in host byte order.
-
-   \param data an address of data block object
- */
-uint16_t m210_note_data_get_y(const struct m210_note_data *data);
 
 /**
    Return 1 if the data block represents a pen up-event, 0 otherwise.
@@ -147,19 +133,19 @@ enum m210_note_state {
     /**
        Note does not contain any data.
      */
-    note_state_empty = 0x9f,
+    M210_NOTE_STATE_EMPTY = 0x9f,
     /**
        Note is contains data but is not closed yet.
      */
-    note_state_unfinished = 0x5f,
+    M210_NOTE_STATE_UNFINISHED = 0x5f,
     /**
        Note contains data and is close by a user.
      */
-    note_state_finished_by_user = 0x3f,
+    M210_NOTE_STATE_FINISHED_BY_USER = 0x3f,
     /**
        Note contains data and is closed programmatically.
      */
-    note_state_finished_by_software = 0x1f
+    M210_NOTE_STATE_FINISHED_BY_SOFTWARE = 0x1f
 };
 
 /**
@@ -369,13 +355,13 @@ enum m210_err m210_get_notes_size(const struct m210 *m210, uint32_t *size);
 enum m210_err m210_fwrite_note_data(const struct m210 *m210, FILE *stream);
 
 enum m210_mode_indicator {
-    mode_indicator_tablet=0x01,
-    mode_indicator_mouse=0x02,
+    M210_MODE_INDICATOR_TABLET=0x01,
+    M210_MODE_INDICATOR_MOUSE=0x02,
 };
 
 enum m210_mode {
-    mode_mouse=0x01,
-    mode_tablet=0x02
+    M210_MODE_MOUSE=0x01,
+    M210_MODE_TABLET=0x02
 };
 
 enum m210_err m210_set_mode(const struct m210 *m210,
@@ -383,24 +369,24 @@ enum m210_err m210_set_mode(const struct m210 *m210,
                             enum m210_mode mode);
 
 enum m210_orientation {
-    orientation_top=0x00,
-    orientation_left=0x01,
-    orientation_right=0x02
+    M210_ORIENTATION_TOP=0x00,
+    M210_ORIENTATION_LEFT=0x01,
+    M210_ORIENTATION_RIGHT=0x02
 };
 
 enum m210_area_size {
-    area_size_min=0x00,
-    area_size0=0x00,
-    area_size1=0x01,
-    area_size2=0x02,
-    area_size3=0x03,
-    area_size4=0x04,
-    area_size5=0x05,
-    area_size6=0x06,
-    area_size7=0x07,
-    area_size8=0x08,
-    area_size9=0x09,
-    area_size_max=0x09
+    M210_AREA_SIZE_MIN=0x00,
+    M210_AREA_SIZE0=0x00,
+    M210_AREA_SIZE1=0x01,
+    M210_AREA_SIZE2=0x02,
+    M210_AREA_SIZE3=0x03,
+    M210_AREA_SIZE4=0x04,
+    M210_AREA_SIZE5=0x05,
+    M210_AREA_SIZE6=0x06,
+    M210_AREA_SIZE7=0x07,
+    M210_AREA_SIZE8=0x08,
+    M210_AREA_SIZE9=0x09,
+    M210_AREA_SIZE_MAX=0x09
 };
 
 enum m210_err m210_config_tablet_mode(const struct m210 *m210,
@@ -408,38 +394,68 @@ enum m210_err m210_config_tablet_mode(const struct m210 *m210,
                                       enum m210_orientation orientation);
 
 enum m210_tablet_pen {
-    pen_released=0x10,
-    pen_pressed=0x11
+    M210_TABLET_PEN_RELEASED=0x10,
+    M210_TABLET_PEN_PRESSED=0x11
 };
 
+/**
+   An object representing a pen event in *tablet* mode.
+ */
 struct m210_tablet_data {
-    uint8_t x[2];
-    uint8_t y[2];
+    /**
+       Little endian value representing x coordinate of the pen.
+    */
+    uint16_t x;
+    /**
+       Little endian value representing y coordinate of the pen.
+    */
+    uint16_t y;
+    /**
+       Current pen status, possible values defined by #m210_tablet_pen.
+    */
     uint8_t pen;
-    uint8_t pressure[2];
+    /**
+       Little endian value representing the pressure of the pen's tip.
+    */
+    uint16_t pressure;
 } __attribute__((packed));
 
 enum m210_err m210_fwrite_tablet_data(const struct m210 *m210, FILE *stream);
 
 enum m210_mouse_battery {
-    battery_unknown=0x40,
-    battery_low=0x41,
-    battery_high=0x42
+    M210_MOUSE_BATTERY_UNKNOWN=0x40,
+    M210_MOUSE_BATTERY_LOW=0x41,
+    M210_MOUSE_BATTERY_HIGH=0x42
 };
 
 enum m210_mouse_pen {
-    pen_out_of_range=0x00,
-    pen_hovering=0x08,
-    pen_tip_pressed=0x01,
-    pen_switch_pressed=0x02,
-    pen_both_pressed=0x03
+    M210_MOUSE_PEN_OUT_OF_RANGE=0x00,
+    M210_MOUSE_PEN_HOVERING=0x08,
+    M210_MOUSE_PEN_TIP_PRESSED=0x01,
+    M210_MOUSE_PEN_SWITCH_PRESSED=0x02,
+    M210_MOUSE_PEN_BOTH_PRESSED=0x03,
 };
 
+/**
+   An object representing a pen event in *mouse* mode.
+ */
 struct m210_mouse_data {
+    /**
+       Current battery status, possible values defined by #m210_mouse_battery.
+    */
     uint8_t battery;
+    /**
+       Current pen status, possible values defined by #m210_mouse_pen.
+    */
     uint8_t pen;
-    uint8_t x[2];
-    uint8_t y[2];
+    /**
+       Little endian value representing x coordinate of the pen.
+    */
+    uint16_t x;
+    /**
+       Little endian value representing y coordinate of th pen.
+    */
+    uint16_t y;
 } __attribute__((packed));
 
 enum m210_err m210_fwrite_mouse_data(const struct m210 *m210, FILE *stream);
