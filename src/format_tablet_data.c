@@ -113,9 +113,6 @@ int main(int argc, char **argv)
 
     while (1) {
         struct m210_tablet_data data;
-        uint16_t x;
-        uint16_t y;
-        uint16_t pressure;
 
         if (fread(&data, sizeof(struct m210_tablet_data), 1, stdin) != 1) {
             if (ferror(stdin))
@@ -123,28 +120,23 @@ int main(int argc, char **argv)
             break;
         }
 
-        memcpy(&x, data.x, 2);
-        x = le16toh(x);
-        memcpy(&y, data.y, 2);
-        y = le16toh(y);
-        memcpy(&pressure, data.pressure, 2);
-        pressure = le16toh(pressure);
+        printf("x: %d\n", le16toh(data.x));
+        printf("y: %d\n", le16toh(data.y));
 
-        printf("x: %d\n", x);
-        printf("y: %d\n", y);
         printf("pen: ");
         switch (data.pen) {
-        case pen_released:
+        case M210_TABLET_PEN_RELEASED:
             printf("released\n");
             break;
-        case pen_pressed:
+        case M210_TABLET_PEN_PRESSED:
             printf("pressed\n");
             break;
         default:
             printf("\n");
             break;
         }
-        printf("pressure: %d\n", pressure);
+
+        printf("pressure: %d\n", le16toh(data.pressure));
     }
 
     exitval = EXIT_SUCCESS;

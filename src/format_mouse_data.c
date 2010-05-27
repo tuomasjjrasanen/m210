@@ -113,8 +113,6 @@ int main(int argc, char **argv)
 
     while (1) {
         struct m210_mouse_data data;
-        uint16_t x;
-        uint16_t y;
 
         if (fread(&data, sizeof(struct m210_mouse_data), 1, stdin) != 1) {
             if (ferror(stdin))
@@ -122,42 +120,24 @@ int main(int argc, char **argv)
             break;
         }
 
-        memcpy(&x, data.x, 2);
-        x = le16toh(x);
-        memcpy(&y, data.y, 2);
-        y = le16toh(y);
-
-        printf("battery: ");
-        switch (data.battery) {
-        case battery_unknown:
-            printf("unknown\n");
-            break;
-        case battery_low:
-            printf("low\n");
-            break;
-        case battery_high:
-            printf("high\n");
-            break;
-        default:
-            printf("\n");
-            break;
-        }
+        printf("x: %d\n", le16toh(data.x));
+        printf("y: %d\n", le16toh(data.y));
 
         printf("pen: ");
         switch (data.pen) {
-        case pen_out_of_range:
+        case M210_MOUSE_PEN_OUT_OF_RANGE:
             printf("out of range\n");
             break;
-        case pen_hovering:
+        case M210_MOUSE_PEN_HOVERING:
             printf("hovering\n");
             break;
-        case pen_tip_pressed:
+        case M210_MOUSE_PEN_TIP_PRESSED:
             printf("tip pressed\n");
             break;
-        case pen_switch_pressed:
+        case M210_MOUSE_PEN_SWITCH_PRESSED:
             printf("switch pressed\n");
             break;
-        case pen_both_pressed:
+        case M210_MOUSE_PEN_BOTH_PRESSED:
             printf("tip and switch pressed\n");
             break;
         default:
@@ -165,8 +145,22 @@ int main(int argc, char **argv)
             break;
         }
 
-        printf("x: %d\n", x);
-        printf("y: %d\n", y);
+        printf("battery: ");
+        switch (data.battery) {
+        case M210_MOUSE_BATTERY_UNKNOWN:
+            printf("unknown\n");
+            break;
+        case M210_MOUSE_BATTERY_LOW:
+            printf("low\n");
+            break;
+        case M210_MOUSE_BATTERY_HIGH:
+            printf("high\n");
+            break;
+        default:
+            printf("\n");
+            break;
+        }
+
     }
 
     exitval = EXIT_SUCCESS;

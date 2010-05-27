@@ -162,10 +162,10 @@ int main(int argc, char **argv)
     if (outputs & OUTPUT_MODE) {
         printf("Operating mode: ");
         switch (info.mode) {
-        case mode_tablet:
+        case M210_MODE_TABLET:
             printf("tablet\n");
             break;
-        case mode_mouse:
+        case M210_MODE_MOUSE:
             printf("mouse\n");
             break;
         default:

@@ -33,8 +33,8 @@ void help_and_exit(void)
     exit(EXIT_FAILURE);
 }
 
-enum m210_orientation orientation = orientation_top;
-enum m210_area_size area_size = area_size_max;
+enum m210_orientation orientation = M210_ORIENTATION_TOP;
+enum m210_area_size area_size = M210_AREA_SIZE_MAX;
 char *outfile = NULL;
 
 void parse_args(int argc, char **argv)
@@ -61,11 +61,11 @@ void parse_args(int argc, char **argv)
             break;
         case 'o':
             if (strncmp(optarg, "top", 4) == 0) {
-                orientation = orientation_top;
+                orientation = M210_ORIENTATION_TOP;
             } else if (strncmp(optarg, "left", 5) == 0) {
-                orientation = orientation_left;
+                orientation = M210_ORIENTATION_LEFT;
             } else if (strncmp(optarg, "right", 6) == 0) {
-                orientation = orientation_right;
+                orientation = M210_ORIENTATION_RIGHT;
             } else {
                 fprintf(stderr, "%s: illegal orientation argument\n",
                         program_invocation_name);
@@ -131,7 +131,7 @@ int main(int argc, char **argv)
         goto err;
     }
 
-    err = m210_set_mode(&m210, mode_indicator_tablet, mode_tablet);
+    err = m210_set_mode(&m210, M210_MODE_INDICATOR_TABLET, M210_MODE_TABLET);
     if (err) {
         m210_err_printf(err, "m210_set_mode");
         goto err;

@@ -110,7 +110,7 @@ int main(int argc, char **argv)
         goto err;
     }
 
-    err = m210_set_mode(&m210, mode_indicator_mouse, mode_mouse);
+    err = m210_set_mode(&m210, M210_MODE_INDICATOR_MOUSE, M210_MODE_MOUSE);
     if (err) {
         m210_err_printf(err, "m210_set_mode");
         goto err;
