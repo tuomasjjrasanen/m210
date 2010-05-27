@@ -40,12 +40,12 @@ struct m210_info {
    semantics.
  */
 enum m210_err {
-    err_ok,
-    err_sys,
-    err_baddev,
-    err_nodev,
-    err_badmsg,
-    err_timeout
+    M210_ERR_OK,
+    M210_ERR_SYS,
+    M210_ERR_BADDEV,
+    M210_ERR_NODEV,
+    M210_ERR_BADMSG,
+    M210_ERR_TIMEOUT
 };
 
 /**

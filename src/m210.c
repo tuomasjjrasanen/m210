@@ -57,7 +57,7 @@ static enum m210_err m210_write(const struct m210 *m210,
 
     request = (uint8_t *) malloc(request_size);
     if (request == NULL)
-        return err_sys;
+        return M210_ERR_SYS;
 
     request[0] = 0x00;     /* Without this, response is not sent. Why?? */
     request[1] = 0x02;     /* report id */
@@ -68,11 +68,11 @@ static enum m210_err m210_write(const struct m210 *m210,
 
     /* Send request to the interface 0. */
     if (write(m210->fds[0], request, request_size) == -1) {
-        err = err_sys;
+        err = M210_ERR_SYS;
         goto err;
     }
 
-    err = err_ok;
+    err = M210_ERR_OK;
   err:
     free(request);
     return err;
@@ -95,7 +95,7 @@ static enum m210_err m210_read(const struct m210 *m210, int interface,
 
     buf = (uint8_t *) malloc(max_response_size * sizeof(uint8_t));
     if (buf == NULL)
-        return err_sys;
+        return M210_ERR_SYS;
 
   again:
     memset(buf, 0, max_response_size);
@@ -107,17 +107,17 @@ static enum m210_err m210_read(const struct m210 *m210, int interface,
 
     switch (select(fd + 1, &readfds, NULL, NULL, &select_interval)) {
     case 0:
-        err = err_timeout;
+        err = M210_ERR_TIMEOUT;
         goto err;
     case -1:
-        err = err_sys;
+        err = M210_ERR_SYS;
         goto err;
     default:
         break;
     }
 
     if (read(fd, buf, max_response_size) == -1) {
-        err = err_sys;
+        err = M210_ERR_SYS;
         goto err;
     }
 
@@ -137,7 +137,7 @@ static enum m210_err m210_read(const struct m210 *m210, int interface,
     else
         memcpy(response, buf, response_size);
 
-    err = err_ok;
+    err = M210_ERR_OK;
   err:
     free(buf);
     return err;
@@ -146,7 +146,7 @@ static enum m210_err m210_read(const struct m210 *m210, int interface,
 static enum m210_err m210_find_hidraw_devnode(uint8_t *found, int iface,
                                               char *path, size_t path_size)
 {
-    int err = err_sys;
+    int err = M210_ERR_SYS;
     struct udev_list_entry *list_entry = NULL;
     struct udev_enumerate *enumerate = NULL;
     struct udev *udev = NULL;
@@ -186,7 +186,7 @@ static enum m210_err m210_find_hidraw_devnode(uint8_t *found, int iface,
         if (vendor == DEVINFO_M210.vendor
             && product == DEVINFO_M210.product
             && iface == ifn) {
-            err = err_ok;
+            err = M210_ERR_OK;
             *found = 1;
             strncpy(path, devnode, path_size);
             udev_device_unref(dev);
@@ -195,7 +195,7 @@ static enum m210_err m210_find_hidraw_devnode(uint8_t *found, int iface,
         list_entry = udev_list_entry_get_next(list_entry);
         udev_device_unref(dev);
     }
-    err = err_ok;
+    err = M210_ERR_OK;
     *found = 0;
   out:
     if (enumerate)
@@ -227,7 +227,7 @@ enum m210_err m210_get_info(const struct m210 *m210, struct m210_info *info)
     uint8_t resp[11];
 
     while (1) {
-        enum m210_err err = err_sys;
+        enum m210_err err = M210_ERR_SYS;
 
         memset(&resp, 0, sizeof(resp));
 
@@ -236,9 +236,9 @@ enum m210_err m210_get_info(const struct m210 *m210, struct m210_info *info)
             return err;
 
         err = m210_read(m210, 0, &resp, sizeof(resp));
-        if (err == err_timeout)
+        if (err == M210_ERR_TIMEOUT)
             continue;
-        else if (err == err_ok)
+        else if (err == M210_ERR_OK)
             break;
         else
             return err;
@@ -249,7 +249,7 @@ enum m210_err m210_get_info(const struct m210 *m210, struct m210_info *info)
         || resp[1] != 0xa9
         || resp[2] != 0x28
         || resp[9] != 0x0e)
-        return err_badmsg;
+        return M210_ERR_BADMSG;
 
     if (info != NULL) {
         /* Fill in only if caller is interested in the info. */
@@ -267,7 +267,7 @@ enum m210_err m210_get_info(const struct m210 *m210, struct m210_info *info)
         info->mode = resp[10];
     }
 
-    return err_ok;
+    return M210_ERR_OK;
 }
 
 static enum m210_err m210_wait_ready(const struct m210 *m210)
@@ -301,7 +301,7 @@ static enum m210_err m210_reject_and_wait(const struct m210 *m210)
 
 static enum m210_err m210_open_from_hidraw_paths(struct m210 *m210, char **hidraw_paths)
 {
-    int err = err_sys;
+    int err = M210_ERR_SYS;
     int i;
     int original_errno;
 
@@ -323,14 +323,14 @@ static enum m210_err m210_open_from_hidraw_paths(struct m210 *m210, char **hidra
 
         if (memcmp(&devinfo, &DEVINFO_M210,
                    sizeof(struct hidraw_devinfo)) != 0) {
-            err = err_baddev;
+            err = M210_ERR_BADDEV;
             goto err;
         }
 
         m210->fds[i] = fd;
     }
 
-    return err_ok;
+    return M210_ERR_OK;
 
   err:
     original_errno = errno;
@@ -347,21 +347,21 @@ enum m210_err m210_open(struct m210 *m210, char** hidraw_paths)
         char iface1_path[PATH_MAX];
         char *paths[M210_USB_INTERFACE_COUNT] = {iface0_path, iface1_path};
         for (i = 0; i < M210_USB_INTERFACE_COUNT; ++i) {
-            enum m210_err err = err_sys;
+            enum m210_err err = M210_ERR_SYS;
             uint8_t found = 0;
 
             memset(paths[i], 0, PATH_MAX);
 
             err = m210_find_hidraw_devnode(&found, i, paths[i], PATH_MAX);
             switch (err) {
-            case err_ok:
+            case M210_ERR_OK:
                 break;
             default:
                 return err;
             }
 
             if (!found)
-                return err_nodev;
+                return M210_ERR_NODEV;
         }
         return m210_open_from_hidraw_paths(m210, paths);
     }
@@ -375,11 +375,11 @@ enum m210_err m210_close(struct m210 *m210)
     for (i = 0; i < M210_USB_INTERFACE_COUNT; ++i) {
         if (m210->fds[i] != -1) {
             if (close(m210->fds[i]) == -1)
-                return err_sys;
+                return M210_ERR_SYS;
             m210->fds[i] = -1;
         }
     }
-    return err_ok;
+    return M210_ERR_OK;
 }
 
 enum m210_err m210_delete_notes(const struct m210 *m210)
@@ -443,14 +443,14 @@ static enum m210_err m210_upload_begin(const struct m210 *m210,
 
     err = m210_read(m210, 0, resp, sizeof(resp));
     switch (err) {
-    case err_timeout:
+    case M210_ERR_TIMEOUT:
         /*
           It seems, that a M210 device with zero notes does not send
           any response.
         */
         *packetc_ptr = 0;
-        return err_ok;
-    case err_ok:
+        return M210_ERR_OK;
+    case M210_ERR_OK:
         break;
     default:
         goto err;
@@ -459,7 +459,7 @@ static enum m210_err m210_upload_begin(const struct m210 *m210,
     /* Check that the packet we received is correct. */
     if (memcmp(resp, sig1, sizeof(sig1))
         || memcmp(resp + sizeof(sig1) + 2, sig2, sizeof(sig2))) {
-        err = err_badmsg;
+        err = M210_ERR_BADMSG;
         goto err;
     }
 
@@ -467,7 +467,7 @@ static enum m210_err m210_upload_begin(const struct m210 *m210,
     memcpy(packetc_ptr, resp + sizeof(sig1), 2);
     *packetc_ptr = be16toh(*packetc_ptr);
 
-    return err_ok;
+    return M210_ERR_OK;
 
   err:
     /* Try to leave the device as it was before the error. */
@@ -505,7 +505,7 @@ static enum m210_err m210_read_note_data_packet(const struct m210 *m210,
 
     packet->num = be16toh(packet->num);
 
-    return err_ok;
+    return M210_ERR_OK;
 }
 
 enum m210_err m210_get_notes_size(const struct m210 *m210, uint32_t *size)
@@ -543,7 +543,7 @@ enum m210_err m210_fwrite_note_data(const struct m210 *m210, FILE *f)
         original_errno = errno;
         m210_reject_and_wait(m210);
         errno = original_errno;
-        return err_sys;
+        return M210_ERR_SYS;
     }
 
     err = m210_accept(m210);
@@ -556,7 +556,7 @@ enum m210_err m210_fwrite_note_data(const struct m210 *m210, FILE *f)
 
         err = m210_read_note_data_packet(m210, &packet);
         if (err) {
-            if (err == err_timeout) {
+            if (err == M210_ERR_TIMEOUT) {
                 /*
                   Timeout because there is not any packets left to
                   read. However, the M210 has promised to send more,
@@ -568,7 +568,7 @@ enum m210_err m210_fwrite_note_data(const struct m210 *m210, FILE *f)
                     uint16_t lost_packet_num = j + 1;
                     lost_packet_numv[lost_packet_numc++] = lost_packet_num;
                 }
-                err = err_ok; /* This error has been handled. */
+                err = M210_ERR_OK; /* This error has been handled. */
                 goto resend;
             } else {
                 goto err;
@@ -580,7 +580,7 @@ enum m210_err m210_fwrite_note_data(const struct m210 *m210, FILE *f)
 
         if (!lost_packet_numc) {
             if (fwrite(packet.data, sizeof(packet.data), 1, f) != 1) {
-                err = err_sys;
+                err = M210_ERR_SYS;
                 goto err;
             }
         }
@@ -610,7 +610,7 @@ enum m210_err m210_fwrite_note_data(const struct m210 *m210, FILE *f)
 
         err = m210_read_note_data_packet(m210, &packet);
         if (err) {
-            if (err == err_timeout)
+            if (err == M210_ERR_TIMEOUT)
                 /*
                   Request resend as many times as needed to get the
                   expected packet. The M210 device has made a promise
@@ -624,7 +624,7 @@ enum m210_err m210_fwrite_note_data(const struct m210 *m210, FILE *f)
         if (packet.num == lost_packet_numv[0]) {
             lost_packet_numv[0] = lost_packet_numv[--lost_packet_numc];
             if (fwrite(packet.data, sizeof(packet.data), 1, f) != 1) {
-                err = err_sys;
+                err = M210_ERR_SYS;
                 goto err;
             }
         }
@@ -685,7 +685,7 @@ int m210_err_printf(enum m210_err err, const char *s)
     else
         snprintf(errstr, total_len, "%s: %s: %s", program_invocation_name, s, m210_errstr);
 
-    if (err == err_sys) {
+    if (err == M210_ERR_SYS) {
         errno = original_errno;
         perror(errstr);
     } else {
@@ -734,20 +734,20 @@ enum m210_err m210_fwrite_tablet_data(const struct m210 *m210, FILE *stream)
         if (err)
             return err;
         if (memcmp(rpt, sig, sizeof(sig)) != 0)
-            return err_badmsg;
+            return M210_ERR_BADMSG;
         switch (rpt[6]) {
         case M210_TABLET_PEN_RELEASED:
         case M210_TABLET_PEN_PRESSED:
             break;
         default:
-            return err_badmsg;
+            return M210_ERR_BADMSG;
         }
         if (fwrite(rpt+sizeof(sig), sizeof(rpt)-sizeof(sig), 1, stream) != 1)
-            return err_sys;
+            return M210_ERR_SYS;
         if (fflush(stream))
-            return err_sys;
+            return M210_ERR_SYS;
     }
-    return err_ok;
+    return M210_ERR_OK;
 }
 
 enum m210_err m210_fwrite_mouse_data(const struct m210 *m210, FILE *stream)
@@ -772,7 +772,7 @@ enum m210_err m210_fwrite_mouse_data(const struct m210 *m210, FILE *stream)
                 break;
             default:
                 /* Unexpected battery state. */
-                return err_badmsg;
+                return M210_ERR_BADMSG;
             }
             switch (rpt[i+1]) {
             case M210_MOUSE_PEN_OUT_OF_RANGE:
@@ -783,13 +783,13 @@ enum m210_err m210_fwrite_mouse_data(const struct m210 *m210, FILE *stream)
                 break;
             default:
                 /* Unexpected pen state. */
-                return err_badmsg;
+                return M210_ERR_BADMSG;
             }
             if (fwrite(rpt+i, 6, 1, stream) != 1)
-                return err_sys;
+                return M210_ERR_SYS;
             if (fflush(stream))
-                return err_sys;
+                return M210_ERR_SYS;
         }
     }
-    return err_ok;
+    return M210_ERR_OK;
 }
