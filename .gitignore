@@ -15,10 +15,10 @@ src/Makefile.in
 stamp-h1
 *~
 *.o
-src/m210-delete-notes
+src/m210-erase
 src/m210-info
-src/m210-download-notes
-src/m210-mouse-mode
-src/m210-tablet-mode
+src/m210-download
+src/m210-mouse
+src/m210-tablet
 src/m210-format-mouse-data
 src/m210-format-tablet-data
