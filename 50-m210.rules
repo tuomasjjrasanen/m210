@@ -1,2 +1,2 @@
-ACTION=="add|change", SUBSYSTEMS=="usb", DRIVERS=="usb", ATTRS{idVendor}=="0e20", ATTRS{idProduct}=="0101"
-SUBSYSTEM=="hidraw", GROUP="plugdev"
+SUBSYSTEM=="hidraw", ATTRS{idVendor}=="0e20", ATTRS{idProduct}=="0101", GROUP="plugdev", SYMLINK+="m210/%s{busnum}:%s{devnum}/interface%s{../../../bInterfaceNumber}"
+SUBSYSTEM=="input", KERNEL=="event*", ATTRS{idVendor}=="0e20", ATTRS{idProduct}=="0101", GROUP="plugdev", SYMLINK+="m210/%s{busnum}:%s{devnum}/event"
