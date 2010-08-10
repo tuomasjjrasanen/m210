@@ -1,0 +1,375 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd"> <html lang="fi" > <head> <script>function a(d){this.t={};this.tick=function(e,f,b){b=b?b:(new Date).getTime();this.t[e]=[b,f]};this.tick("start",null,d)}var c=new a;window.jstiming={Timer:a,load:c};try{var g=null;if(window.chrome&&window.chrome.csi)g=Math.floor(window.chrome.csi().pageT);if(g==null)if(window.gtbExternal)g=window.gtbExternal.pageT();if(g==null)if(window.external)g=window.external.pageT;if(g)window.jstiming.pt=g}catch(h){};
+</script> <meta content="text/html; charset=utf-8" http-equiv="Content-Type" /> <meta name="robots" content="noarchive>" /> <base target="_top"> <title>M210 Memory management and up...</title> <style type="text/css">
+/* default css */
+table {
+font-size: 1em;
+line-height: inherit;
+border-collapse: collapse;
+}
+tr {
+text-align: left;
+}
+div, address, ol, ul, li, option, select {
+margin-top: 0px;
+margin-bottom: 0px;
+}
+p {
+margin: 0px;
+}
+pre {
+font-family: Courier New;
+white-space: pre-wrap;
+margin:0;
+}
+body {
+margin: 6px;
+padding: 0px;
+font-family: Verdana, sans-serif;
+font-size: 10pt;
+background-color: #ffffff;
+color: #000;
+}
+img {
+-moz-force-broken-image-icon: 1;
+}
+@media screen {
+html.pageview {
+background-color: #f3f3f3 !important;
+overflow-x: hidden;
+overflow-y: scroll;
+}
+body {
+min-height: 1100px;
+counter-reset: __goog_page__;
+}
+* html body {
+height: 1100px;
+}
+/* Prevent repaint errors when scrolling in Safari. This "Star-7" css hack
+targets Safari 3.1, but not WebKit nightlies and presumably Safari 4.
+That's OK because this bug is fixed in WebKit nightlies/Safari 4 :-). */
+html*#wys_frame::before {
+content: '\A0';
+position: fixed;
+overflow: hidden;
+width: 0;
+height: 0;
+top: 0;
+left: 0;
+}
+.pageview body {
+border-top: 1px solid #ccc;
+border-left: 1px solid #ccc;
+border-right: 2px solid #bbb;
+border-bottom: 2px solid #bbb;
+width: 648px !important;
+margin: 15px auto 25px;
+padding: 40px 50px;
+}
+/* IE6 */
+* html {
+overflow-y: scroll;
+}
+* html.pageview body {
+overflow-x: auto;
+}
+.writely-callout-data {
+display: none;
+}
+.writely-footnote-marker {
+background-image: url('images/footnote_doc_icon.gif');
+background-color: transparent;
+background-repeat: no-repeat;
+width: 7px;
+overflow: hidden;
+height: 16px;
+vertical-align: top;
+-moz-user-select: none;
+}
+.editor .writely-footnote-marker {
+cursor: move;
+}
+.writely-footnote-marker-highlight {
+background-position: -15px 0;
+-moz-user-select: text;
+}
+.writely-footnote-hide-selection ::-moz-selection, .writely-footnote-hide-selection::-moz-selection {
+background: transparent;
+}
+.writely-footnote-hide-selection ::selection, .writely-footnote-hide-selection::selection {
+background: transparent;
+}
+.writely-footnote-hide-selection {
+cursor: move;
+}
+/* Comments */
+.writely-comment-yellow {
+background-color: #ffffd7;
+}
+.writely-comment-orange {
+background-color: #ffe3c0;
+}
+.writely-comment-pink {
+background-color: #ffd7ff;
+}
+.writely-comment-green {
+background-color: #d7ffd7;
+}
+.writely-comment-blue {
+background-color: #d7ffff;
+}
+.writely-comment-purple {
+background-color: #eed7ff;
+}
+.br_fix span+br:not(:-moz-last-node) {
+position:relative;
+left: -1ex
+}
+#cb-p-tgt {
+font-size: 8pt;
+padding: .4em;
+background-color: #ddd;
+color: #333;
+}
+#cb-p-tgt-can {
+text-decoration: underline;
+color: #36c;
+font-weight: bold;
+margin-left: 2em;
+}
+#cb-p-tgt .spin {
+width: 16px;
+height: 16px;
+background: url(//ssl.gstatic.com/docs/clipboard/spin_16o.gif) no-repeat;
+}
+}
+h6 { font-size: 8pt }
+h5 { font-size: 8pt }
+h4 { font-size: 10pt }
+h3 { font-size: 12pt }
+h2 { font-size: 14pt }
+h1 { font-size: 18pt }
+blockquote {padding: 10px; border: 1px #DDD dashed }
+.webkit-indent-blockquote { border: none; }
+a img {border: 0}
+.pb {
+border-width: 0;
+page-break-after: always;
+/* We don't want this to be resizeable, so enforce a width and height
+using !important */
+height: 1px !important;
+width: 100% !important;
+}
+.editor .pb {
+border-top: 1px dashed #C0C0C0;
+border-bottom: 1px dashed #C0C0C0;
+}
+div.google_header, div.google_footer {
+position: relative;
+margin-top: 1em;
+margin-bottom: 1em;
+}
+/* Table of contents */
+.editor div.writely-toc {
+background-color: #f3f3f3;
+border: 1px solid #ccc;
+}
+.writely-toc > ol {
+padding-left: 3em;
+font-weight: bold;
+}
+ol.writely-toc-subheading {
+padding-left: 1em;
+font-weight: normal;
+}
+/* IE6 only */
+* html writely-toc ol {
+list-style-position: inside;
+}
+.writely-toc-none {
+list-style-type: none;
+}
+.writely-toc-decimal {
+list-style-type: decimal;
+}
+.writely-toc-upper-alpha {
+list-style-type: upper-alpha;
+}
+.writely-toc-lower-alpha {
+list-style-type: lower-alpha;
+}
+.writely-toc-upper-roman {
+list-style-type: upper-roman;
+}
+.writely-toc-lower-roman {
+list-style-type: lower-roman;
+}
+.writely-toc-disc {
+list-style-type: disc;
+}
+/* Ordered lists converted to numbered lists can preserve ordered types, and
+vice versa. This is confusing, so disallow it */
+ul[type="i"], ul[type="I"], ul[type="1"], ul[type="a"], ul[type="A"] {
+list-style-type: disc;
+}
+ol[type="disc"], ol[type="circle"], ol[type="square"] {
+list-style-type: decimal;
+}
+/* end default css */
+/* custom css */
+/* end custom css */
+/* ui edited css */
+body {
+font-family: Times New Roman;
+font-size: 12.0pt;
+line-height: normal;
+background-color: #ffffff;
+}
+/* end ui edited css */
+/* editor CSS */
+.editor a:visited {color: #551A8B}
+.editor table.zeroBorder {border: 1px dotted gray}
+.editor table.zeroBorder td {border: 1px dotted gray}
+.editor table.zeroBorder th {border: 1px dotted gray}
+.editor div.google_header, .editor div.google_footer {
+border: 2px #DDDDDD dashed;
+position: static;
+width: 100%;
+min-height: 2em;
+}
+.editor .misspell {background-color: yellow}
+.editor .writely-comment {
+font-size: 9pt;
+line-height: 1.4;
+padding: 1px;
+border: 1px dashed #C0C0C0
+}
+/* end editor CSS */
+</style> <style>
+body {
+margin: 0px;
+}
+#doc-contents {
+margin: 6px;
+}
+#google-view-footer {
+clear: both;
+border-top: thin solid;
+padding-top: 0.3em;
+padding-bottom: 0.3em;
+}
+a.google-small-link:link, a.google-small-link:visited {
+color:#112ABB;
+font-family:Arial,Sans-serif;
+font-size:11px !important;
+}
+body, p, div, td {
+direction: inherit;
+}
+@media print {
+#google-view-footer {
+display: none;
+}
+}
+</style> <script>
+function viewOnLoad() {
+if (document.location.href.indexOf('spi=1') != -1) {
+if (navigator.userAgent.toLowerCase().indexOf('msie') != -1) {
+window.print();
+} else {
+window.setTimeout(window.print, 10);
+}
+}
+if (document.location.href.indexOf('hgd=1') != -1) {
+var footer = document.getElementById("google-view-footer");
+if (footer) {
+footer.style.display = 'none';
+}
+}
+}
+</script> </head> <body onload="window.jstiming.load.tick('ol'); window.jstiming.report(window.jstiming.load, null, document.location.protocol == 'https:' ? 'https://gg.google.com/csi' : null);"> <div id="doc-contents"> <p align="center" class="western" style="margin-bottom: 0in"><b><u><font size="4"><font size="5">Memory management and upload protocol</font></font></u></b></p><p class="western" style="margin-bottom: 0in"><br></p><p class="western" style="margin-bottom: 0in">M210 device save notes in flash memory.</p><p class="western" style="margin-bottom: 0in">Each note contain note header and data (XY coordinates, Pen up)</p><p class="western" style="margin-bottom: 0in"><br></p><p class="western" style="margin-bottom: 0in"><font size="4"><u><b>Note structure description:</b></u></font></p><p class="western" style="margin-bottom: 0in"><br></p><p class="western" style="margin-bottom: 0in"><b><u>Note header:</u></b> 14 Bytes.</p><p class="western" style="margin-bottom: 0in"><br></p><table border="1" bordercolor="#000000" cellpadding="8" cellspacing="0" width="616"><colgroup><col width="80"> <col width="118"> <col width="31"> <col width="42"> <col width="68"> <col width="23"> <col width="23"> <col width="23"> <col width="23"> <col width="23"> </colgroup><tbody><tr valign="top"><td width="80"><p class="western">Byte number</p></td><td width="118"><p align="center" class="western">Byte description</p></td><td width="31"><p align="center" class="western">7</p></td><td width="42"><p align="center" class="western">6</p></td><td width="68"><p align="center" class="western">5</p></td><td width="23"><p align="center" class="western">4</p></td><td width="23"><p align="center" class="western">3</p></td><td width="23"><p align="center" class="western">2</p></td><td width="23"><p align="center" class="western">1</p></td><td width="23"><p align="center" class="western">0</p></td></tr><tr valign="top"><td width="80"><p class="western">1</p></td><td rowspan="3" width="118"><p class="western">Pointer to next note address</p></td><td colspan="8" width="368"><p align="center" class="western">Low</p></td></tr><tr valign="top"><td width="80"><p class="western">2</p></td><td colspan="8" width="368"><p class="western"><br></p></td></tr><tr valign="top"><td width="80"><p class="western">3</p></td><td colspan="8" width="368"><p align="center" class="western">High</p></td></tr><tr valign="top"><td width="80"><p class="western">4</p></td><td width="118"><p class="western">Flags</p></td><td width="31"><p align="center" class="western">Note open</p></td><td width="42"><p align="center" class="western">Note closed</p></td><td width="68"><p align="center" class="western">Note closed (software)</p></td><td width="23"><p align="center" class="western">1</p></td><td width="23"><p align="center" class="western">1</p></td><td width="23"><p align="center" class="western">1</p></td><td width="23"><p align="center" class="western">1</p></td><td width="23"><p align="center" class="western">1</p></td></tr><tr valign="top"><td width="80"><p class="western">5</p></td><td width="118"><p class="western">Note number</p></td><td colspan="8" width="368"><p class="western"><br></p></td></tr><tr valign="top"><td width="80"><p class="western">6</p></td><td width="118"><p class="western">Total note number</p></td><td colspan="8" width="368"><p class="western"><br></p></td></tr><tr valign="top"><td width="80"><p class="western">7</p></td><td rowspan="8" width="118"><p class="western">Reserved</p></td><td colspan="8" rowspan="8" width="368"><p class="western"><br></p></td></tr><tr><td valign="top" width="80"><p class="western">8</p></td></tr><tr><td valign="top" width="80"><p class="western">9</p></td></tr><tr><td valign="top" width="80"><p class="western">10</p></td></tr><tr><td valign="top" width="80"><p class="western">11</p></td></tr><tr><td valign="top" width="80"><p class="western">12</p></td></tr><tr><td valign="top" width="80"><p class="western">13</p></td></tr><tr><td valign="top" width="80"><p class="western">14</p></td></tr></tbody></table><p class="western" style="margin-bottom: 0in"><br></p><p class="western" style="margin-bottom: 0in"><br></p><p class="western" style="margin-left: 0.5in; margin-bottom: 0in"> Note open:</p><p class="western" style="margin-left: 0.5in; margin-bottom: 0in"> 0 &ndash; There is XY coordinates in this note.</p><p class="western" style="margin-left: 0.5in; margin-bottom: 0in"> 1 &ndash; Empty note.</p><p class="western" style="margin-left: 0.5in; margin-bottom: 0in"><br></p><p class="western" style="margin-left: 0.5in; margin-bottom: 0in"> Note closed:</p><p class="western" style="margin-left: 1in; margin-bottom: 0in"> 0 &ndash; The note closed by user or software.</p><p class="western" style="margin-left: 1.5in; margin-bottom: 0in">1 &ndash; Note not closed.</p><p class="western" style="margin-left: 1.5in; margin-bottom: 0in"><br></p><p class="western" style="margin-left: 0.5in; margin-bottom: 0in"> Note closed (software):</p><p class="western" style="margin-left: 0.5in; margin-bottom: 0in"> 0 &ndash; Note not closed by user.</p><p class="western" style="margin-left: 0.5in; margin-bottom: 0in"> 1 &ndash; else.</p><p class="western" style="margin-left: 0.5in; margin-bottom: 0in"><br></p><p class="western" style="margin-left: 1.5in; margin-bottom: 0in; page-break-before: always"><u><b>Data:</b></u></p><p class="western" style="margin-bottom: 0in"><br></p><p class="western" style="margin-bottom: 0in"><b>XY coordinates:</b> 4 Bytes</p><p class="western" style="margin-bottom: 0in"></p><table border="1" bordercolor="#000000" cellpadding="8" cellspacing="0" width="616"><colgroup><col width="83"> <col width="118"> <col width="31"> <col width="42"> <col width="56"> <col width="25"> <col width="25"> <col width="25"> <col width="25"> <col width="25"> </colgroup><tbody><tr valign="top"><td width="83"><p class="western">Byte number</p></td><td width="118"><p align="center" class="western">Byte description</p></td><td width="31"><p align="center" class="western">7</p></td><td width="42"><p align="center" class="western">6</p></td><td width="56"><p align="center" class="western">5</p></td><td width="25"><p align="center" class="western">4</p></td><td width="25"><p align="center" class="western">3</p></td><td width="25"><p align="center" class="western">2</p></td><td width="25"><p align="center" class="western">1</p></td><td width="25"><p align="center" class="western">0</p></td></tr><tr valign="top"><td width="83"><p class="western">1</p></td><td rowspan="2" width="118"><p class="western">X coordinate</p></td><td colspan="8" width="365"><p align="center" class="western">Low</p></td></tr><tr valign="top"><td width="83"><p class="western">2</p></td><td colspan="8" width="365"><p align="center" class="western">High</p></td></tr><tr valign="top"><td width="83"><p class="western">3</p></td><td rowspan="2" width="118"><p class="western">Y coordinate</p></td><td colspan="8" width="365"><p align="center" class="western">Low</p></td></tr><tr valign="top"><td width="83"><p class="western">4</p></td><td colspan="8" width="365"><p align="center" class="western">High</p></td></tr></tbody></table><p class="western" style="margin-bottom: 0in"></p><p class="western" style="margin-bottom: 0in"><br></p><p class="western" style="margin-bottom: 0in"><b>Pen up: </b>4 Bytes</p><p class="western" style="margin-bottom: 0in"><br></p><table border="1" bordercolor="#000000" cellpadding="8" cellspacing="0" width="616"><colgroup><col width="83"> <col width="118"> <col width="32"> <col width="32"> <col width="32"> <col width="32"> <col width="32"> <col width="32"> <col width="32"> <col width="31"> </colgroup><tbody><tr valign="top"><td width="83"><p class="western">Byte number</p></td><td width="118"><p align="center" class="western">Byte description</p></td><td width="32"><p align="center" class="western">7</p></td><td width="32"><p align="center" class="western">6</p></td><td width="32"><p align="center" class="western">5</p></td><td width="32"><p align="center" class="western">4</p></td><td width="32"><p align="center" class="western">3</p></td><td width="32"><p align="center" class="western">2</p></td><td width="32"><p align="center" class="western">1</p></td><td width="31"><p align="center" class="western">0</p></td></tr><tr valign="top"><td width="83"><p class="western">1</p></td><td rowspan="4" width="118"><p class="western">Pen up</p></td><td width="32"><p align="center" class="western">0</p></td><td width="32"><p align="center" class="western">0</p></td><td width="32"><p align="center" class="western">0</p></td><td width="32"><p align="center" class="western">0</p></td><td width="32"><p align="center" class="western">0</p></td><td width="32"><p align="center" class="western">0</p></td><td width="32"><p align="center" class="western">0</p></td><td width="31"><p align="center" class="western">0</p></td></tr><tr valign="top"><td width="83"><p class="western">2</p></td><td width="32"><p align="center" class="western">0</p></td><td width="32"><p align="center" class="western">0</p></td><td width="32"><p align="center" class="western">0</p></td><td width="32"><p align="center" class="western">0</p></td><td width="32"><p align="center" class="western">0</p></td><td width="32"><p align="center" class="western">0</p></td><td width="32"><p align="center" class="western">0</p></td><td width="31"><p align="center" class="western">0</p></td></tr><tr valign="top"><td width="83"><p class="western">3</p></td><td width="32"><p align="center" class="western">0</p></td><td width="32"><p align="center" class="western">0</p></td><td width="32"><p align="center" class="western">0</p></td><td width="32"><p align="center" class="western">0</p></td><td width="32"><p align="center" class="western">0</p></td><td width="32"><p align="center" class="western">0</p></td><td width="32"><p align="center" class="western">0</p></td><td width="31"><p align="center" class="western">0</p></td></tr><tr valign="top"><td width="83"><p class="western">4</p></td><td width="32"><p align="center" class="western">1</p></td><td width="32"><p align="center" class="western">0</p></td><td width="32"><p align="center" class="western">0</p></td><td width="32"><p align="center" class="western">0</p></td><td width="32"><p align="center" class="western">0</p></td><td width="32"><p align="center" class="western">0</p></td><td width="32"><p align="center" class="western">0</p></td><td width="31"><p align="center" class="western">0</p></td></tr></tbody></table><p class="western" style="margin-bottom: 0in"></p><p class="western" style="margin-bottom: 0in"><br></p><p class="western" style="margin-bottom: 0in"><br></p><p class="western" style="margin-bottom: 0in"><br></p><p class="western" style="margin-bottom: 0in"><b><font size="4">Memory data structure example:</font></b></p><p class="western" style="margin-bottom: 0in"><br></p><table border="1" bordercolor="#000000" cellpadding="8" cellspacing="0" width="616"><colgroup><col width="51"> <col width="52"> <col width="52"> <col width="52"> <col width="52"> <col width="52"> <col width="52"> <col width="52"> <col width="52"> </colgroup><tbody><tr valign="top"><td width="51"><p align="center" class="western">Note 1 header </p></td><td width="52"><p align="center" class="western">XY</p></td><td width="52"><p align="center" class="western">XY</p></td><td width="52"><p align="center" class="western">XY</p></td><td width="52"><p align="center" class="western">XY</p></td><td width="52"><p align="center" class="western">&hellip;.</p></td><td width="52"><p align="center" class="western">Pen up</p></td><td width="52"><p align="center" class="western">XY</p></td><td width="52"><p align="center" class="western">XY</p></td></tr></tbody></table><p class="western" style="margin-bottom: 0in"><br></p><table border="1" bordercolor="#000000" cellpadding="8" cellspacing="0" width="616"><colgroup><col width="51"> <col width="52"> <col width="52"> <col width="52"> <col width="52"> <col width="52"> <col width="52"> <col width="52"> <col width="52"> </colgroup><tbody><tr valign="top"><td width="51"><p align="center" class="western">XY</p></td><td width="52"><p align="center" class="western">Pen up</p></td><td width="52"><p align="center" class="western">Note 2 header</p></td><td width="52"><p align="center" class="western">XY</p></td><td width="52"><p align="center" class="western">&hellip;.</p></td><td width="52"><p align="center" class="western">Pen up</p></td><td width="52"><p align="center" class="western">Note N header</p></td><td width="52"><p align="center" class="western"><br></p></td><td width="52"><p align="center" class="western"><br></p></td></tr></tbody></table><p class="western" style="margin-bottom: 0in"><br></p><p class="western" style="margin-bottom: 0in"><br></p><p class="western" style="margin-bottom: 0in"><br></p><p class="western" style="margin-bottom: 0in"><u><b>Remark:</b></u></p><p class="western" style="margin-bottom: 0in"><br></p><p class="western" style=" margin-bottom: 0in">1. The last note will be empty note and the pointer for next note = 0xFFFFFF</p><p class="western" style="margin-bottom: 0in; page-break-before: always"><font size="4"><u><b>Upload:</b></u></font></p><p class="western" style="margin-bottom: 0in">Upload data from device memory.</p><p class="western" style="margin-bottom: 0in"><br></p><p class="western" style="margin-bottom: 0in"><u>Upload Sequence<b>:</b></u></p><p class="western" style="margin-bottom: 0in"><br></p><ol><li><p class="western" style="margin-bottom: 0in"><i><b>Request start of upload</b></i></p></li></ol><p class="western" style="margin-left: 0.25in; margin-bottom: 0in"><br></p><p class="western" style="margin-left: 0.5in; margin-bottom: 0in"> Host <font face="Wingdings">&#61664;</font> Device</p><p class="western" style="margin-left: 0.5in; margin-bottom: 0in"><br></p><dl><dl><dl><dd><table border="1" bordercolor="#000000" cellpadding="8" cellspacing="0" width="101"><colgroup><col width="83"> </colgroup><tbody><tr><td valign="top" width="83"><p align="center" class="western" style="margin-bottom: 0in">Upload</p><p align="center" class="western" style="margin-bottom: 0in">Command</p><p align="center" class="western">(1 Byte)</p></td></tr><tr><td valign="top" width="83"><p align="center" class="western">0xB5</p></td></tr></tbody></table></dd></dl></dl></dl><p class="western" style="margin-left: 0.5in; margin-bottom: 0in"><br></p><ol start="2"><li><p class="western" style="margin-bottom: 0in"><i><b>Device sends the number of data packets to host.</b></i></p></li></ol><p class="western" style="margin-left: 0.25in; margin-bottom: 0in"><br></p><p class="western" style="margin-left: 1in; margin-bottom: 0in">Device <font face="Wingdings">&#61664;</font> Host </p><p class="western" style="margin-left: 1in; margin-bottom: 0in"></p><dl><dl><dd><table border="1" bordercolor="#000000" cellpadding="8" cellspacing="0" width="526"><colgroup><col width="46"> <col width="47"> <col width="47"> <col width="47"> <col width="47"> <col width="34"> <col width="42"> <col width="39"> <col width="34"> </colgroup><tbody><tr valign="top"><td colspan="5" width="296"><p align="center" class="western" style="margin-bottom: 0in">Signature</p><p align="center" class="western">(5 Bytes)</p></td><td colspan="2" width="92"><p align="center" class="western" style="margin-bottom: 0in">Number of packets</p><p align="center" class="western">(2 Bytes)</p></td><td colspan="2" width="88"><p align="center" class="western" style="margin-bottom: 0in">Signature</p><p align="center" class="western">(2 Bytes)</p></td></tr><tr valign="top"><td width="46"><p align="center" class="western">0xAA</p></td><td width="47"><p align="center" class="western">0xAA</p></td><td width="47"><p align="center" class="western">0xAA</p></td><td width="47"><p align="center" class="western">0xAA</p></td><td width="47"><p align="center" class="western">0xAA</p></td><td width="34"><p align="center" class="western">High</p></td><td width="42"><p align="center" class="western">Low</p></td><td width="39"><p align="center" class="western">0x55</p></td><td width="34"><p align="center" class="western">0x55</p></td></tr></tbody></table></dd></dl></dl><p class="western" style="margin-left: 1in; margin-bottom: 0in"><br></p><ol start="3"><li><p class="western" style="margin-bottom: 0in"><i><b>Host sends an ACK for receiving the data packets or NACK for cancel upload to device. </b></i></p></li></ol><p class="western" style="margin-left: 0.25in; margin-bottom: 0in"><br></p><p class="western" style="margin-left: 0.5in; margin-bottom: 0in"> Host <font face="Wingdings">&#61664;</font> Device</p><p class="western" style="margin-left: 0.25in; margin-bottom: 0in"><br></p><dl><dl><dl><dd><table border="1" bordercolor="#000000" cellpadding="8" cellspacing="0" width="101"><colgroup><col width="83"> </colgroup><tbody><tr><td valign="top" width="83"><p align="center" class="western" style="margin-bottom: 0in">ACK</p><p align="center" class="western">(1 Byte)</p></td></tr><tr><td valign="top" width="83"><p align="center" class="western">0xB6</p></td></tr></tbody></table></dd></dl></dl></dl><p class="western" style="margin-left: 0.25in; margin-bottom: 0in"><br></p><dl><dl><dl><dd><table border="1" bordercolor="#000000" cellpadding="8" cellspacing="0" width="101"><colgroup><col width="83"> </colgroup><tbody><tr><td valign="top" width="83"><p align="center" class="western" style="margin-bottom: 0in">NACK</p><p align="center" class="western">(1 Byte)</p></td></tr><tr><td valign="top" width="83"><p align="center" class="western">0xB7</p></td></tr></tbody></table></dd></dl></dl></dl><p class="western" style="margin-left: 0.5in; margin-bottom: 0in"><br></p><ol start="4"><li><p class="western" style="margin-bottom: 0in"><i><b>Device sends upload data to host</b>.</i></p></li></ol><p class="western" style="margin-left: 0.25in; margin-bottom: 0in"><br></p><p class="western" style="margin-left: 0.75in; margin-bottom: 0in"> Device <font face="Wingdings">&#61664;</font> Host</p><p class="western" style="margin-left: 0.75in; margin-bottom: 0in"><br></p><dl><dl><dd><table border="1" bordercolor="#000000" cellpadding="8" cellspacing="0" width="526"><colgroup><col width="46"> <col width="47"> <col width="384"> </colgroup><tbody><tr valign="top"><td colspan="2" width="108"><p align="center" class="western" style="margin-bottom: 0in">Packet number</p><p align="center" class="western">(2 Bytes)</p></td><td width="384"><p align="center" class="western" style="margin-bottom: 0in">Data</p><p align="center" class="western">(62 Bytes)</p></td></tr><tr valign="top"><td colspan="2" width="108"><p align="center" class="western">N</p></td><td rowspan="2" width="384"><p align="center" class="western">Upload Data</p></td></tr><tr valign="top"><td width="46"><p align="center" class="western">High</p></td><td width="47"><p align="center" class="western">Low</p></td></tr></tbody></table></dd></dl></dl><p class="western" style="margin-left: 1.25in; margin-bottom: 0in"><b>N</b> &ndash; Sequence number, each packet gets a sequence number(starting with 1), e.g. the first packet gets sequence number 1, the second 2 etc..</p><p class="western" style="margin-bottom: 0in"><br></p><p class="western" style="margin-bottom: 0in"><b>Upload Data</b> &ndash; Data of all notes (header and data) from memory. </p><p class="western" style="margin-left: 2in; margin-bottom: 0in">e.g. packet number 1 will contain data form address 0 to 61 in the memory, packet number will contain data form address 62 to 123 in the memory etc. </p><p class="western" style="margin-left: 0.25in; margin-bottom: 0in"><br></p><ol start="5"><li><p class="western" style="margin-bottom: 0in"><b><i>Packets retransmission</i>.</b></p></li></ol><p class="western" style="margin-left: 0.25in; margin-bottom: 0in"><br></p><p class="western" style="margin-left: 0.5in; margin-bottom: 0in"> Host <font face="Wingdings">&#61664;</font> Device</p><p class="western" style="margin-left: 1in; margin-bottom: 0in"><br></p><p class="western" style="margin-left: 0.25in; margin-bottom: 0in"><b><i>5.a.</i></b> In case all packets have been received successfully, the host sends an ACK</p><p class="western" style="margin-left: 0.25in; margin-bottom: 0in"> response and the upload sequence is complete.</p><p class="western" style="margin-left: 0.25in; margin-bottom: 0in"><br></p><dl><dl><dl><dd><table border="1" bordercolor="#000000" cellpadding="8" cellspacing="0" width="101"><colgroup><col width="83"> </colgroup><tbody><tr><td valign="top" width="83"><p align="center" class="western" style="margin-bottom: 0in">ACK</p><p align="center" class="western">(1 Byte)</p></td></tr><tr><td valign="top" width="83"><p align="center" class="western">0xB6</p></td></tr></tbody></table></dd></dl></dl></dl><p class="western" style="margin-left: 0.25in; margin-bottom: 0in"><br></p><p class="western" style="margin-left: 0.5in; margin-bottom: 0in"><b><i>5.b.</i></b> In case some packets have been lost the host sends a NACK response with</p><p class="western" style="margin-left: 0.5in; margin-bottom: 0in"> the lost packet number.</p><p class="western" style="margin-left: 0.5in; margin-bottom: 0in"><br></p><dl><dl><dl><dd><table border="1" bordercolor="#000000" cellpadding="8" cellspacing="0" width="301"><colgroup><col width="83"> <col width="84"> <col width="84"> </colgroup><tbody><tr valign="top"><td width="83"><p align="center" class="western" style="margin-bottom: 0in">NACK</p><p align="center" class="western">(1 Byte)</p></td><td colspan="2" width="184"><p align="center" class="western" style="margin-bottom: 0in">Lost packet number</p><p align="center" class="western">(2 Byte)</p></td></tr><tr valign="top"><td rowspan="2" width="83"><p align="center" class="western">0xB7</p></td><td colspan="2" width="184"><p align="center" class="western">X</p></td></tr><tr valign="top"><td width="84"><p align="center" class="western">High</p></td><td width="84"><p align="center" class="western">Low</p></td></tr></tbody></table></dd></dl></dl></dl><p class="western" style="margin-left: 0.5in; margin-bottom: 0in"> X &ndash; Lost packet number.</p><p class="western" style="margin-left: 0.5in; margin-bottom: 0in"><br></p><ol start="6"><li><p class="western" style="margin-bottom: 0in"><i><b>Device send the lost packet to host (return to stage 5).</b></i></p></li></ol><p class="western" style="margin-left: 0.25in; margin-bottom: 0in"><br></p><p class="western" style="margin-left: 0.75in; margin-bottom: 0in"> Device <font face="Wingdings">&#61664;</font> Host</p><p class="western" style="margin-left: 0.75in; margin-bottom: 0in"><br></p><dl><dl><dd><table border="1" bordercolor="#000000" cellpadding="8" cellspacing="0" width="526"><colgroup><col width="46"> <col width="47"> <col width="384"> </colgroup><tbody><tr valign="top"><td colspan="2" width="108"><p align="center" class="western" style="margin-bottom: 0in">Packet number</p><p align="center" class="western">(2 Bytes)</p></td><td width="384"><p align="center" class="western" style="margin-bottom: 0in">Data</p><p align="center" class="western">(62 Bytes)</p></td></tr><tr valign="top"><td colspan="2" width="108"><p align="center" class="western">X</p></td><td rowspan="2" width="384"><p align="center" class="western">Upload Data</p></td></tr><tr valign="top"><td width="46"><p align="center" class="western">High</p></td><td width="47"><p align="center" class="western">Low</p></td></tr></tbody></table></dd></dl></dl><p class="western" style="margin-left: 0.5in; margin-bottom: 0in"> X &ndash; Lost packet number.</p><p class="western" style="margin-bottom: 0in"><br></p><p class="western" style="margin-bottom: 0in"><br></p><br> <br clear="all" /> </div> <div id="google-view-footer"> <div id="maybecanedit" style="float:right"><a class="google-small-link" id="editpermissionlink" href="Doc?tab=edit&dr=true&id=dqswcdk_6qtgc8wgn" title="Muokkaa tätä sivua"> Muokkaa tätä sivua (jos sinulla on oikeudet siihen)</a> <span style="color:#676767;">|</span> <input id="report-abuse-button" type="button" value="Ilmoita väärinkäytöstä" onclick="reportAbuse();"></div> <div style="float:left"> <a title="Lisätietoja Google-dokumentit -sovelluksesta" class="google-small-link" href="/"> Google-dokumentit – tekstinkäsittely, esitykset ja taulukkolaskenta verkossa.</a> </div> <p> &nbsp; </div> <script><!--
+    viewOnLoad();
+    if(window.jstiming){window.jstiming.a={};window.jstiming.c=1;var j=function(a,b,e){var c=a.t[b],g=a.t.start;if(c&&(g||e)){c=a.t[b][0];g=e!=undefined?e:g[0];return c-g}};window.jstiming.report=function(a,b,e){var c="";if(window.jstiming.pt){c+="&srt="+window.jstiming.pt;delete window.jstiming.pt}try{if(window.external&&window.external.tran)c+="&tran="+window.external.tran;else if(window.gtbExternal&&window.gtbExternal.tran)c+="&tran="+window.gtbExternal.tran();else if(window.chrome&&window.chrome.csi)c+=
+"&tran="+window.chrome.csi().tran}catch(g){}if(a.b)c+="&"+a.b;var f=a.t,n=f.start,k=[],h=[];for(var d in f)if(d!="start")if(d.indexOf("_")!=0){var i=f[d][1];if(i)f[i]&&h.push(d+"."+j(a,d,f[i][0]));else n&&k.push(d+"."+j(a,d))}delete f.start;if(b)for(var l in b)c+="&"+l+"="+b[l];a=[e?e:"http://csi.gstatic.com/csi","?v=3","&s="+(window.jstiming.sn||"writely")+"&action=",a.name,h.length?"&it="+h.join(","):"","",c,"&rt=",k.join(",")].join("");b=new Image;var m=window.jstiming.c++;window.jstiming.a[m]=
+b;b.onload=b.onerror=function(){delete window.jstiming.a[m]};b.src=a;b=null;return a}};
+
+    window.jstiming.load.name = 'published';
+    
+    
+    var urchinPage = "/View";
+
+    
+    function getXHR() {
+      if (typeof XMLHttpRequest != "undefined") {
+        return new XMLHttpRequest();
+      }
+      try { return new ActiveXObject("Msxml2.XMLHTTP.6.0") } catch(e) {}
+      try { return new ActiveXObject("Msxml2.XMLHTTP.3.0") } catch(e) {}
+      try { return new ActiveXObject("Msxml2.XMLHTTP") } catch(e) {}
+      try { return new ActiveXObject("Microsoft.XMLHTTP") } catch(e) {}
+      return null;
+    }
+
+    function reportAbuse() {
+      var req = getXHR();
+      if (req) {
+        
+          var docid = 'dqswcdk_6qtgc8wgn';
+          var posttoken = '';
+        
+        req.onreadystatechange = function() {
+          try {
+            if (req.readyState == 4 && req.status == 200) {
+              var button = document.getElementById("report-abuse-button");
+              button.value = 'Kiitos!';
+              button.disabled = true;
+            }
+          } catch (ex) {
+            
+          }
+        }
+        try {
+          req.open('POST', 'MiscCommands', true);
+          req.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded; charset=UTF-8');
+          req.send('command=report_abuse&abuseDoc=' + encodeURIComponent(docid) +
+                   '&POST_TOKEN=' + encodeURIComponent(posttoken));
+        } catch (ex) {
+          
+        }
+      }
+    }
+  --></script> <script><!--
+      
+      
+        var docid = 'dqswcdk_6qtgc8wgn';
+        var doctitle = 'M210 Memory management and up...';
+        var useranalyticsid = '';
+      
+      if (useranalyticsid) {
+        
+        doctitle = doctitle.replace(/\s+/g, '_');
+        var _gaq = _gaq || [];
+        _gaq.push(function() {
+          var pageTracker = _gaq._createAsyncTracker(useranalyticsid);
+          pageTracker._setAllowAnchor(true);
+          pageTracker._setCookiePath('/a/' + useranalyticsid);
+          pageTracker._trackPageview(doctitle);
+        });
+      }
+    --></script>
+<script type="text/javascript">
+var _gaq = _gaq || [];
+var page = typeof urchinPage != 'undefined' ? urchinPage : window.location.href;
+var account = 'UA-18065-1';
+_gaq.push(function() {
+var pageTracker = _gaq._createAsyncTracker(account);
+pageTracker._setAllowAnchor(true);
+pageTracker._trackPageview(page);
+});
+(function() {
+var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+(document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(ga);
+})();
+</script>
+</body> </html> 
