@@ -1,2 +1,3 @@
-SUBSYSTEM=="hidraw", ATTRS{idVendor}=="0e20", ATTRS{idProduct}=="0101", GROUP="plugdev", SYMLINK+="m210/%s{busnum}:%s{devnum}/interface%s{../../../bInterfaceNumber}"
+SUBSYSTEM=="hidraw", ATTR{../../../bInterfaceNumber}=="00", ATTRS{idVendor}=="0e20", ATTRS{idProduct}=="0101", GROUP="plugdev", SYMLINK+="m210/%s{busnum}:%s{devnum}/mouse"
+SUBSYSTEM=="hidraw", ATTR{../../../bInterfaceNumber}=="01", ATTRS{idVendor}=="0e20", ATTRS{idProduct}=="0101", GROUP="plugdev", SYMLINK+="m210/%s{busnum}:%s{devnum}/tablet"
 SUBSYSTEM=="input", KERNEL=="event*", ATTRS{idVendor}=="0e20", ATTRS{idProduct}=="0101", GROUP="plugdev", SYMLINK+="m210/%s{busnum}:%s{devnum}/event"
