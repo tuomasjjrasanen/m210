@@ -1,14 +1,60 @@
+# -*- coding: utf-8 -*-
+"""
+Various helpers and wrappers for Linux programming.
+
+Modules:
+linux
+linux.hidraw
+linux.input
+
+This module contains:
+linux.PROGRAM_INVOCATION_SHORT_NAME
+linux.daemonize()
+
+Author: Tuomas (tuos) Räsänen <tuos@codegrove.org>
+"""
+
+import errno
 import os
 import os.path
 import signal
 import sys
 import syslog
 
-# As defined by glibc:
-program_invocation_short_name = os.path.basename(sys.argv[0])
+__all__ = [
+    'PROGRAM_INVOCATION_SHORT_NAME',
+    'daemonize',
+    ]
 
-def daemonize():
-    signal.signal(signal.SIGINT, signal.SIG_IGN)
+# As defined by glibc:
+PROGRAM_INVOCATION_SHORT_NAME = os.path.basename(sys.argv[0])
+
+def daemonize(syslog_options=syslog.LOG_PID | syslog.LOG_CONS):
+    """Summon a quite proper Linux daemon process quite properly.
+
+    1. Fork and exit parent.
+
+    2. Create a new session.
+
+    3. Ignore SIGHUP.
+
+    4. Fork and exit parent again.
+
+    5. Clear umask.
+
+    6. Change current directory to /.
+
+    7. Close all file descriptors.
+
+    8. Open new files for sys.stdin, sys.stdout and sys.stderr.
+
+    9. Redirect them to /dev/null.
+
+    10. Optionally open syslog if syslog_options is not None. Default
+    syslog_options is syslog.LOG_PID | syslog.LOG_CONS.
+ 
+    """
+
     if os.fork():
         os._exit(0)
     else:
@@ -23,8 +69,10 @@ def daemonize():
     for i in range(os.sysconf('SC_OPEN_MAX')):
         try:
             os.close(i)
-        except OSError:
-            continue
+        except OSError, e:
+            if e.errno == errno.EBADF:
+                continue # Ignore if the file descriptor does not exists.
+            raise e # Other exceptions shall fly through.
             
     # Close old standard file objects and open new ones. open() is
     # guaranteed to allocate lowest available file descriptor, that
@@ -36,5 +84,6 @@ def daemonize():
     sys.stderr.close()
     sys.stderr = open(os.devnull, sys.stderr.mode)
 
-    syslog.openlog(program_invocation_short_name, syslog.LOG_PID,
-                   syslog.LOG_DAEMON)
+    if syslog_options is not None:
+        syslog.openlog(PROGRAM_INVOCATION_SHORT_NAME, syslog_options,
+                       syslog.LOG_DAEMON)
