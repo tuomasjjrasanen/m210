@@ -1,9 +1,13 @@
 from distutils.core import setup, Extension
 
-modulehidraw = Extension('hidraw',
-                         sources=['modulehidraw.c'])
+modulehidraw = Extension('linux.hidraw',
+                         sources=['linux/modulehidraw.c'])
 
-setup(name='python-hidraw',
+moduleinput = Extension('linux.input',
+                         sources=['linux/moduleinput.c'])
+
+setup(name='notetaker',
       version='0.1',
-      py_modules=['m210'],
-      ext_modules=[modulehidraw])
+      py_modules=['peganotes'],
+      packages=['linux'],
+      ext_modules=[modulehidraw, moduleinput])

@@ -1,23 +1,48 @@
+"""
+Python API to Pegasus Notetaker devices.
+
+Currently only Pegasus Mobile Notetaker M210 is supported.
+
+"""
+
 import select
 
-import hidraw
+import linux.hidraw
 
 class CommunicationError(Exception):
+    """
+    Raised when an unexpected message is received from a M210 device.
+    """
     pass
 
 class ModeButtonInterrupt(Exception):
     pass
 
 class TimeoutError(Exception):
+    """
+    Raised when communication to a M210 device timeouts.
+    """
     pass
 
 class M210(object):
+    """
+    M210 exposes two interfaces via USB-connection. By default, udev
+    creates two hidraw devices to represent these interfaces when the
+    device is plugged in. Paths to these devices must be passed to
+    initialize a M210-connection. Interface 1 is used for reading and
+    writing, interface 2 only for reading.
+
+    Usage example:
+    >>> import peganotes
+    >>> m210 = peganotes.M210(["/dev/hidraw1", "/dev/hidraw2"])
+    >>> m210.get_info()
+    """
 
     def __init__(self, hidraw_filepaths):
         self._files = []
         for filepath, mode in zip(hidraw_filepaths, ('rwb', 'rb')):
             f = open(filepath, mode)
-            devinfo = hidraw.get_devinfo(f.fileno())
+            devinfo = linux.hidraw.get_devinfo(f.fileno())
             if devinfo != {'product': 257, 'vendor': 3616, 'bustype': 3}:
                 raise ValueError('%s is not a M210 hidraw device.' % filepath)
             self._files.append(f)
@@ -62,7 +87,7 @@ class M210(object):
 
         firmware_ver, analog_ver, pad_ver = struct.unpack('>HHH', response[3:9])
 
-        mode = {'\x01': 'mouse', '\x02': 'tablet'}.get(response[10])
+        mode = {'\x01': 'mouse', '\x02': 'tablet'}[response[10]]
 
         return {'firmware_version': firmware_ver,
                 'analog_version': analog_ver,
