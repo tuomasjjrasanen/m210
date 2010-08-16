@@ -1,6 +1,8 @@
+# -*- coding: utf-8 -*-
 from __future__ import absolute_import
 
 # Standard modules.
+import optparse
 import sys
 
 # Third-party modules.
@@ -45,12 +47,29 @@ def attach_to_dbus():
     _dbus_objects = []
     _dbus_objects.append(DaemonDBusObject(bus))
 
+def parse_args():
+    parser = optparse.OptionParser(version='''%s 0.1
+Copyright (C) 2010 Tuomas (tuos) Räsänen <tuos@codegrove.org>
+License GPLv3+: GNU GPL version 3 or later <http://gnu.org/licenses/gpl.html>.
+This is free software: you are free to change and redistribute it.
+There is NO WARRANTY, to the extent permitted by law.
+
+Written by Tuomas Räsänen.''' % (linux.PROGRAM_INVOCATION_SHORT_NAME))
+    parser.add_option('', '--no-daemon', action='store_false',
+                      default=True, dest='daemon',
+                      help='do not run %s as a daemon'
+                      % linux.PROGRAM_INVOCATION_SHORT_NAME)
+    return parser.parse_args(sys.argv)
+
 def main():
-    linux.daemonize()
+    options, args = parse_args()
+
+    if options.daemon:
+        linux.daemonize()
 
     attach_to_dbus()
 
-    app = PyQt4.QtCore.QCoreApplication(sys.argv)
+    app = PyQt4.QtCore.QCoreApplication([])
     app.exec_()
 
 if __name__ == '__main__':

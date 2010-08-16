@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 from distutils.core import setup, Extension
 
 modulehidraw = Extension('linux.hidraw',
@@ -8,6 +9,9 @@ moduleinput = Extension('linux.input',
 
 setup(name='notetaker',
       version='0.1',
+      author='Tuomas Räsänen',
+      author_email='tuos@codegrove.org',
       py_modules=['peganotes'],
       packages=['linux'],
+      scripts=['notetakerd.py'],
       ext_modules=[modulehidraw, moduleinput])
