@@ -5,6 +5,8 @@ Currently only Pegasus Mobile Notetaker M210 is supported.
 
 """
 
+from __future__ import absolute_import
+
 import select
 
 import linux.hidraw

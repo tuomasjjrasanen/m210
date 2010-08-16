@@ -14,6 +14,8 @@ linux.daemonize()
 Author: Tuomas (tuos) Räsänen <tuos@codegrove.org>
 """
 
+from __future__ import absolute_import
+
 import errno
 import os
 import os.path
