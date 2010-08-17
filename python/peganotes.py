@@ -19,9 +19,6 @@ class CommunicationError(Exception):
     """
     pass
 
-class ModeButtonInterrupt(Exception):
-    pass
-
 class TimeoutError(Exception):
     """
     Raised when communication to a M210 device timeouts.
@@ -45,7 +42,8 @@ class M210(object):
     
     """
 
-    def __init__(self, hidraw_filepaths):
+    def __init__(self, hidraw_filepaths, read_timeout=1.0):
+        self.read_timeout = read_timeout
         self._fds = []
         for filepath, mode in zip(hidraw_filepaths, (os.O_RDWR, os.O_RDONLY)):
             fd = os.open(filepath, mode)
@@ -57,16 +55,19 @@ class M210(object):
     def _read(self, iface_n):
         fd = self._fds[iface_n]
 
-        rlist, _, _ = select.select([fd], [], [], 1.0)
+        rlist, _, _ = select.select([fd], [], [], self.read_timeout)
         if not fd in rlist:
             raise TimeoutError("Reading timeouted.")
 
         response_size = (64, 9)[iface_n]
-        response = os.read(fd, response_size)
 
-        if iface_n == 0:
-            if response[:2] == '\x80\xb5':
-                raise ModeButtonInterrupt()
+        while True:
+            response = os.read(fd, response_size)
+
+            if iface_n == 0:
+                if response[:2] == '\x80\xb5':
+                    continue # Ignore mode button events.
+            break
 
         return response
 
@@ -80,8 +81,6 @@ class M210(object):
             try:
                 response = self._read(0)
             except TimeoutError:
-                continue
-            except ModeButtonInterrupt:
                 continue
             break
 
@@ -99,5 +98,31 @@ class M210(object):
                 'pad_version': pad_ver,
                 'mode': mode}
 
+    def _reject_upload(self):
+        self._write('\xb7')
+
+    def _upload_begin(self):
+        self._write('\xb5')
+        try:
+            response = self._read(0)
+        except TimeoutError:
+            # M210 with zero notes stored in it does not send any response.
+            return 0
+        if (not response.startswith('\xaa\xaa\xaa\xaa\xaa')
+            or response[7:9] != '\x55\x55'):
+            raise CommunicationError("Unrecognized upload response: %s"
+                                     % response[:9])
+        return struct.unpack('>H', response[5:7])[0]
+
+    def get_notes_size(self):
+        self._wait_ready()
+        size = self._upload_begin()
+        self._reject_upload()
+        return size
+
     def get_info(self):
         return self._wait_ready()
+
+    def delete_notes(self):
+        self._wait_ready()
+        self._write('\xb0')
