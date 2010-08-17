@@ -8,49 +8,11 @@ import sys
 import syslog
 
 # Third-party modules.
-import dbus
-import dbus.service
-import dbus.mainloop.glib
-
-dbus.mainloop.glib.DBusGMainLoop(set_as_default=True)
-
 import PyQt4.QtCore
 
 # Project-specific modules.
-import time
 import linux
-
-DBUS_SERVICE_NAME = 'org.codegrove.notetaker'
-
-class DaemonDBusObject(dbus.service.Object):
-
-    def __init__(self, bus):
-        dbus.service.Object.__init__(self, bus, '/daemon')
-
-    @dbus.service.method(DBUS_SERVICE_NAME, in_signature='s', out_signature='s')
-    def hello(self, name):
-        return 'Hola %s!' % name
-
-    @dbus.service.method(DBUS_SERVICE_NAME, in_signature='', out_signature='')
-    def exit(self):
-        PyQt4.QtCore.QCoreApplication.quit()
-
-def attach_to_dbus():
-    global _bus_name
-    global _dbus_objects
-
-    # Integrate to glib-mainloop. For some reason, DBusQtMainLoop does not work.
-    dbus.mainloop.glib.DBusGMainLoop(set_as_default=True)
-
-    # Open a bus.
-    bus = dbus.SystemBus()
-
-    # Register a well-known name for the bus.
-    _bus_name = dbus.service.BusName(DBUS_SERVICE_NAME, bus)
-
-    # Export objects through the bus.
-    _dbus_objects = []
-    _dbus_objects.append(DaemonDBusObject(bus))
+import notetaker.dbus
 
 def parse_args():
     parser = optparse.OptionParser(version='''%s 0.1
@@ -72,12 +34,7 @@ def main():
     if options.daemon:
         linux.daemonize()
 
-    syslog.syslog(syslog.LOG_INFO, 'started')
-
-    try:
-        attach_to_dbus()
-    except Exception, e:
-        syslog.syslog(syslog.LOG_DEBUG, str(e))
+    notetaker.dbus.attach()
 
     app = PyQt4.QtCore.QCoreApplication([])
     app.exec_()
