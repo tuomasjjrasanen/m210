@@ -98,25 +98,38 @@ class M210(object):
                 'pad_version': pad_ver,
                 'mode': mode}
 
+    def _accept_upload(self):
+        self._write('\xb6')
+
     def _reject_upload(self):
         self._write('\xb7')
 
-    def _upload_begin(self):
+    def _begin_upload(self):
         self._write('\xb5')
         try:
-            response = self._read(0)
-        except TimeoutError:
-            # M210 with zero notes stored in it does not send any response.
-            return 0
-        if (not response.startswith('\xaa\xaa\xaa\xaa\xaa')
-            or response[7:9] != '\x55\x55'):
-            raise CommunicationError("Unrecognized upload response: %s"
-                                     % response[:9])
-        return struct.unpack('>H', response[5:7])[0]
+            try:
+                response = self._read(0)
+            except TimeoutError:
+                # M210 with zero notes stored in it does not send any response.
+                return 0
+            if (not response.startswith('\xaa\xaa\xaa\xaa\xaa')
+                or response[7:9] != '\x55\x55'):
+                raise CommunicationError("Unrecognized upload response: %s"
+                                         % response[:9])
+            return struct.unpack('>H', response[5:7])[0]
+        except Exception, e:
+            # If just anything goes wrong, try to leave the device in
+            # a decent state by sending a reject request. Then just
+            # raise the original exception.
+            try:
+                self._reject_upload()
+            except:
+                pass
+            raise e
 
     def get_notes_size(self):
         self._wait_ready()
-        size = self._upload_begin()
+        size = self._begin_upload()
         self._reject_upload()
         return size
 
