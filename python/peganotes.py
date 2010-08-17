@@ -7,7 +7,9 @@ Currently only Pegasus Mobile Notetaker M210 is supported.
 
 from __future__ import absolute_import
 
+import os
 import select
+import struct
 
 import linux.hidraw
 
@@ -34,30 +36,33 @@ class M210(object):
     initialize a M210-connection. Interface 1 is used for reading and
     writing, interface 2 only for reading.
 
-    Usage example:
-    >>> import peganotes
-    >>> m210 = peganotes.M210(["/dev/hidraw1", "/dev/hidraw2"])
-    >>> m210.get_info()
+    Usage example::
+
+      >>> import peganotes
+      >>> m210 = peganotes.M210(["/dev/hidraw1", "/dev/hidraw2"])
+      >>> m210.get_info()
+      {'firmware_version': 337, 'analog_version': 265, 'pad_version': 32028, 'mode': 'tablet'}
+    
     """
 
     def __init__(self, hidraw_filepaths):
-        self._files = []
-        for filepath, mode in zip(hidraw_filepaths, ('rwb', 'rb')):
-            f = open(filepath, mode)
-            devinfo = linux.hidraw.get_devinfo(f.fileno())
+        self._fds = []
+        for filepath, mode in zip(hidraw_filepaths, (os.O_RDWR, os.O_RDONLY)):
+            fd = os.open(filepath, mode)
+            devinfo = linux.hidraw.get_devinfo(fd)
             if devinfo != {'product': 257, 'vendor': 3616, 'bustype': 3}:
                 raise ValueError('%s is not a M210 hidraw device.' % filepath)
-            self._files.append(f)
+            self._fds.append(fd)
 
     def _read(self, iface_n):
-        f = self._files[iface_n]
+        fd = self._fds[iface_n]
 
-        rlist, _, _ = select.select([f], [], [], 1.0)
-        if not f in rlist:
+        rlist, _, _ = select.select([fd], [], [], 1.0)
+        if not fd in rlist:
             raise TimeoutError("Reading timeouted.")
 
         response_size = (64, 9)[iface_n]
-        response = f.read(response_size)
+        response = os.read(fd, response_size)
 
         if iface_n == 0:
             if response[:2] == '\x80\xb5':
@@ -67,11 +72,7 @@ class M210(object):
 
     def _write(self, request):
         request_header = struct.pack('BBB', 0x00, 0x02, len(request))
-        _, wlist, _ = select.select([], [self._files[0]], [], 1.0)
-        if not self._files[0] in wlist:
-            raise TimeoutError("Writing timeouted.")
-        self._files[0].write(request_header + request)
-        self._files[0].flush()
+        os.write(self._fds[0], request_header + request)
 
     def _wait_ready(self):
         while True:
@@ -79,6 +80,8 @@ class M210(object):
             try:
                 response = self._read(0)
             except TimeoutError:
+                continue
+            except ModeButtonInterrupt:
                 continue
             break
 
