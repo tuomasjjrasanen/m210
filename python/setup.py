@@ -13,5 +13,5 @@ setup(name='notetaker',
       author_email='tuos@codegrove.org',
       py_modules=['peganotes'],
       packages=['linux'],
-      scripts=['notetakerd.py'],
+      scripts=['notetakerd'],
       ext_modules=[modulehidraw, moduleinput])
