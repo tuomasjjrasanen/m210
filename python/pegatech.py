@@ -41,9 +41,16 @@ class M210(object):
     Usage example::
 
       >>> import pegatech
-      >>> m210 = pegatech.M210(["/dev/hidraw1", "/dev/hidraw2"])
+      >>> m210 = pegatech.M210(("/dev/hidraw1", "/dev/hidraw2"))
       >>> m210.get_info()
-      {'firmware_version': 337, 'analog_version': 265, 'pad_version': 32028, 'mode': 'tablet'}
+      {'download_size': 1364, 'firmware_version': 337, 'analog_version': 265, 'pad_version': 32028, 'mode': 'tablet'}
+      >>> download_destination = open("m210notes", "wb")
+      >>> m210.download_notes_to(download_destination)
+      >>> download_destination.tell()
+      1364
+      >>> m210.delete_notes()
+      >>> m210.get_info()
+      {'download_size': 0, 'firmware_version': 337, 'analog_version': 265, 'pad_version': 32028, 'mode': 'tablet'}
     
     """
 
@@ -158,7 +165,7 @@ class M210(object):
         packet_number = struct.unpack('>H', response[:2])[0]
         return packet_number, response[2:]
 
-    def download_notes(self, destination_file):
+    def download_notes_to(self, destination_file):
         """Download notes to an open `destination_file` in one pass.
 
         Return the total size (bytes) of downloaded notes.
