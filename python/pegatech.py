@@ -1,7 +1,9 @@
 """
 Python API to Pegasus Notetaker devices.
 
-Currently only Pegasus Mobile Notetaker M210 is supported.
+Currently only Pegasus Mobile Notetaker `M210`_ is supported.
+
+.. _M210: http://www.pegatech.com/?CategoryID=207&ArticleID=268
 
 """
 
@@ -35,8 +37,8 @@ class M210(object):
 
     Usage example::
 
-      >>> import peganotes
-      >>> m210 = peganotes.M210(["/dev/hidraw1", "/dev/hidraw2"])
+      >>> import pegatech
+      >>> m210 = pegatech.M210(["/dev/hidraw1", "/dev/hidraw2"])
       >>> m210.get_info()
       {'firmware_version': 337, 'analog_version': 265, 'pad_version': 32028, 'mode': 'tablet'}
     
