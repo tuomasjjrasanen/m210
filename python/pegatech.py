@@ -15,6 +15,12 @@ import struct
 
 import linux.hidraw
 
+__all__ =  [
+    "CommunicationError",
+    "TimeoutError",
+    "M210",
+    ]
+
 class CommunicationError(Exception):
     """
     Raised when an unexpected message is received from a M210 device.
@@ -43,6 +49,8 @@ class M210(object):
       {'firmware_version': 337, 'analog_version': 265, 'pad_version': 32028, 'mode': 'tablet'}
     
     """
+
+    PACKET_PAYLOAD_SIZE = 62
 
     def __init__(self, hidraw_filepaths, read_timeout=1.0):
         self.read_timeout = read_timeout
@@ -107,6 +115,7 @@ class M210(object):
         self._write('\xb7')
 
     def _begin_upload(self):
+        """Return packet count."""
         self._write('\xb5')
         try:
             try:
@@ -130,14 +139,17 @@ class M210(object):
             raise e
 
     def get_notes_size(self):
+        """Return the total size (bytes) of all notes stored in the device."""
         self._wait_ready()
-        size = self._begin_upload()
+        packet_count = self._begin_upload()
         self._reject_upload()
-        return size
+        return packet_count * M210.PACKET_PAYLOAD_SIZE
 
     def get_info(self):
+        """Return a dict containing version and mode information of the device."""
         return self._wait_ready()
 
     def delete_notes(self):
+        """Delete all notes stored in the device."""
         self._wait_ready()
         self._write('\xb0')
