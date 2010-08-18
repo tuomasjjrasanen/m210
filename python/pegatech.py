@@ -23,15 +23,11 @@ __all__ =  [
     ]
 
 class CommunicationError(Exception):
-    """
-    Raised when an unexpected message is received.
-    """
+    """Raised when an unexpected message is received."""
     pass
 
 class TimeoutError(Exception):
-    """
-    Raised when communication timeouts.
-    """
+    """Raised when communication timeouts."""
     pass
 
 class M210(object):
@@ -117,6 +113,7 @@ class M210(object):
 
     def _begin_upload(self):
         """Return packet count."""
+
         self._write('\xb5')
         try:
             try:
@@ -139,19 +136,20 @@ class M210(object):
                 pass
             raise e
 
-    def get_notes_size(self):
-        """Return the total size (bytes) of all notes stored in the device."""
-        self._wait_ready()
+    def get_info(self):
+        """Return a dict containing information about versions, current mode
+        and the size of stored notes in bytes.
+        """
+
+        info = self._wait_ready()
         packet_count = self._begin_upload()
         self._reject_upload()
-        return packet_count * M210._PACKET_PAYLOAD_SIZE
-
-    def get_info(self):
-        """Return a dict containing version and mode information of the device."""
-        return self._wait_ready()
+        info['download_size'] = packet_count * M210._PACKET_PAYLOAD_SIZE
+        return info
 
     def delete_notes(self):
         """Delete all notes stored in the device."""
+
         self._wait_ready()
         self._write('\xb0')
 
@@ -162,6 +160,7 @@ class M210(object):
 
     def download_notes(self, destination_file):
         """Download notes to an open `destination_file` in one pass.
+
         Return the total size (bytes) of downloaded notes.
         """
 
