@@ -14,6 +14,7 @@ import select
 import struct
 
 import linux.hidraw
+from notetaker.collections import OrderedSet
 
 __all__ =  [
     "CommunicationError",
@@ -23,13 +24,13 @@ __all__ =  [
 
 class CommunicationError(Exception):
     """
-    Raised when an unexpected message is received from a M210 device.
+    Raised when an unexpected message is received.
     """
     pass
 
 class TimeoutError(Exception):
     """
-    Raised when communication to a M210 device timeouts.
+    Raised when communication timeouts.
     """
     pass
 
@@ -50,7 +51,7 @@ class M210(object):
     
     """
 
-    PACKET_PAYLOAD_SIZE = 62
+    _PACKET_PAYLOAD_SIZE = 62
 
     def __init__(self, hidraw_filepaths, read_timeout=1.0):
         self.read_timeout = read_timeout
@@ -76,7 +77,7 @@ class M210(object):
 
             if iface_n == 0:
                 if response[:2] == '\x80\xb5':
-                    continue # Ignore mode button events.
+                    continue # Ignore mode button events, at least for now.
             break
 
         return response
@@ -143,7 +144,7 @@ class M210(object):
         self._wait_ready()
         packet_count = self._begin_upload()
         self._reject_upload()
-        return packet_count * M210.PACKET_PAYLOAD_SIZE
+        return packet_count * M210._PACKET_PAYLOAD_SIZE
 
     def get_info(self):
         """Return a dict containing version and mode information of the device."""
@@ -153,3 +154,60 @@ class M210(object):
         """Delete all notes stored in the device."""
         self._wait_ready()
         self._write('\xb0')
+
+    def _receive_packet(self):
+        response = self._read(0)
+        packet_number = struct.unpack('>H', response[:2])[0]
+        return packet_number, response[2:]
+
+    def download_notes(self, destination_file):
+        """Download notes to an open `destination_file` in one pass.
+        Return the total size (bytes) of downloaded notes.
+        """
+
+        def request_lost_packets(lost_packet_numbers):
+            while lost_packet_numbers:
+                lost_packet_number = lost_packet_numbers[0]
+                self._write('\xb7' + struct.pack('>H', lost_packet_number))
+                packet_number, packet_payload = self._receive_packet()
+                if packet_number == lost_packet_number:
+                    lost_packet_numbers.remove(lost_packet_number)
+                    destination_file.write(packet_payload)
+
+        # Wait until the device is ready to upload packages to
+        # us. This is needed because previous public API call might
+        # have failed and the device hasn't had enough time to recover
+        # from that incident yet.
+        self._wait_ready()
+
+        packet_count = self._begin_upload()
+        if packet_count == 0:
+            # The device does not have any notes, inform that it's ok
+            # and let it rest.
+            self._reject_upload()
+            return 0
+
+        self._accept_upload()
+        lost_packet_numbers = OrderedSet()
+
+        # For some odd reason, packet numbering starts from 1 in
+        # M210's memory.
+        for expected_number in range(1, packet_count + 1):
+
+            packet_number, packet_payload = self._receive_packet()
+
+            if packet_number != expected_number:
+                lost_packet_numbers.add(expected_number)
+
+            if not lost_packet_numbers:
+                # It's safe to write only when all expected packets so
+                # far have been received. The behavior is changed as
+                # soon as the first package is lost.
+                destination_file.write(packet_payload)
+
+        request_lost_packets(lost_packet_numbers)
+
+        # Thank the device for cooperation and let it rest.
+        self._accept_upload()
+
+        return packet_count * M210._PACKET_PAYLOAD_SIZE
