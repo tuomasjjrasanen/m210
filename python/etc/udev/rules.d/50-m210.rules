@@ -1,4 +1,2 @@
-SUBSYSTEM=="hidraw", ATTR{../../../bInterfaceNumber}=="00", ATTRS{idVendor}=="0e20", ATTRS{idProduct}=="0101", GROUP="plugdev", SYMLINK+="m210/%s{busnum}:%s{devnum}/mouse", RUN+="/usr/bin/dbus-send --type=method_call --system --dest=org.codegrove.notetaker /org/codegrove/notetaker/daemon org.codegrove.notetaker.daemon.m210_connected uint16:0 string:%r string:%k"
-SUBSYSTEM=="hidraw", ATTR{../../../bInterfaceNumber}=="01", ATTRS{idVendor}=="0e20", ATTRS{idProduct}=="0101", GROUP="plugdev", SYMLINK+="m210/%s{busnum}:%s{devnum}/tablet", RUN+="/usr/bin/dbus-send --type=method_call --system --dest=org.codegrove.notetaker /org/codegrove/notetaker/daemon org.codegrove.notetaker.daemon.m210_connected uint16:1 string:%r string:%k"
-SUBSYSTEM=="input", KERNEL=="event*", ATTRS{idVendor}=="0e20", ATTRS{idProduct}=="0101", GROUP="plugdev", SYMLINK+="m210/%s{busnum}:%s{devnum}/event", RUN+="/usr/bin/dbus-send --type=method_call --system --dest=org.codegrove.notetaker /org/codegrove/notetaker/daemon org.codegrove.notetaker.daemon.m210_connected uint16:2 string:%r string:input/%k"
-
+ACTION=="add", ATTR{idVendor}=="0e20", ATTR{idProduct}=="0101", RUN+="/usr/local/bin/notetaker-connect %p"
+SUBSYSTEM=="usb", ACTION=="remove", RUN+="/usr/local/bin/notetaker-disconnect %p"

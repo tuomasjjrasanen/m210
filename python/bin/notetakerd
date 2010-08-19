@@ -6,7 +6,6 @@ from __future__ import absolute_import
 import optparse
 import os.path
 import sys
-import syslog
 
 # Third-party modules.
 import dbus
@@ -35,6 +34,8 @@ class M210Connection(object):
 
     def __del__(self):
         if self._event_fd is not None:
+            # self._event_fd might be None if self.__init__ fails for
+            # some reason.
             linux.input.release_event_device(self._event_fd)
 
 class Daemon(dbus.service.Object):
@@ -43,15 +44,20 @@ class Daemon(dbus.service.Object):
 
     def __init__(self, bus):
         dbus.service.Object.__init__(self, bus, Daemon.OBJECT_PATH)
-        self._m210_connections = []
-        self._triplet = [None, None, None]
+        self._connections = {}
 
-    @dbus.service.method(DAEMON_INTERFACE_NAME, in_signature='iss', out_signature='')
-    def m210_connected(self, index, udev_root, kernel_name):
-        self._triplet[index] = os.path.join(udev_root, kernel_name)
-        if not None in self._triplet:
-            self._m210_connections.append(M210Connection(*self._triplet))
-            self._triplet = [None, None, None]
+    @dbus.service.method(DAEMON_INTERFACE_NAME, in_signature='ssss',
+                         out_signature='')
+    def connect(self, syspath, hidraw0_path, hidraw1_path, event_path):
+        if syspath in self._connections:
+            raise ValueError("%s is already connected" % syspath)
+        self._connections[syspath] = M210Connection(hidraw0_path, hidraw1_path,
+                                                    event_path)
+
+    @dbus.service.method(DAEMON_INTERFACE_NAME, in_signature='s',
+                         out_signature='')
+    def disconnect(self, syspath):
+        self._connections.pop(syspath)
 
 def attach_to_dbus():
     global _name

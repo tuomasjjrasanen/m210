@@ -42,7 +42,11 @@ setup(name='notetaker',
       author='Tuomas Räsänen',
       author_email='tuos@codegrove.org',
       packages=['linux', 'notetaker'],
-      scripts=['bin/notetakerd'],
+      scripts=[
+        'bin/notetakerd',
+        'bin/notetaker-connect',
+        'bin/notetaker-disconnect',
+        ],
       data_files=[
         ('/etc/dbus-1/system.d',
          [

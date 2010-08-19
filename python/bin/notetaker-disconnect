@@ -1,0 +1,16 @@
+#!/usr/bin/python
+
+import os
+import os.path
+import sys
+
+import dbus
+
+if __name__ == "__main__":
+    syspath = sys.argv[1]
+    
+    bus = dbus.SystemBus()
+    remote_object = bus.get_object('org.codegrove.notetaker',
+                                   '/org/codegrove/notetaker/daemon')
+    iface = dbus.Interface(remote_object, 'org.codegrove.notetaker.daemon')
+    iface.disconnect(syspath)
