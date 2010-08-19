@@ -25,8 +25,8 @@ DAEMON_INTERFACE_NAME = 'org.codegrove.notetaker.daemon'
 
 class M210Connection(object):
 
-    def __init__(self, sysfs_path):
-        hidraw0_path, hidraw1_path, event_path = find_m210_paths("/sys" + sysfs_path)
+    def __init__(self, dirpath):
+        hidraw0_path, hidraw1_path, event_path = find_m210_paths(dirpath)
         self._event_fd = None
         self._event_fd = os.open(event_path, os.O_RDWR)
         linux.input.grab_event_device(self._event_fd)
@@ -75,14 +75,14 @@ class Daemon(dbus.service.Object):
         self._connections = {}
 
     @dbus.service.method(DAEMON_INTERFACE_NAME, in_signature='s')
-    def connect(self, sysfs_path):
-        if sysfs_path in self._connections:
-            raise ValueError("%s is already connected" % sysfs_path)
-        self._connections[sysfs_path] = M210Connection(sysfs_path)
+    def connect(self, dirpath):
+        if dirpath in self._connections:
+            raise ValueError("%s is already connected" % dirpath)
+        self._connections[dirpath] = M210Connection(dirpath)
 
     @dbus.service.method(DAEMON_INTERFACE_NAME, in_signature='s')
-    def disconnect(self, sysfs_path):
-        self._connections.pop(sysfs_path)
+    def disconnect(self, dirpath):
+        self._connections.pop(dirpath)
 
     @dbus.service.method(DAEMON_INTERFACE_NAME, out_signature='as')
     def connections(self):

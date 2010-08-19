@@ -1,2 +1,2 @@
-ACTION=="add", ATTR{idVendor}=="0e20", ATTR{idProduct}=="0101", RUN+="/usr/local/bin/notetaker-connect %p"
-SUBSYSTEM=="usb", ACTION=="remove", RUN+="/usr/local/bin/notetaker-disconnect %p"
+ACTION=="add", ATTR{idVendor}=="0e20", ATTR{idProduct}=="0101", RUN+="/usr/local/bin/notetaker-connect /sys%p"
+SUBSYSTEM=="usb", ACTION=="remove", RUN+="/usr/local/bin/notetaker-disconnect /sys%p"
