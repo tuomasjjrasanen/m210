@@ -1,16 +1,36 @@
 #!/usr/bin/python
+# -*- coding: utf-8 -*-
 
+# Standard modules.
+import optparse
 import os
 import os.path
 import sys
 
+# Third-party modules.
 import dbus
 
+# Project modules.
+import linux
+
+def parse_args():
+    parser = optparse.OptionParser(version='''%s 0.1
+Copyright (C) 2010 Tuomas (tuos) Räsänen <tuos@codegrove.org>
+License GPLv3+: GNU GPL version 3 or later <http://gnu.org/licenses/gpl.html>.
+This is free software: you are free to change and redistribute it.
+There is NO WARRANTY, to the extent permitted by law.
+
+Written by Tuomas Räsänen.''' % (linux.PROGRAM_INVOCATION_SHORT_NAME),
+                                   usage='%prog [OPTION]... SYSFS_PATH',
+                                   description='Requests notetakerd to disconnect a device pointed by sysfs path.')
+    return parser.parse_args(sys.argv)
+
 if __name__ == "__main__":
-    syspath = sys.argv[1]
-    
+    options, args = parse_args()
+
     bus = dbus.SystemBus()
     remote_object = bus.get_object('org.codegrove.notetaker',
                                    '/org/codegrove/notetaker/daemon')
     iface = dbus.Interface(remote_object, 'org.codegrove.notetaker.daemon')
-    iface.disconnect(syspath)
+
+    iface.disconnect(args[1])
