@@ -1,6 +1,5 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
-from __future__ import absolute_import
 
 # Standard modules.
 import optparse
@@ -58,6 +57,11 @@ class Daemon(dbus.service.Object):
                          out_signature='')
     def disconnect(self, syspath):
         self._connections.pop(syspath)
+
+    @dbus.service.method(DAEMON_INTERFACE_NAME, in_signature='',
+                         out_signature='as')
+    def connections(self):
+        return list(self._connections.keys())
 
 def attach_to_dbus():
     global _name
