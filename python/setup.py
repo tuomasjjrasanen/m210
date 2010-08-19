@@ -41,9 +41,8 @@ setup(name='notetaker',
       version='0.1',
       author='Tuomas Räsänen',
       author_email='tuos@codegrove.org',
-      py_modules=['pegatech'],
       packages=['linux', 'notetaker'],
-      scripts=['notetakerd'],
+      scripts=['bin/notetakerd'],
       data_files=[
         ('/etc/dbus-1/system.d',
          [
@@ -53,6 +52,11 @@ setup(name='notetaker',
         ('/etc/init',
          [
                 'etc/init/notetakerd.conf',
+                ],
+         ),
+        ('/etc/udev/rules.d',
+         [
+                'etc/udev/rules.d/50-m210.rules',
                 ],
          ),
         ],

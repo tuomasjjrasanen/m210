@@ -1,0 +1,2 @@
+Daemon should scan the system for M210 devices during startup, because
+the device might have been plugged in before the daemon is started.

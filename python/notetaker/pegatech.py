@@ -14,7 +14,7 @@ import select
 import struct
 
 import linux.hidraw
-from notetaker.collections import OrderedSet
+from .collections import OrderedSet
 
 __all__ =  [
     "CommunicationError",

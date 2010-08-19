@@ -1,6 +1,11 @@
+#!/usr/bin/python
+# -*- coding: utf-8 -*-
 from __future__ import absolute_import
 
+# Standard modules.
+import optparse
 import os.path
+import sys
 import syslog
 
 # Third-party modules.
@@ -10,8 +15,12 @@ import dbus.mainloop.glib
 
 dbus.mainloop.glib.DBusGMainLoop(set_as_default=True)
 
+import PyQt4.QtCore
+
+# Project-specific modules.
+import linux
 import linux.input
-import pegatech
+import notetaker.pegatech
 
 SERVICE_NAME = 'org.codegrove.notetaker'
 DAEMON_INTERFACE_NAME = 'org.codegrove.notetaker.daemon'
@@ -22,7 +31,7 @@ class M210Connection(object):
         self._event_fd = None
         self._event_fd = os.open(event_path, os.O_RDWR)
         linux.input.grab_event_device(self._event_fd)
-        self.m210 = pegatech.M210((hidraw0_path, hidraw1_path))
+        self.m210 = notetaker.pegatech.M210((hidraw0_path, hidraw1_path))
 
     def __del__(self):
         if self._event_fd is not None:
@@ -44,7 +53,7 @@ class Daemon(dbus.service.Object):
             self._m210_connections.append(M210Connection(*self._triplet))
             self._triplet = [None, None, None]
 
-def attach():
+def attach_to_dbus():
     global _name
     global _dbus_objects
 
@@ -60,3 +69,31 @@ def attach():
     # Export objects through the bus.
     _dbus_objects = []
     _dbus_objects.append(Daemon(bus))
+
+def parse_args():
+    parser = optparse.OptionParser(version='''%s 0.1
+Copyright (C) 2010 Tuomas (tuos) Räsänen <tuos@codegrove.org>
+License GPLv3+: GNU GPL version 3 or later <http://gnu.org/licenses/gpl.html>.
+This is free software: you are free to change and redistribute it.
+There is NO WARRANTY, to the extent permitted by law.
+
+Written by Tuomas Räsänen.''' % (linux.PROGRAM_INVOCATION_SHORT_NAME))
+    parser.add_option('', '--no-daemon', action='store_false',
+                      default=True, dest='daemon',
+                      help='do not run %s as a daemon'
+                      % linux.PROGRAM_INVOCATION_SHORT_NAME)
+    return parser.parse_args(sys.argv)
+
+def main():
+    options, args = parse_args()
+
+    if options.daemon:
+        linux.daemonize()
+
+    attach_to_dbus()
+
+    app = PyQt4.QtCore.QCoreApplication([])
+    app.exec_()
+
+if __name__ == '__main__':
+    main()
