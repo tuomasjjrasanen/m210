@@ -3,8 +3,6 @@
 
 # Standard modules.
 import optparse
-import os
-import os.path
 import sys
 
 # Third-party modules.
@@ -12,19 +10,6 @@ import dbus
 
 # Project modules.
 import linux
-
-def find_paths(syspath):
-    dirpath = "/sys" + syspath
-    find_cmd = r"find %s -iregex .*%s[0-9][0-9]*$ | sed 's/.*\(%s[0-9][0-9]*\)/\1/'"
-
-    find_hidraw = find_cmd % (dirpath, "hidraw", "hidraw")
-    hidraw_names = os.popen(find_hidraw).read().strip().splitlines()
-    hidraw0_path, hidraw1_path = ["/dev/" + name for name in hidraw_names]
-
-    find_event = find_cmd % (dirpath, "event", "event")
-    event_path = "/dev/input/" + os.popen(find_event).read().strip().splitlines()[0]
-
-    return hidraw0_path, hidraw1_path, event_path
 
 def parse_args():
     parser = optparse.OptionParser(version='''%s 0.1
@@ -41,13 +26,9 @@ Written by Tuomas Räsänen.''' % (linux.PROGRAM_INVOCATION_SHORT_NAME),
 if __name__ == "__main__":
     options, args = parse_args()
 
-    syspath = args[1]
-
-    hidraw0_path, hidraw1_path, event_path = find_paths(syspath)
-    
     bus = dbus.SystemBus()
     remote_object = bus.get_object('org.codegrove.notetaker',
                                    '/org/codegrove/notetaker/daemon')
     iface = dbus.Interface(remote_object, 'org.codegrove.notetaker.daemon')
 
-    iface.connect(syspath, hidraw0_path, hidraw1_path, event_path)
+    iface.connect(args[1])
