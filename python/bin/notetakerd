@@ -25,7 +25,8 @@ DAEMON_INTERFACE_NAME = 'org.codegrove.notetaker.daemon'
 
 class M210Connection(object):
 
-    def __init__(self, hidraw0_path, hidraw1_path, event_path):
+    def __init__(self, sysfs_path):
+        hidraw0_path, hidraw1_path, event_path = find_m210_paths("/sys" + sysfs_path)
         self._event_fd = None
         self._event_fd = os.open(event_path, os.O_RDWR)
         linux.input.grab_event_device(self._event_fd)
@@ -37,18 +38,33 @@ class M210Connection(object):
             # some reason.
             linux.input.release_event_device(self._event_fd)
 
-def find_paths(syspath):
-    dirpath = "/sys" + syspath
-    find_cmd = r"find %s -iregex .*%s[0-9][0-9]*$ | sed 's/.*\(%s[0-9][0-9]*\)/\1/'"
+def find_m210_dirpaths():
+    find_cmd = r"""
+find /sys/devices/pci0000\:00 -type d \
+-execdir grep -q 0e20 '{}'/idVendor \; \
+-execdir grep -q 0101 '{}'/idProduct \; \
+-print 2>/dev/null
+"""
+    
+    return os.popen(find_cmd).read().strip().splitlines()
 
+def udev_root():
+    return os.popen("udevadm info --root").read().strip().splitlines()[0]
+
+def find_m210_paths(dirpath):
+    find_cmd = r"""
+find %s -iregex .*%s[0-9][0-9]*$ | sed 's/.*\(%s[0-9][0-9]*\)/\1/'
+"""
+    
     find_hidraw = find_cmd % (dirpath, "hidraw", "hidraw")
     hidraw_names = os.popen(find_hidraw).read().strip().splitlines()
-    hidraw0_path, hidraw1_path = ["/dev/" + name for name in hidraw_names]
-
+    hidraw_paths = [os.path.join(udev_root(), name) for name in hidraw_names]
+    
     find_event = find_cmd % (dirpath, "event", "event")
-    event_path = "/dev/input/" + os.popen(find_event).read().strip().splitlines()[0]
-
-    return hidraw0_path, hidraw1_path, event_path
+    event_name = os.popen(find_event).read().strip().splitlines()[0]
+    event_path = os.path.join(udev_root(), "input", event_name)
+    
+    return hidraw_paths[0], hidraw_paths[1], event_path
 
 class Daemon(dbus.service.Object):
 
@@ -59,14 +75,14 @@ class Daemon(dbus.service.Object):
         self._connections = {}
 
     @dbus.service.method(DAEMON_INTERFACE_NAME, in_signature='s')
-    def connect(self, syspath):
-        if syspath in self._connections:
-            raise ValueError("%s is already connected" % syspath)
-        self._connections[syspath] = M210Connection(*find_paths(syspath))
+    def connect(self, sysfs_path):
+        if sysfs_path in self._connections:
+            raise ValueError("%s is already connected" % sysfs_path)
+        self._connections[sysfs_path] = M210Connection(sysfs_path)
 
     @dbus.service.method(DAEMON_INTERFACE_NAME, in_signature='s')
-    def disconnect(self, syspath):
-        self._connections.pop(syspath)
+    def disconnect(self, sysfs_path):
+        self._connections.pop(sysfs_path)
 
     @dbus.service.method(DAEMON_INTERFACE_NAME, out_signature='as')
     def connections(self):
