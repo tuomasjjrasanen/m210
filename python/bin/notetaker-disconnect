@@ -23,6 +23,10 @@ There is NO WARRANTY, to the extent permitted by law.
 Written by Tuomas Räsänen.''' % (linux.PROGRAM_INVOCATION_SHORT_NAME),
                                    usage='%prog [OPTION]... SYSFS_PATH',
                                    description='Requests notetakerd to disconnect a device pointed by sysfs path.')
+    parser.add_option("--list", "", action="store_true",
+                      help="List all connected devices and exit.")
+    parser.add_option("--all", "", action="store_true",
+                      help="Disconnect all connected devices.")
     return parser.parse_args(sys.argv)
 
 if __name__ == "__main__":
@@ -32,5 +36,15 @@ if __name__ == "__main__":
     remote_object = bus.get_object('org.codegrove.notetaker',
                                    '/org/codegrove/notetaker/daemon')
     iface = dbus.Interface(remote_object, 'org.codegrove.notetaker.daemon')
+
+    if options.list:
+        for dirpath in iface.connections():
+            print dirpath
+        sys.exit(0)
+
+    if options.all:
+        for dirpath in iface.connections():
+            iface.disconnect(dirpath)
+        sys.exit(0)
 
     iface.disconnect(args[1])
