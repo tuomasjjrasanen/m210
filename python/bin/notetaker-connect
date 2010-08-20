@@ -16,8 +16,9 @@ This is free software: you are free to change and redistribute it.
 There is NO WARRANTY, to the extent permitted by law.
 
 Written by Tuomas Räsänen.''',
-                                   usage='%prog [OPTION]... SYSFS_PATH',
-                                   description='Requests notetakerd to connect a device pointed by sysfs path.')
+                                   usage='%prog [OPTION]... DIRPATH',
+                                   description='''Requests notetakerd to
+connect a device pointed by a path to a sysfs device directory.''')
     parser.add_option("--list", "", action="store_true",
                       help="List all disconnected devices and exit.")
     parser.add_option("--all", "", action="store_true",
