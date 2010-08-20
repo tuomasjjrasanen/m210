@@ -5,21 +5,17 @@
 import optparse
 import sys
 
-# Third-party modules.
-import dbus
-
 # Project modules.
-import linux
 import notetaker
 
 def parse_args():
-    parser = optparse.OptionParser(version='''%s 0.1
+    parser = optparse.OptionParser(version='''%prog 0.1
 Copyright (C) 2010 Tuomas (tuos) Räsänen <tuos@codegrove.org>
 License GPLv3+: GNU GPL version 3 or later <http://gnu.org/licenses/gpl.html>.
 This is free software: you are free to change and redistribute it.
 There is NO WARRANTY, to the extent permitted by law.
 
-Written by Tuomas Räsänen.''' % (linux.PROGRAM_INVOCATION_SHORT_NAME),
+Written by Tuomas Räsänen.''',
                                    usage='%prog [OPTION]... SYSFS_PATH',
                                    description='Requests notetakerd to connect a device pointed by sysfs path.')
     parser.add_option("--list", "", action="store_true",
@@ -31,23 +27,20 @@ Written by Tuomas Räsänen.''' % (linux.PROGRAM_INVOCATION_SHORT_NAME),
 if __name__ == "__main__":
     options, args = parse_args()
 
-    bus = dbus.SystemBus()
-    remote_object = bus.get_object('org.codegrove.notetaker',
-                                   '/org/codegrove/notetaker/daemon')
-    iface = dbus.Interface(remote_object, 'org.codegrove.notetaker.daemon')
+    daemon = notetaker.Daemon()
 
     if options.list:
-        connections = iface.connections()
+        connections = daemon.connections()
         for dirpath in notetaker.find_m210_dirpaths():
             if dirpath not in connections:
                 print dirpath
         sys.exit(0)
 
     if options.all:
-        connections = iface.connections()
+        connections = daemon.connections()
         for dirpath in notetaker.find_m210_dirpaths():
             if dirpath not in connections:
-                iface.connect(dirpath)
+                daemon.connect(dirpath)
         sys.exit(0)
 
-    iface.connect(args[1])
+    daemon.connect(args[1])

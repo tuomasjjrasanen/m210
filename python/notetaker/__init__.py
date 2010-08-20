@@ -1,5 +1,20 @@
+# Standard modules.
 import os
 import os.path
+
+# Third-party modules.
+import dbus
+
+NAME = 'org.codegrove.notetaker'
+OBJECT_PATH = '/org/codegrove/notetaker/daemon'
+INTERFACE = 'org.codegrove.notetaker.daemon'
+
+class Daemon(dbus.Interface):
+
+    def __init__(self):
+        bus = dbus.SystemBus()
+        remote_object = bus.get_object(NAME, OBJECT_PATH)
+        dbus.Interface.__init__(self, remote_object, INTERFACE)
 
 def find_m210_dirpaths():
     find_cmd = r"""

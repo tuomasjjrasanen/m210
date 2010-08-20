@@ -21,9 +21,6 @@ import linux.input
 import notetaker
 import notetaker.pegatech
 
-SERVICE_NAME = 'org.codegrove.notetaker'
-DAEMON_INTERFACE_NAME = 'org.codegrove.notetaker.daemon'
-
 class M210Connection(object):
 
     def __init__(self, dirpath):
@@ -41,38 +38,35 @@ class M210Connection(object):
 
 class Daemon(dbus.service.Object):
 
-    OBJECT_PATH = '/org/codegrove/notetaker/daemon'
-
     def __init__(self, bus):
-        dbus.service.Object.__init__(self, bus, Daemon.OBJECT_PATH)
+        dbus.service.Object.__init__(self, bus, notetaker.OBJECT_PATH)
         self._connections = {}
 
-    @dbus.service.method(DAEMON_INTERFACE_NAME, in_signature='s')
+    @dbus.service.method(notetaker.INTERFACE, in_signature='s')
     def connect(self, dirpath):
         if dirpath in self._connections:
             raise ValueError("%s is already connected" % dirpath)
         self._connections[dirpath] = M210Connection(dirpath)
 
-    @dbus.service.method(DAEMON_INTERFACE_NAME, in_signature='s')
+    @dbus.service.method(notetaker.INTERFACE, in_signature='s')
     def disconnect(self, dirpath):
         self._connections.pop(dirpath)
 
-    @dbus.service.method(DAEMON_INTERFACE_NAME, out_signature='as')
+    @dbus.service.method(notetaker.INTERFACE, out_signature='as')
     def connections(self):
         return list(self._connections.keys())
 
 def parse_args():
-    parser = optparse.OptionParser(version='''%s 0.1
+    parser = optparse.OptionParser(version='''%prog 0.1
 Copyright (C) 2010 Tuomas (tuos) Räsänen <tuos@codegrove.org>
 License GPLv3+: GNU GPL version 3 or later <http://gnu.org/licenses/gpl.html>.
 This is free software: you are free to change and redistribute it.
 There is NO WARRANTY, to the extent permitted by law.
 
-Written by Tuomas Räsänen.''' % (linux.PROGRAM_INVOCATION_SHORT_NAME))
+Written by Tuomas Räsänen.''')
     parser.add_option('', '--no-daemon', action='store_false',
                       default=True, dest='daemon',
-                      help='do not run %s as a daemon'
-                      % linux.PROGRAM_INVOCATION_SHORT_NAME)
+                      help='do not run %prog as a daemon')
     return parser.parse_args(sys.argv)
 
 def main():
@@ -89,7 +83,7 @@ def main():
     bus = dbus.SystemBus()
 
     # Register a well-known name for the service.
-    name = dbus.service.BusName(SERVICE_NAME, bus)
+    name = dbus.service.BusName(notetaker.NAME, bus)
 
     # Export a daemon object through the bus.
     daemon = Daemon(bus)
