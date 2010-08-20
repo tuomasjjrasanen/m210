@@ -16,6 +16,12 @@ class Daemon(dbus.Interface):
         remote_object = bus.get_object(NAME, OBJECT_PATH)
         dbus.Interface.__init__(self, remote_object, INTERFACE)
 
+    def disconnected_devices(self):
+        connected_devs = self.connected_devices()
+        for dirpath in find_m210_dirpaths():
+            if dirpath not in connected_devs:
+                yield dirpath
+
 def find_m210_dirpaths():
     find_cmd = r"""
 find /sys/devices/pci0000\:00 -type d \

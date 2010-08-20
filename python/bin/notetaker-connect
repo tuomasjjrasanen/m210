@@ -19,8 +19,10 @@ Written by Tuomas Räsänen.''',
                                    usage='%prog [OPTION]... DIRPATH',
                                    description='''Requests notetakerd to
 connect a device pointed by a path to a sysfs device directory.''')
-    parser.add_option("--list", "", action="store_true",
+    parser.add_option("--list-disconnected", "", action="store_true",
                       help="List all disconnected devices and exit.")
+    parser.add_option("--list-all", "", action="store_true",
+                      help="List all devices and exit.")
     parser.add_option("--all", "", action="store_true",
                       help="Connect all disconnected devices.")
     return parser.parse_args(sys.argv)
@@ -30,18 +32,22 @@ if __name__ == "__main__":
 
     daemon = notetaker.Daemon()
 
-    if options.list:
-        connections = daemon.connections()
-        for dirpath in notetaker.find_m210_dirpaths():
-            if dirpath not in connections:
-                print dirpath
+    connected_devs = daemon.connected_devices()
+    disconnected_devs = daemon.disconnected_devices()
+
+    if options.list_all:
+        options.list_disconnected = True
+        for dirpath in connected_devs:
+            print "C", dirpath
+
+    if options.list_disconnected:
+        for dirpath in disconnected_devs:
+            print "D", dirpath
         sys.exit(0)
 
     if options.all:
-        connections = daemon.connections()
-        for dirpath in notetaker.find_m210_dirpaths():
-            if dirpath not in connections:
-                daemon.connect(dirpath)
+        for dirpath in disconnected_devs:
+            daemon.connect(dirpath)
         sys.exit(0)
 
     daemon.connect(args[1])

@@ -40,21 +40,21 @@ class Daemon(dbus.service.Object):
 
     def __init__(self, bus):
         dbus.service.Object.__init__(self, bus, notetaker.OBJECT_PATH)
-        self._connections = {}
+        self._connected_devs = {}
 
     @dbus.service.method(notetaker.INTERFACE, in_signature='s')
     def connect(self, dirpath):
-        if dirpath in self._connections:
+        if dirpath in self._connected_devs:
             raise ValueError("%s is already connected" % dirpath)
-        self._connections[dirpath] = M210Connection(dirpath)
+        self._connected_devs[dirpath] = M210Connection(dirpath)
 
     @dbus.service.method(notetaker.INTERFACE, in_signature='s')
     def disconnect(self, dirpath):
-        self._connections.pop(dirpath)
+        self._connected_devs.pop(dirpath)
 
     @dbus.service.method(notetaker.INTERFACE, out_signature='as')
-    def connections(self):
-        return list(self._connections.keys())
+    def connected_devices(self):
+        return list(self._connected_devs.keys())
 
 def parse_args():
     parser = optparse.OptionParser(version='''%prog 0.1
