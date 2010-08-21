@@ -34,13 +34,12 @@ if __name__ == "__main__":
     disconnected_devs = daemon.disconnected_devices()
 
     if options.list_all:
-        options.list_disconnected = True
-        for dirpath in connected_devs:
-            print "C", dirpath
+        notetaker.cli.print_connected_devices(connected_devs)
+        notetaker.cli.print_disconnected_devices(disconnected_devs)
+        sys.exit(0)
 
     if options.list_disconnected:
-        for dirpath in disconnected_devs:
-            print "D", dirpath
+        notetaker.cli.print_disconnected_devices(disconnected_devs)
         sys.exit(0)
 
     if options.all:
