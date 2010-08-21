@@ -2,7 +2,6 @@
 # -*- coding: utf-8 -*-
 
 # Standard modules.
-import optparse
 import os
 import sys
 
@@ -19,7 +18,10 @@ import PyQt4.QtCore
 import linux
 import linux.input
 import notetaker
+import notetaker.cli
 import notetaker.pegatech
+
+USAGE='%prog [OPTION]'
 
 class M210Connection(object):
 
@@ -57,13 +59,7 @@ class Daemon(dbus.service.Object):
         return list(self._connected_devs.keys())
 
 def parse_args():
-    parser = optparse.OptionParser(version='''%prog 0.1
-Copyright (C) 2010 Tuomas (tuos) Räsänen <tuos@codegrove.org>
-License GPLv3+: GNU GPL version 3 or later <http://gnu.org/licenses/gpl.html>.
-This is free software: you are free to change and redistribute it.
-There is NO WARRANTY, to the extent permitted by law.
-
-Written by Tuomas Räsänen.''')
+    parser = notetaker.cli.OptionParser(usage=USAGE)
     parser.add_option('', '--no-daemon', action='store_false',
                       default=True, dest='daemon',
                       help='do not run %prog as a daemon')

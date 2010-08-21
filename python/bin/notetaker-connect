@@ -2,29 +2,27 @@
 # -*- coding: utf-8 -*-
 
 # Standard modules.
-import optparse
 import sys
 
 # Project modules.
 import notetaker
+import notetaker.cli
+
+USAGE = '%prog [OPTION]... DIRPATH'
+DESCRIPTION = '''Requests notetakerd to
+connect a device pointed by a path to a sysfs device directory.'''
 
 def parse_args():
-    parser = optparse.OptionParser(version='''%prog 0.1
-Copyright (C) 2010 Tuomas (tuos) Räsänen <tuos@codegrove.org>
-License GPLv3+: GNU GPL version 3 or later <http://gnu.org/licenses/gpl.html>.
-This is free software: you are free to change and redistribute it.
-There is NO WARRANTY, to the extent permitted by law.
+    parser = notetaker.cli.OptionParser(usage=USAGE,
+                                        description=DESCRIPTION)
 
-Written by Tuomas Räsänen.''',
-                                   usage='%prog [OPTION]... DIRPATH',
-                                   description='''Requests notetakerd to
-connect a device pointed by a path to a sysfs device directory.''')
     parser.add_option("--list-disconnected", "", action="store_true",
                       help="List all disconnected devices and exit.")
     parser.add_option("--list-all", "", action="store_true",
                       help="List all devices and exit.")
     parser.add_option("--all", "", action="store_true",
                       help="Connect all disconnected devices.")
+
     return parser.parse_args(sys.argv)
 
 if __name__ == "__main__":
