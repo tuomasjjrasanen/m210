@@ -5,9 +5,9 @@ import os.path
 # Third-party modules.
 import dbus
 
-NAME = 'org.codegrove.notetaker'
-OBJECT_PATH = '/org/codegrove/notetaker/daemon'
-INTERFACE = 'org.codegrove.notetaker.daemon'
+NAME = 'org.codegrove.noter'
+OBJECT_PATH = '/org/codegrove/noter/daemon'
+INTERFACE = 'org.codegrove.noter.daemon'
 
 class Daemon(dbus.Interface):
 

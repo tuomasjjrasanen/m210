@@ -5,15 +5,15 @@
 import sys
 
 # Project modules.
-import notetaker
-import notetaker.cli
+import noter
+import noter.cli
 
 USAGE = '%prog [OPTION]... DIRPATH'
-DESCRIPTION = '''Requests notetakerd to
+DESCRIPTION = '''Requests noterd to
 connect a device pointed by a path to a sysfs device directory.'''
 
 def parse_args():
-    parser = notetaker.cli.OptionParser(usage=USAGE,
+    parser = noter.cli.OptionParser(usage=USAGE,
                                         description=DESCRIPTION)
 
     parser.add_option("--list-disconnected", "", action="store_true",
@@ -28,18 +28,18 @@ def parse_args():
 if __name__ == "__main__":
     options, args = parse_args()
 
-    daemon = notetaker.Daemon()
+    daemon = noter.Daemon()
 
     connected_devs = daemon.connected_devices()
     disconnected_devs = daemon.disconnected_devices()
 
     if options.list_all:
-        notetaker.cli.print_connected_devices(connected_devs)
-        notetaker.cli.print_disconnected_devices(disconnected_devs)
+        noter.cli.print_connected_devices(connected_devs)
+        noter.cli.print_disconnected_devices(disconnected_devs)
         sys.exit(0)
 
     if options.list_disconnected:
-        notetaker.cli.print_disconnected_devices(disconnected_devs)
+        noter.cli.print_disconnected_devices(disconnected_devs)
         sys.exit(0)
 
     if options.all:

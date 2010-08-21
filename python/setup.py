@@ -37,30 +37,30 @@ class uninstall(Command):
                 print('Removing %s' % installed_filename)
                 os.system('rm %s' % installed_filename)
 
-setup(name='notetaker',
+setup(name='noter',
       version='0.1',
       author='Tuomas Räsänen',
       author_email='tuos@codegrove.org',
-      packages=['linux', 'notetaker'],
+      packages=['linux', 'noter'],
       scripts=[
-        'bin/notetakerd',
-        'bin/notetaker-connect',
-        'bin/notetaker-disconnect',
+        'bin/noterd',
+        'bin/noter-connect',
+        'bin/noter-disconnect',
         ],
       data_files=[
         ('/etc/dbus-1/system.d',
          [
-                'etc/dbus-1/system.d/org.codegrove.notetaker.conf',
+                'etc/dbus-1/system.d/org.codegrove.noter.conf',
                 ],
          ),
         ('/etc/init',
          [
-                'etc/init/notetakerd.conf',
+                'etc/init/noterd.conf',
                 ],
          ),
         ('/etc/udev/rules.d',
          [
-                'etc/udev/rules.d/50-m210.rules',
+                'etc/udev/rules.d/50-noter.rules',
                 ],
          ),
         ],
