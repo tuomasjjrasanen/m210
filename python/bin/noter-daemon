@@ -62,7 +62,7 @@ def parse_args():
     parser = noter.cli.OptionParser(usage=USAGE)
     parser.add_option('', '--no-daemon', action='store_false',
                       default=True, dest='daemon',
-                      help='do not run %prog as a daemon')
+                      help='do not run as a daemon')
     return parser.parse_args(sys.argv)
 
 def main():

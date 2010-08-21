@@ -9,7 +9,7 @@ import noter
 import noter.cli
 
 USAGE = '%prog [OPTION]... DIRPATH'
-DESCRIPTION = '''Requests noterd to
+DESCRIPTION = '''Requests noter-daemon to
 connect a device pointed by a path to a sysfs device directory.'''
 
 def parse_args():
