@@ -15,51 +15,50 @@ dbus.mainloop.glib.DBusGMainLoop(set_as_default=True)
 import PyQt4.QtCore
 
 # Project-specific modules.
-import linux
-import linux.input
-import noter
-import noter.cli
-import noter.pegatech
+import noter.core
+import noter.daemon
+import noter.daemon.input
+import noter.daemon.pegatech
 
 USAGE='%prog [OPTION]'
 
 class M210Connection(object):
 
     def __init__(self, dirpath):
-        hidraw0_path, hidraw1_path, event_path = noter.find_m210_paths(dirpath)
+        hidraw0, hidraw1, event = noter.daemon.find_m210_paths(dirpath)
         self._event_fd = None
-        self._event_fd = os.open(event_path, os.O_RDWR)
-        linux.input.grab_event_device(self._event_fd)
-        self.m210 = noter.pegatech.M210((hidraw0_path, hidraw1_path))
+        self._event_fd = os.open(event, os.O_RDWR)
+        noter.daemon.input.grab_event_device(self._event_fd)
+        self.m210 = noter.daemon.pegatech.M210((hidraw0, hidraw1))
 
     def __del__(self):
         if self._event_fd is not None:
             # self._event_fd might be None if self.__init__ fails for
             # some reason.
-            linux.input.release_event_device(self._event_fd)
+            noter.daemon.input.release_event_device(self._event_fd)
 
 class Daemon(dbus.service.Object):
 
     def __init__(self, bus):
-        dbus.service.Object.__init__(self, bus, noter.OBJECT_PATH)
+        dbus.service.Object.__init__(self, bus, noter.daemon.OBJECT_PATH)
         self._connected_devs = {}
 
-    @dbus.service.method(noter.INTERFACE, in_signature='s')
+    @dbus.service.method(noter.daemon.INTERFACE, in_signature='s')
     def connect(self, dirpath):
         if dirpath in self._connected_devs:
             raise ValueError("%s is already connected" % dirpath)
         self._connected_devs[dirpath] = M210Connection(dirpath)
 
-    @dbus.service.method(noter.INTERFACE, in_signature='s')
+    @dbus.service.method(noter.daemon.INTERFACE, in_signature='s')
     def disconnect(self, dirpath):
         self._connected_devs.pop(dirpath)
 
-    @dbus.service.method(noter.INTERFACE, out_signature='as')
+    @dbus.service.method(noter.daemon.INTERFACE, out_signature='as')
     def connected_devices(self):
         return list(self._connected_devs.keys())
 
 def parse_args():
-    parser = noter.cli.OptionParser(usage=USAGE)
+    parser = noter.core.OptionParser(usage=USAGE)
     parser.add_option('', '--no-daemon', action='store_false',
                       default=True, dest='daemon',
                       help='do not run as a daemon')
@@ -69,7 +68,7 @@ def main():
     options, args = parse_args()
 
     if options.daemon:
-        linux.daemonize()
+        noter.daemon.daemonize()
 
     # Integrate to glib-mainloop. For some reason, DBusQtMainLoop does
     # not work.
@@ -79,7 +78,7 @@ def main():
     bus = dbus.SystemBus()
 
     # Register a well-known name for the service.
-    name = dbus.service.BusName(noter.NAME, bus)
+    name = dbus.service.BusName(noter.daemon.NAME, bus)
 
     # Export a daemon object through the bus.
     daemon = Daemon(bus)

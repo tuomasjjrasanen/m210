@@ -1,0 +1,13 @@
+=======
+ Noter
+=======
+
+Noter is a software project which aims to provide easy-to-use tools
+for controlling and using digital pens and notetaker devices in modern
+Linux desktop environments.
+
+The latest release of Noter provides support for following models:
+
+- `Pegasus Mobile Notetaker M210`_
+
+.. _Pegasus Mobile Notetaker M210: http://www.pegatech.com/?CategoryID=207&ArticleID=268
