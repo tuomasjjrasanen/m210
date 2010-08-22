@@ -14,15 +14,13 @@ import dbus
 import dbus.service
 import dbus.mainloop.glib
 
-dbus.mainloop.glib.DBusGMainLoop(set_as_default=True)
-
 import PyQt4.QtCore
 
 # Project-specific modules.
-import noter.optparse
-import noter.daemon
 import noter.collections
+import noter.daemon
 import noter.input
+import noter.optparse
 import noter.pegatech
 
 USAGE='%prog [OPTION]'
@@ -79,10 +77,12 @@ class Daemon(dbus.service.Object):
     @dbus.service.method(noter.daemon.INTERFACE, in_signature='s')
     def connect(self, devpath):
         self._connection_map[devpath] = M210Connection(devpath)
+        self.device_connected(devpath)
 
     @dbus.service.method(noter.daemon.INTERFACE, in_signature='s')
     def disconnect(self, devpath):
         self._connection_map.pop(devpath)
+        self.device_disconnected(devpath)
 
     @dbus.service.method(noter.daemon.INTERFACE, out_signature='as')
     def connected_devpaths(self):
@@ -109,11 +109,24 @@ class Daemon(dbus.service.Object):
     @dbus.service.method(noter.daemon.INTERFACE, in_signature='s')
     def delete_notes(self, devpath):
         self._connection_map[devpath].m210.delete_notes()
+        self.device_erased(devpath)
 
     @dbus.service.method(noter.daemon.INTERFACE, in_signature='s',
                          out_signature='a{si}')
     def get_info(self, devpath):
         return self._connection_map[devpath].m210.get_info()
+
+    @dbus.service.signal(noter.daemon.INTERFACE, signature='s')
+    def device_connected(self, devpath):
+        pass
+
+    @dbus.service.signal(noter.daemon.INTERFACE, signature='s')
+    def device_disconnected(self, devpath):
+        pass
+
+    @dbus.service.signal(noter.daemon.INTERFACE, signature='s')
+    def device_erased(self, devpath):
+        pass
 
 def parse_args():
     parser = noter.optparse.OptionParser(usage=USAGE)
