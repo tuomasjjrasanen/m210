@@ -5,46 +5,34 @@
 import sys
 
 # Project modules.
-import noter.cli
 import noter.core
 import noter.daemon
 
-USAGE = '%prog [OPTION]... DIRPATH'
-
-DESCRIPTION = '''Requests noter-daemon to
-disconnect a device pointed by a path to a sysfs device directory.'''
-
-def parse_args():
-    parser = noter.core.OptionParser(usage=USAGE,
-                                     description=DESCRIPTION)
-    parser.add_option("--list-connected", "", action="store_true",
-                      help="List all connected devices and exit.")
-    parser.add_option("--list-all", "", action="store_true",
-                      help="List all devices and exit.")
-    parser.add_option("--all", "", action="store_true",
-                      help="Disconnect all connected devices.")
-    return parser.parse_args(sys.argv)
+USAGE = '%prog [OPTION]... [DEVPATH]...'
+DESCRIPTION = 'Disconnect devices from the noter-daemon.'
 
 if __name__ == "__main__":
-    options, args = parse_args()
+    parser = noter.core.OptionParser(usage=USAGE, description=DESCRIPTION)
+
+    parser.add_option("--verbose", "", action="store_true", default=False,
+                      help="print processing messages")
+    parser.add_option("--all", "", action="store_true",
+                      help="disconnect all connected devices")
+
+    options, args = parser.parse_args(sys.argv)
 
     daemon = noter.daemon.Interface()
 
-    connected_devs = daemon.connected_devices()
-    disconnected_devs = list(daemon.disconnected_devices())
-
-    if options.list_all:
-        noter.cli.print_connected_devices(connected_devs)
-        noter.cli.print_disconnected_devices(disconnected_devs)
-        sys.exit(0)
-
-    if options.list_connected:
-        noter.cli.print_connected_devices(connected_devs)
-        sys.exit(0)
-
     if options.all:
-        for dirpath in connected_devs:
+        for dirpath in daemon.connected_devpaths():
             daemon.disconnect(dirpath)
         sys.exit(0)
 
-    daemon.disconnect(args[1])
+    devpaths = args[1:]
+    if not devpaths:
+        devpaths.append(daemon.connected_devpaths()[0])
+        
+    for devpath in devpaths:
+        daemon.disconnect(devpath)
+        if options.verbose:
+            print "D", devpath

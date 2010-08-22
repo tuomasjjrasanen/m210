@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 
 # Standard modules.
+import os.path
 import sys
 
 # Project modules.
@@ -9,30 +10,31 @@ import noter.core
 import noter.daemon
 
 USAGE = '%prog [OPTION]... [DEVPATH]...'
-DESCRIPTION = 'Connect devices to the noter-daemon.'
+DESCRIPTION = 'Print information about connected devices.'
 
 if __name__ == "__main__":
     parser = noter.core.OptionParser(usage=USAGE, description=DESCRIPTION)
 
-    parser.add_option("--verbose", "", action="store_true", default=False,
-                      help="print processing messages")
     parser.add_option("--all", "", action="store_true",
-                      help="connect all disconnected devices")
+                      help="print info about all connected devices")
 
     options, args = parser.parse_args(sys.argv)
 
     daemon = noter.daemon.Interface()
 
+    def print_info(devpath):
+        print devpath
+        for key, value in daemon.get_info(devpath).items():
+            print " ", key.replace("_", " ").capitalize() + ":", value
+    
     if options.all:
-        for dirpath in daemon.disconnected_devpaths():
-            daemon.connect(dirpath)
+        for devpath in daemon.connected_devpaths():
+            print_info(devpath)
         sys.exit(0)
-
+        
     devpaths = args[1:]
     if not devpaths:
-        devpaths.append("")
+        devpaths.append(daemon.connected_devpaths()[0])
 
     for devpath in devpaths:
-        devpath = daemon.connect(devpath)
-        if options.verbose:
-            print "C", devpath
+        print_info(devpath)

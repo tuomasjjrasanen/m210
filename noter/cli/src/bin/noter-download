@@ -1,0 +1,37 @@
+#!/usr/bin/python
+# -*- coding: utf-8 -*-
+
+# Standard modules.
+import os.path
+import sys
+
+# Project modules.
+import noter.core
+import noter.daemon
+
+USAGE = '%prog [OPTION]... FILE [DEVPATH]'
+DESCRIPTION = 'Download notes to a file from a connected device.'
+
+if __name__ == "__main__":
+    parser = noter.core.OptionParser(usage=USAGE, description=DESCRIPTION)
+
+    parser.add_option("--verbose", "", action="store_true", default=False,
+                      help="print processing messages")
+
+    options, args = parser.parse_args(sys.argv)
+
+    try:
+        filepath = os.path.abspath(args[1])
+    except IndexError:
+        parser.error("FILE is required.")
+
+    daemon = noter.daemon.Interface()
+
+    try:
+        device = args[2]
+    except IndexError:
+        device = daemon.connected_devpaths()[0]
+
+    bytes = daemon.download_notes(device, filepath)
+    if options.verbose:
+        print bytes, "bytes downloaded to '%s'." % filepath

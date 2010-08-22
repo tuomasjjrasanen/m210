@@ -43,14 +43,15 @@ class M210(object):
       >>> import pegatech
       >>> m210 = pegatech.M210(("/dev/hidraw1", "/dev/hidraw2"))
       >>> m210.get_info()
-      {'download_size': 1364, 'firmware_version': 337, 'analog_version': 265, 'pad_version': 32028, 'mode': 'tablet'}
+      {'download_size': 1364, 'firmware_version': 337, 'analog_version': 265, 'pad_version': 32028, 'mode': 2}
       >>> download_destination = open("m210notes", "wb")
       >>> m210.download_notes_to(download_destination)
+      1364
       >>> download_destination.tell()
       1364
       >>> m210.delete_notes()
       >>> m210.get_info()
-      {'download_size': 0, 'firmware_version': 337, 'analog_version': 265, 'pad_version': 32028, 'mode': 'tablet'}
+      {'download_size': 0, 'firmware_version': 337, 'analog_version': 265, 'pad_version': 32028, 'mode': 2}
     
     """
 
@@ -105,12 +106,10 @@ class M210(object):
 
         firmware_ver, analog_ver, pad_ver = struct.unpack('>HHH', response[3:9])
 
-        mode = {'\x01': 'mouse', '\x02': 'tablet'}[response[10]]
-
         return {'firmware_version': firmware_ver,
                 'analog_version': analog_ver,
                 'pad_version': pad_ver,
-                'mode': mode}
+                'mode': ord(response[10])}
 
     def _accept_upload(self):
         self._write('\xb6')
