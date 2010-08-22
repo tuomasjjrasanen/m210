@@ -13,8 +13,8 @@ import os
 import select
 import struct
 
-import noter.daemon.hidraw
-import noter.daemon.collections
+import noter.hidraw
+import noter.collections
 
 __all__ =  [
     "CommunicationError",
@@ -62,7 +62,7 @@ class M210(object):
         self._fds = []
         for filepath, mode in zip(hidraw_filepaths, (os.O_RDWR, os.O_RDONLY)):
             fd = os.open(filepath, mode)
-            devinfo = noter.daemon.hidraw.get_devinfo(fd)
+            devinfo = noter.hidraw.get_devinfo(fd)
             if devinfo != {'product': 257, 'vendor': 3616, 'bustype': 3}:
                 raise ValueError('%s is not a M210 hidraw device.' % filepath)
             self._fds.append(fd)
@@ -193,7 +193,7 @@ class M210(object):
             return 0
 
         self._accept_upload()
-        lost_packet_numbers = noter.daemon.collections.OrderedSet()
+        lost_packet_numbers = noter.collections.OrderedSet()
 
         # For some odd reason, packet numbering starts from 1 in
         # M210's memory.

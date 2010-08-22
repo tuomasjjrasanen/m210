@@ -1,14 +1,8 @@
 # -*- coding: utf-8 -*-
 
-from distutils.core import setup, Extension
+from distutils.core import setup
 
 import noter
-
-modulehidraw = Extension('noter.daemon.hidraw',
-                         sources=['src/lib/modulehidraw.c'])
-
-moduleinput = Extension('noter.daemon.input',
-                         sources=['src/lib/moduleinput.c'])
 
 setup(name='noter-daemon',
       version=noter.VERSION,
@@ -36,5 +30,4 @@ setup(name='noter-daemon',
                 ],
          ),
         ],
-      ext_modules=[modulehidraw, moduleinput],
       )
