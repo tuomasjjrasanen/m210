@@ -6,14 +6,14 @@ import os.path
 import sys
 
 # Project modules.
-import noter.core
+import noter.optparse
 import noter.daemon
 
 USAGE = '%prog [OPTION]... FILE [DEVPATH]'
 DESCRIPTION = 'Download notes to a file from a connected device.'
 
 if __name__ == "__main__":
-    parser = noter.core.OptionParser(usage=USAGE, description=DESCRIPTION)
+    parser = noter.optparse.OptionParser(usage=USAGE, description=DESCRIPTION)
 
     parser.add_option("--verbose", "", action="store_true", default=False,
                       help="print processing messages")

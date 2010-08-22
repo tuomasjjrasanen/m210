@@ -6,7 +6,7 @@ import os.path
 import sys
 
 # Project modules.
-import noter.core
+import noter.optparse
 import noter.daemon
 
 USAGE = '%prog [OPTION]... [DEVPATH]...'
@@ -24,7 +24,7 @@ def is_confirmed():
             print "Please answer y or n."
 
 if __name__ == "__main__":
-    parser = noter.core.OptionParser(usage=USAGE, description=DESCRIPTION)
+    parser = noter.optparse.OptionParser(usage=USAGE, description=DESCRIPTION)
 
     parser.add_option("--no-confirmation", "", action="store_false",
                       dest="ask_confirmation", default=True,

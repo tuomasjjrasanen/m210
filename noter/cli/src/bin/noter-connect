@@ -5,14 +5,14 @@
 import sys
 
 # Project modules.
-import noter.core
+import noter.optparse
 import noter.daemon
 
 USAGE = '%prog [OPTION]... [DEVPATH]...'
 DESCRIPTION = 'Connect devices to the noter-daemon.'
 
 if __name__ == "__main__":
-    parser = noter.core.OptionParser(usage=USAGE, description=DESCRIPTION)
+    parser = noter.optparse.OptionParser(usage=USAGE, description=DESCRIPTION)
 
     parser.add_option("--verbose", "", action="store_true", default=False,
                       help="print processing messages")

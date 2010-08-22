@@ -6,14 +6,14 @@ import os.path
 import sys
 
 # Project modules.
-import noter.core
+import noter.optparse
 import noter.daemon
 
 USAGE = '%prog [OPTION]... [DEVPATH]...'
 DESCRIPTION = 'Print information about connected devices.'
 
 if __name__ == "__main__":
-    parser = noter.core.OptionParser(usage=USAGE, description=DESCRIPTION)
+    parser = noter.optparse.OptionParser(usage=USAGE, description=DESCRIPTION)
 
     parser.add_option("--all", "", action="store_true",
                       help="print info about all connected devices")

@@ -19,7 +19,7 @@ dbus.mainloop.glib.DBusGMainLoop(set_as_default=True)
 import PyQt4.QtCore
 
 # Project-specific modules.
-import noter.core
+import noter.optparse
 import noter.daemon
 import noter.daemon.collections
 import noter.daemon.input
@@ -120,7 +120,7 @@ class Daemon(dbus.service.Object):
         return self._connection_map[devpath].m210.get_info()
 
 def parse_args():
-    parser = noter.core.OptionParser(usage=USAGE)
+    parser = noter.optparse.OptionParser(usage=USAGE)
     parser.add_option('', '--no-daemon', action='store_false',
                       default=True, dest='daemon',
                       help='do not run as a daemon')
