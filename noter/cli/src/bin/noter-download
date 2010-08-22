@@ -6,8 +6,9 @@ import os.path
 import sys
 
 # Project modules.
-import noter.optparse
+import noter.cli
 import noter.daemon
+import noter.optparse
 
 USAGE = '%prog [OPTION]... FILE [DEVPATH]'
 DESCRIPTION = 'Download notes to a file from a connected device.'
@@ -28,10 +29,10 @@ if __name__ == "__main__":
     daemon = noter.daemon.Interface()
 
     try:
-        device = args[2]
+        devpath = args[2]
     except IndexError:
-        device = daemon.connected_devpaths()[0]
+        devpath = noter.cli.get_connected_devpath_or_exit(daemon)
 
-    bytes = daemon.download_notes(device, filepath)
+    bytes = daemon.download_notes(devpath, filepath)
     if options.verbose:
         print bytes, "bytes downloaded to '%s'." % filepath

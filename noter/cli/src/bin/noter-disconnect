@@ -5,8 +5,9 @@
 import sys
 
 # Project modules.
-import noter.optparse
+import noter.cli
 import noter.daemon
+import noter.optparse
 
 USAGE = '%prog [OPTION]... [DEVPATH]...'
 DESCRIPTION = 'Disconnect devices from the noter-daemon.'
@@ -30,7 +31,7 @@ if __name__ == "__main__":
 
     devpaths = args[1:]
     if not devpaths:
-        devpaths.append(daemon.connected_devpaths()[0])
+        devpaths.append(noter.cli.get_connected_devpath_or_exit(daemon))
         
     for devpath in devpaths:
         daemon.disconnect(devpath)

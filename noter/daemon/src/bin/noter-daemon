@@ -76,13 +76,9 @@ class Daemon(dbus.service.Object):
         dbus.service.Object.__init__(self, bus, noter.daemon.OBJECT_PATH)
         self._connection_map = noter.collections.OrderedDict()
 
-    @dbus.service.method(noter.daemon.INTERFACE, in_signature='s',
-                         out_signature='s')
+    @dbus.service.method(noter.daemon.INTERFACE, in_signature='s')
     def connect(self, devpath):
-        if not devpath:
-            devpath = self.disconnected_devpaths()[0]
         self._connection_map[devpath] = M210Connection(devpath)
-        return devpath
 
     @dbus.service.method(noter.daemon.INTERFACE, in_signature='s')
     def disconnect(self, devpath):

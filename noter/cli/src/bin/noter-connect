@@ -2,11 +2,12 @@
 # -*- coding: utf-8 -*-
 
 # Standard modules.
+import os.path
 import sys
 
 # Project modules.
-import noter.optparse
 import noter.daemon
+import noter.optparse
 
 USAGE = '%prog [OPTION]... [DEVPATH]...'
 DESCRIPTION = 'Connect devices to the noter-daemon.'
@@ -30,7 +31,14 @@ if __name__ == "__main__":
 
     devpaths = args[1:]
     if not devpaths:
-        devpaths.append("")
+        disconnected_devpaths = daemon.disconnected_devpaths()
+        try:
+            devpath = disconnected_devpaths[0]
+        except IndexError:
+            prog = os.path.basename(sys.argv[0])
+            print >>sys.stderr, "%s: error: not any devices available" % prog
+            sys.exit(1)
+        devpaths.append(devpath)
 
     for devpath in devpaths:
         devpath = daemon.connect(devpath)

@@ -6,8 +6,9 @@ import os.path
 import sys
 
 # Project modules.
-import noter.optparse
+import noter.cli
 import noter.daemon
+import noter.optparse
 
 USAGE = '%prog [OPTION]... [DEVPATH]...'
 DESCRIPTION = 'Erase notes from connected devices.'
@@ -38,7 +39,7 @@ if __name__ == "__main__":
 
     devpaths = args[1:]
     if not devpaths:
-        devpaths.append(daemon.connected_devpaths()[0])
+        devpaths.append(noter.cli.get_connected_devpath_or_exit(daemon))
 
     for devpath in devpaths:
         print devpath
