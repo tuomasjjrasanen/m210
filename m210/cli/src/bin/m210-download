@@ -1,0 +1,38 @@
+#!/usr/bin/python
+# -*- coding: utf-8 -*-
+
+# Standard modules.
+import os.path
+import sys
+
+# Project modules.
+import m210.cli
+import m210.daemon
+import m210.optparse
+
+USAGE = '%prog [OPTION]... FILE [DEVPATH]'
+DESCRIPTION = 'Download notes to a file from a connected device.'
+
+if __name__ == "__main__":
+    parser = m210.optparse.OptionParser(usage=USAGE, description=DESCRIPTION)
+
+    parser.add_option("--verbose", "", action="store_true", default=False,
+                      help="print processing messages")
+
+    options, args = parser.parse_args(sys.argv)
+
+    try:
+        filepath = os.path.abspath(args[1])
+    except IndexError:
+        parser.error("FILE is required.")
+
+    daemon = m210.daemon.Interface()
+
+    try:
+        devpath = args[2]
+    except IndexError:
+        devpath = m210.cli.get_connected_devpath_or_exit(daemon)
+
+    bytes = daemon.download_notes(devpath, filepath)
+    if options.verbose:
+        print bytes, "bytes downloaded to '%s'." % filepath

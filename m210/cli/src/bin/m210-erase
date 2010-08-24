@@ -1,0 +1,49 @@
+#!/usr/bin/python
+# -*- coding: utf-8 -*-
+
+# Standard modules.
+import os.path
+import sys
+
+# Project modules.
+import m210.cli
+import m210.daemon
+import m210.optparse
+
+USAGE = '%prog [OPTION]... [DEVPATH]...'
+DESCRIPTION = 'Erase notes from connected devices.'
+
+def is_confirmed():
+    while True:
+        answer = raw_input("Really erase [y/n]? ")
+        if answer == 'y':
+            return True
+        elif answer == 'n':
+            print "Aborted."
+            return False
+        else:
+            print "Please answer y or n."
+
+if __name__ == "__main__":
+    parser = m210.optparse.OptionParser(usage=USAGE, description=DESCRIPTION)
+
+    parser.add_option("--no-confirmation", "", action="store_false",
+                      dest="ask_confirmation", default=True,
+                      help="do not ask confirmation")
+    parser.add_option("--all", "", action="store_true",
+                      help="erase all connected devices")
+
+    options, args = parser.parse_args(sys.argv)
+
+    daemon = m210.daemon.Interface()
+
+    devpaths = args[1:]
+    if not devpaths:
+        devpaths.append(m210.cli.get_connected_devpath_or_exit(daemon))
+
+    for devpath in devpaths:
+        print devpath
+        if options.ask_confirmation:
+            if not is_confirmed():
+                continue
+        daemon.delete_notes(devpath)

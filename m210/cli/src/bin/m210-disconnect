@@ -1,0 +1,39 @@
+#!/usr/bin/python
+# -*- coding: utf-8 -*-
+
+# Standard modules.
+import sys
+
+# Project modules.
+import m210.cli
+import m210.daemon
+import m210.optparse
+
+USAGE = '%prog [OPTION]... [DEVPATH]...'
+DESCRIPTION = 'Disconnect devices from the m210-daemon.'
+
+if __name__ == "__main__":
+    parser = m210.optparse.OptionParser(usage=USAGE, description=DESCRIPTION)
+
+    parser.add_option("--verbose", "", action="store_true", default=False,
+                      help="print processing messages")
+    parser.add_option("--all", "", action="store_true",
+                      help="disconnect all connected devices")
+
+    options, args = parser.parse_args(sys.argv)
+
+    daemon = m210.daemon.Interface()
+
+    if options.all:
+        for dirpath in daemon.connected_devpaths():
+            daemon.disconnect(dirpath)
+        sys.exit(0)
+
+    devpaths = args[1:]
+    if not devpaths:
+        devpaths.append(m210.cli.get_connected_devpath_or_exit(daemon))
+        
+    for devpath in devpaths:
+        daemon.disconnect(devpath)
+        if options.verbose:
+            print "D", devpath
