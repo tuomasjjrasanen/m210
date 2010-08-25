@@ -5,9 +5,11 @@
 import os.path
 import sys
 
+# Third-party modules
+import dbus.exceptions
+
 # Project modules.
 import m210.cli
-import m210.daemon
 import m210.optparse
 
 USAGE = '%prog [OPTION]... FILE [DEVPATH]'
@@ -26,13 +28,19 @@ if __name__ == "__main__":
     except IndexError:
         parser.error("FILE is required.")
 
-    daemon = m210.daemon.Interface()
+    daemon = m210.cli.get_interface_or_exit()
 
     try:
         devpath = args[2]
     except IndexError:
-        devpath = m210.cli.get_connected_devpath_or_exit(daemon)
+        devpath = daemon.devpaths()[-1]
 
-    bytes = daemon.download_notes(devpath, filepath)
+    open(filepath, "a").close()
+    try:
+        bytes = daemon.download_notes(devpath, filepath)
+    except dbus.exceptions.DBusException, e:
+        if e.get_dbus_name() == "org.freedesktop.DBus.Python.m210.daemon.NotConnectedError":
+            m210.cli.error_and_exit("%s is not connected" % devpath)
+        raise e
     if options.verbose:
         print bytes, "bytes downloaded to '%s'." % filepath

@@ -2,40 +2,46 @@
 # -*- coding: utf-8 -*-
 
 # Standard modules.
-import os.path
 import sys
+
+# Third-party modules.
+import dbus.exceptions
 
 # Project modules.
 import m210.cli
-import m210.daemon
 import m210.optparse
 
 USAGE = '%prog [OPTION]... [DEVPATH]...'
-DESCRIPTION = 'Print information about connected devices.'
+DESCRIPTION = 'Print information about plugged devices.'
 
 if __name__ == "__main__":
     parser = m210.optparse.OptionParser(usage=USAGE, description=DESCRIPTION)
 
     parser.add_option("--all", "", action="store_true",
-                      help="print info about all connected devices")
+                      help="print info about all plugged devices")
 
     options, args = parser.parse_args(sys.argv)
 
-    daemon = m210.daemon.Interface()
+    daemon = m210.cli.get_interface_or_exit()
 
-    def print_info(devpath):
-        print devpath
-        for key, value in daemon.get_info(devpath).items():
-            print " ", key.replace("_", " ").capitalize() + ":", value
-    
     if options.all:
-        for devpath in daemon.connected_devpaths():
-            print_info(devpath)
-        sys.exit(0)
-        
-    devpaths = args[1:]
-    if not devpaths:
-        devpaths.append(m210.cli.get_connected_devpath_or_exit(daemon))
+        devpaths = daemon.devpaths()
+    else:        
+        devpaths = args[1:]
+        if not devpaths:
+            devpaths = daemon.devpaths()[-1:]
 
     for devpath in devpaths:
-        print_info(devpath)
+        print "Device directory:", devpath
+        try:
+            firmware, analog, pad, mode, bytes = daemon.get_info(devpath)
+        except dbus.exceptions.DBusException, e:
+            name = e.get_dbus_name()
+            if name == "org.freedesktop.DBus.Python.m210.daemon.NotConnectedError":
+                continue
+            raise e
+        print "Firmware version:", firmware
+        print "Analog version:  ", analog
+        print "Pad version:     ", pad
+        print "Mode:            ", mode
+        print "Used memory:     ", bytes

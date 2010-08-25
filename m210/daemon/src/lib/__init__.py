@@ -7,6 +7,15 @@ NAME = 'org.codegrove.m210.daemon'
 OBJECT_PATH = '/org/codegrove/m210/daemon'
 INTERFACE = 'org.codegrove.m210.daemon'
 
+class AlreadyConnectedError(Exception):
+    pass
+
+class NotConnectedError(Exception):
+    pass
+
+class UnknownDeviceError(Exception):
+    pass
+
 class Interface(dbus.Interface):
 
     def __init__(self):

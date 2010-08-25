@@ -4,9 +4,11 @@
 # Standard modules.
 import sys
 
+# Third-party modules.
+import dbus.exceptions
+
 # Project modules.
 import m210.cli
-import m210.daemon
 import m210.optparse
 
 USAGE = '%prog [OPTION]... [DEVPATH]...'
@@ -22,18 +24,25 @@ if __name__ == "__main__":
 
     options, args = parser.parse_args(sys.argv)
 
-    daemon = m210.daemon.Interface()
+    daemon = m210.cli.get_interface_or_exit()
 
     if options.all:
-        for dirpath in daemon.connected_devpaths():
-            daemon.disconnect(dirpath)
+        for devpath in daemon.disconnect_all():
+            if options.verbose:
+                print "D", devpath
         sys.exit(0)
 
     devpaths = args[1:]
     if not devpaths:
-        devpaths.append(m210.cli.get_connected_devpath_or_exit(daemon))
+        devpaths = daemon.devpaths()[-1:]
         
     for devpath in devpaths:
-        daemon.disconnect(devpath)
+        try:
+            daemon.disconnect(devpath)
+        except dbus.exceptions.DBusException, e:
+            if e.get_dbus_name() == "org.freedesktop.DBus.Python.m210.daemon.NotConnectedError":
+                m210.cli.error_and_exit("%s is not connected" % devpath)
+            raise e           
+
         if options.verbose:
             print "D", devpath

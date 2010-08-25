@@ -71,50 +71,103 @@ class M210Connection(object):
 class Daemon(dbus.service.Object):
 
     def __init__(self, bus):
-        dbus.service.Object.__init__(self, bus, m210.daemon.OBJECT_PATH)
         self._connection_map = m210.collections.OrderedDict()
+        for devpath in find_m210_devpaths():
+            self._connection_map[devpath] = None
+        bus.add_signal_receiver(self.device_added, "device_added")
+        bus.add_signal_receiver(self.device_removed, "device_removed")
+        dbus.service.Object.__init__(self, bus, m210.daemon.OBJECT_PATH)
+
+    def device_added(self, devpath):
+        self._connection_map[devpath] = None
+        self.device_plugged(devpath)
+
+    def device_removed(self, devpath):
+        try:
+            self._connection_map.pop(devpath)
+        except KeyError:
+            pass
+        else:
+            self.device_unplugged(devpath)
+
+    def get_connection(self, devpath):
+        try:
+            conn = self._connection_map[devpath]
+        except KeyError:
+            raise m210.daemon.UnknownDeviceError(devpath)
+        if conn is None:
+            raise m210.daemon.NotConnectedError(devpath)
+        return conn
 
     @dbus.service.method(m210.daemon.INTERFACE, in_signature='s')
     def connect(self, devpath):
-        self._connection_map[devpath] = M210Connection(devpath)
-        self.device_connected(devpath)
+        try:
+            self.get_connection(devpath)
+        except m210.daemon.NotConnectedError:
+            self._connection_map[devpath] = M210Connection(devpath)
+            self.device_connected(devpath)
+        else:
+            raise m210.daemon.AlreadyConnectedError(devpath)
+
+    @dbus.service.method(m210.daemon.INTERFACE, out_signature='as')
+    def connect_all(self):
+        result = []
+        for devpath in self._connection_map:
+            try:
+                self.connect(devpath)
+            except m210.daemon.AlreadyConnectedError:
+                continue
+            result.append(devpath)
+        return result
 
     @dbus.service.method(m210.daemon.INTERFACE, in_signature='s')
     def disconnect(self, devpath):
-        self._connection_map.pop(devpath)
+        self.get_connection(devpath)
+        self._connection_map[devpath] = None
         self.device_disconnected(devpath)
 
     @dbus.service.method(m210.daemon.INTERFACE, out_signature='as')
-    def connected_devpaths(self):
-        return self._connection_map.keys()
+    def disconnect_all(self):
+        result = []
+        for devpath in self._connection_map:
+            try:
+                self.disconnect(devpath)
+            except m210.daemon.NotConnectedError:
+                continue
+            result.append(devpath)
+        return result
 
     @dbus.service.method(m210.daemon.INTERFACE, out_signature='as')
-    def disconnected_devpaths(self):
-        result = []
-        connected_devpaths = self.connected_devpaths()
-        for devpath in find_m210_devpaths():
-            if devpath not in connected_devpaths:
-                result.append(devpath)
-        return result
+    def devpaths(self):
+        return self._connection_map.keys()
 
     @dbus.service.method(m210.daemon.INTERFACE, in_signature='ss',
                          out_signature='i')
     def download_notes(self, devpath, filename):
         f = open(filename, "wb")
         try:
-            return self._connection_map[devpath].m210.download_notes_to(f)
+            return self.get_connection(devpath).m210.download_notes_to(f)
         finally:
             f.close()
 
     @dbus.service.method(m210.daemon.INTERFACE, in_signature='s')
     def delete_notes(self, devpath):
-        self._connection_map[devpath].m210.delete_notes()
+        self.get_connection(devpath).m210.delete_notes()
         self.device_erased(devpath)
 
     @dbus.service.method(m210.daemon.INTERFACE, in_signature='s',
-                         out_signature='a{si}')
+                         out_signature='iiisi')
     def get_info(self, devpath):
-        return self._connection_map[devpath].m210.get_info()
+        info = self.get_connection(devpath).m210.get_info()
+        return info['firmware_version'], info['analog_version'], info['pad_version'], info['mode'], info['used_memory']
+
+    @dbus.service.signal(m210.daemon.INTERFACE, signature='s')
+    def device_plugged(self, devpath):
+        pass
+
+    @dbus.service.signal(m210.daemon.INTERFACE, signature='s')
+    def device_unplugged(self, devpath):
+        pass
 
     @dbus.service.signal(m210.daemon.INTERFACE, signature='s')
     def device_connected(self, devpath):

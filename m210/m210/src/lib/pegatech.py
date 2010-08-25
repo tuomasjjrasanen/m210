@@ -43,7 +43,7 @@ class M210(object):
       >>> import pegatech
       >>> dev = pegatech.M210(("/dev/hidraw1", "/dev/hidraw2"))
       >>> dev.get_info()
-      {'download_size': 1364, 'firmware_version': 337, 'analog_version': 265, 'pad_version': 32028, 'mode': 2}
+      {'used_memory': 1364, 'firmware_version': 337, 'analog_version': 265, 'pad_version': 32028, 'mode': 'table'}
       >>> download_destination = open("m210notes", "wb")
       >>> dev.download_notes_to(download_destination)
       1364
@@ -51,7 +51,7 @@ class M210(object):
       1364
       >>> dev.delete_notes()
       >>> dev.get_info()
-      {'download_size': 0, 'firmware_version': 337, 'analog_version': 265, 'pad_version': 32028, 'mode': 2}
+      {'used_memory': 0, 'firmware_version': 337, 'analog_version': 265, 'pad_version': 32028, 'mode': 'table'}
     
     """
 
@@ -104,12 +104,14 @@ class M210(object):
             raise CommunicationError('Unexpected response to info request: %s'
                                      % response)
 
+        mode_str = {'\x01': 'mouse', '\x02': 'tablet'}[response[10]]
+
         firmware_ver, analog_ver, pad_ver = struct.unpack('>HHH', response[3:9])
 
         return {'firmware_version': firmware_ver,
                 'analog_version': analog_ver,
                 'pad_version': pad_ver,
-                'mode': ord(response[10])}
+                'mode': mode_str}
 
     def _accept_upload(self):
         self._write('\xb6')
@@ -150,7 +152,7 @@ class M210(object):
         info = self._wait_ready()
         packet_count = self._begin_upload()
         self._reject_upload()
-        info['download_size'] = packet_count * M210._PACKET_PAYLOAD_SIZE
+        info['used_memory'] = packet_count * M210._PACKET_PAYLOAD_SIZE
         return info
 
     def delete_notes(self):

@@ -8,8 +8,12 @@ setup(name='m210-cli',
       version=m210.VERSION,
       author='Tuomas Räsänen',
       author_email='tuos@codegrove.org',
-      package_dir={'m210.cli': 'src/lib'},
-      packages=['m210.cli'],
+      package_dir={
+        'm210.cli': 'src/lib',
+        },
+      packages=[
+        'm210.cli',
+        ],
       scripts=[
         'src/bin/m210-connect',
         'src/bin/m210-disconnect',
