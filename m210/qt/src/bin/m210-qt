@@ -1,0 +1,140 @@
+#!/usr/bin/python
+# -*- coding: utf-8 -*-
+
+import sys
+
+import dbus.mainloop.qt
+dbus.mainloop.qt.DBusQtMainLoop(set_as_default=True)
+
+from PyQt4.QtCore import pyqtSignal
+from PyQt4.QtCore import Qt
+from PyQt4.QtCore import QObject
+from PyQt4.QtGui import QApplication
+from PyQt4.QtGui import QMainWindow
+from PyQt4.QtGui import QFileDialog
+from PyQt4.QtGui import QMessageBox
+
+from m210.qt.ui.mainwindow import Ui_MainWindow
+import m210.daemon
+
+class MainWindow(QMainWindow, Ui_MainWindow):
+
+    def __init__(self, *args):
+        QMainWindow.__init__(self, *args)
+        self.setupUi(self)
+        self.actionQuit.triggered.connect(self.close)
+        self.menuFile.addAction(self.actionQuit)
+        self.daemon = m210.daemon.Interface()
+        self.index_map = {}
+        for devpath in self.daemon.devpaths():
+            self.device_plugged(devpath)
+
+        self.listWidget.itemSelectionChanged.connect(self.device_selection_changed)
+        self.daemon.connect_to_signal("device_plugged", self.device_plugged)
+        self.daemon.connect_to_signal("device_unplugged", self.device_unplugged)
+        self.daemon.connect_to_signal("device_connected", self.device_connected)
+        self.daemon.connect_to_signal("device_disconnected",
+                                      self.device_disconnected)
+        self.groupBox.clicked.connect(self.connection_clicked)
+        self.spinBoxUsedMemory.valueChanged.connect(self.used_mem_changed)
+        self.pushButtonErase.clicked.connect(self.erase_clicked)
+        self.pushButtonDownload.clicked.connect(self.download_clicked)
+
+    def download_clicked(self):
+        filename = QFileDialog.getSaveFileName(self, "Select download target")
+        if filename:
+            devpath = self.selected_devpath()
+            # Just create the file if it does not exist. This should
+            # to ensure that the file has a proper owner and a
+            # group. m210-daemon is probably running under different
+            # uid and will create the file if it does not exist.
+            open(filename, "a").close()
+            self.daemon.download_notes(devpath, unicode(filename))
+
+    def erase_clicked(self):
+        result = QMessageBox.question(self, "Erase all notes?",
+                                      "Are you sure you want to erase all notes stored in the device?",
+                                      QMessageBox.Yes | QMessageBox.No,
+                                      QMessageBox.No)
+        if result == QMessageBox.Yes:
+            devpath = self.selected_devpath()
+            self.daemon.delete_notes(devpath)
+            self.spinBoxUsedMemory.setValue(0)
+
+    def used_mem_changed(self, memory):
+        self.pushButtonDownload.setEnabled(bool(memory))
+        self.pushButtonErase.setEnabled(bool(memory))
+
+    def connection_clicked(self, is_checked):
+        devpath = self.selected_devpath()
+        if is_checked:
+            self.daemon.connect(devpath)
+        else:
+            self.daemon.disconnect(devpath)
+        
+    def device_selection_changed(self):
+        devpath = self.selected_devpath()
+        if not devpath:
+            self.groupBox.setEnabled(False)
+            return
+        self.groupBox.setEnabled(True)
+        try:
+            self.update_details(devpath)
+        except dbus.exceptions.DBusException, e:
+            name = e.get_dbus_name()
+            if name != "org.freedesktop.DBus.Python.m210.daemon.NotConnectedError":
+                raise e
+
+    def selected_devpath(self):
+        try:
+            selected_item = self.listWidget.selectedItems()[0]
+        except IndexError:
+            return None
+        return unicode(selected_item.data(Qt.DisplayRole).toString())
+
+    def update_details(self, devpath):
+        firmware, analog, pad, mode, bytes = self.daemon.get_info(devpath)
+        self.groupBox.setChecked(True)
+        self.spinBoxFirmwareVersion.setValue(int(firmware))
+        self.spinBoxAnalogVersion.setValue(int(analog))
+        self.spinBoxPadVersion.setValue(int(pad))
+        self.spinBoxUsedMemory.setValue(int(bytes))
+
+    def clear_details(self):
+        self.groupBox.setChecked(False)
+        self.spinBoxFirmwareVersion.setValue(0)
+        self.spinBoxAnalogVersion.setValue(0)
+        self.spinBoxPadVersion.setValue(0)
+        self.spinBoxUsedMemory.setValue(0)
+        
+    def device_plugged(self, devpath):
+        self.listWidget.addItem(devpath)
+        self.index_map[devpath] = self.listWidget.count() - 1
+
+    def device_unplugged(self, devpath):
+        i = self.index_map.pop(devpath)
+        self.listWidget.takeItem(i)
+        self.clear_details()
+
+    def device_connected(self, devpath):
+        i = self.index_map[devpath]
+        item = self.listWidget.item(i)
+        if item.isSelected():
+            self.groupBox.setChecked(True)
+            self.update_details(devpath)
+
+    def device_disconnected(self, devpath):
+        i = self.index_map[devpath]
+        item = self.listWidget.item(i)
+        if item.isSelected():
+            self.groupBox.setChecked(False)
+            self.clear_details()
+
+def main():
+    app = QApplication(sys.argv)
+    mw = MainWindow()
+    mw.show()
+    sys.exit(app.exec_())
+
+if __name__ == "__main__":
+    main()
