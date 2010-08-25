@@ -30,6 +30,15 @@ class TimeoutError(Exception):
     """Raised when communication timeouts."""
     pass
 
+class TabletSizeError(Exception):
+    pass
+
+class TabletOrientationError(Exception):
+    pass
+
+class ModeError(Exception):
+    pass
+
 class M210(object):
     """
     M210 exposes two interfaces via USB-connection. By default, udev
@@ -43,7 +52,7 @@ class M210(object):
       >>> import pegatech
       >>> dev = pegatech.M210(("/dev/hidraw1", "/dev/hidraw2"))
       >>> dev.get_info()
-      {'used_memory': 1364, 'firmware_version': 337, 'analog_version': 265, 'pad_version': 32028, 'mode': 'tablet'}
+      {'used_memory': 1364, 'firmware_version': 337, 'analog_version': 265, 'pad_version': 32028, 'mode': 'TABLET'}
       >>> download_destination = open("m210notes", "wb")
       >>> dev.download_notes_to(download_destination)
       1364
@@ -51,13 +60,15 @@ class M210(object):
       1364
       >>> dev.delete_notes()
       >>> dev.get_info()
-      {'used_memory': 0, 'firmware_version': 337, 'analog_version': 265, 'pad_version': 32028, 'mode': 'tablet'}
+      {'used_memory': 0, 'firmware_version': 337, 'analog_version': 265, 'pad_version': 32028, 'mode': 'TABLET'}
     
     """
 
-    _MODE_BYTE_TO_STR_MAP = {'\x01': 'mouse', '\x02': 'tablet'}
-    _MODE_STR_TO_BYTE_MAP = {'mouse': '\x01', 'tablet': '\x02'}
+    _MODE_BYTE_TO_STR_MAP = {'\x01': 'MOUSE', '\x02': 'TABLET'}
+    _MODE_STR_TO_BYTE_MAP = {'MOUSE': '\x01', 'TABLET': '\x02'}
     _MODE_BYTE_TO_INDICATOR_MAP = {'\x01': '\x02', '\x02': '\x01'}
+
+    _ORIENTATION_STR_TO_BYTE_MAP = {'NW': '\x01', 'N': '\x00', 'NE': '\x02'}
 
     _PACKET_PAYLOAD_SIZE = 62
 
@@ -148,16 +159,33 @@ class M210(object):
                 pass
             raise e
 
+    def set_tablet_settings(self, size, orientation):
+        if size not in range(10):
+            raise TabletSizeError(size)
+
+        try:
+            orient_byte = M210._ORIENTATION_STR_TO_BYTE_MAP[orientation]
+        except KeyError:
+            raise TabletOrientationError(orientation)
+
+        # Size byte in M210 is counter-intuitive: 0x00 means the largest,
+        # 0x09 the smallest. However, in our API, sizes are handled
+        # intuitively and therefore needs to be changed here.
+        size_byte = chr(abs(size - 9))
+
+        self._wait_ready()
+        self._write(''.join(('\x80\xb6', size_byte, orient_byte)))
+
     def set_mode(self, new_mode):
         """Set the operation mode of the device. 
-        Value of `new_mode` should be 'tablet' or 'mouse', ValueError
+        Value of `new_mode` should be 'TABLET' or 'MOUSE', ModeError
         is raised otherwise.
         """
 
         try:
             mode_byte = M210._MODE_STR_TO_BYTE_MAP[new_mode]
         except KeyError:
-            raise ValueError("Unknown mode: %s" % new_mode)
+            raise ModeError(new_mode)
 
         mode_indicator = M210._MODE_BYTE_TO_INDICATOR_MAP[mode_byte]
 

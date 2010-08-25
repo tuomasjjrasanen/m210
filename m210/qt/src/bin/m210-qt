@@ -45,14 +45,25 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             self.device_plugged(devpath)
 
     def desired_mode_changed(self, new_mode):
-        self.pushButtonSetMode.setEnabled(new_mode != self.current_mode)
+        self.set_tablet_widgets_sensitivity(new_mode)
+
+    def set_tablet_widgets_sensitivity(self, mode):
+        is_tablet_mode = mode == "TABLET"
+        self.comboBoxOrientation.setEnabled(is_tablet_mode)
+        self.spinBoxSize.setEnabled(is_tablet_mode)
+        self.labelSize.setEnabled(is_tablet_mode)
+        self.labelOrientation.setEnabled(is_tablet_mode)
 
     def set_mode(self):
         devpath = self.selected_devpath()
         new_mode = unicode(self.comboBoxMode.currentText())
         self.daemon.set_mode(devpath, new_mode)
         self.current_mode = new_mode
-        self.pushButtonSetMode.setEnabled(False)
+        if new_mode == "TABLET":
+            size = self.spinBoxSize.value()
+            orientation = unicode(self.comboBoxOrientation.currentText())
+            self.daemon.set_tablet_settings(devpath, size, orientation)
+        self.statusBar().showMessage("%s mode activated." % new_mode, 3000)
 
     def download_clicked(self):
         filename = QFileDialog.getSaveFileName(self, "Select download target")
@@ -64,7 +75,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             # uid and will create the file if it does not exist.
             open(filename, "a").close()
             bytes = self.daemon.download_notes(devpath, unicode(filename))
-            self.statusBar().showMessage("Downloaded %s bytes." % bytes, 5000)
+            self.statusBar().showMessage("Downloaded %s bytes." % bytes, 3000)
 
     def erase_clicked(self):
         result = QMessageBox.question(self, "Erase all notes?",
@@ -118,6 +129,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         index = self.comboBoxMode.findText(mode)
         self.comboBoxMode.setCurrentIndex(index)
         self.spinBoxUsedMemory.setValue(bytes)
+        self.set_tablet_widgets_sensitivity(mode)
 
     def clear_details(self):
         self.groupBox.setChecked(False)

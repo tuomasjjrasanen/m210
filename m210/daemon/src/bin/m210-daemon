@@ -155,6 +155,10 @@ class Daemon(dbus.service.Object):
         self.get_connection(devpath).m210.set_mode(new_mode)
         self.device_mode_changed(devpath, new_mode)
 
+    @dbus.service.method(m210.daemon.INTERFACE, in_signature='sis')
+    def set_tablet_settings(self, devpath, size, orientation):
+        self.get_connection(devpath).m210.set_tablet_settings(size, orientation)
+
     @dbus.service.method(m210.daemon.INTERFACE, in_signature='s')
     def delete_notes(self, devpath):
         self.get_connection(devpath).m210.delete_notes()
