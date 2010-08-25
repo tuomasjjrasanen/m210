@@ -43,7 +43,7 @@ class M210(object):
       >>> import pegatech
       >>> dev = pegatech.M210(("/dev/hidraw1", "/dev/hidraw2"))
       >>> dev.get_info()
-      {'used_memory': 1364, 'firmware_version': 337, 'analog_version': 265, 'pad_version': 32028, 'mode': 'table'}
+      {'used_memory': 1364, 'firmware_version': 337, 'analog_version': 265, 'pad_version': 32028, 'mode': 'tablet'}
       >>> download_destination = open("m210notes", "wb")
       >>> dev.download_notes_to(download_destination)
       1364
@@ -51,9 +51,13 @@ class M210(object):
       1364
       >>> dev.delete_notes()
       >>> dev.get_info()
-      {'used_memory': 0, 'firmware_version': 337, 'analog_version': 265, 'pad_version': 32028, 'mode': 'table'}
+      {'used_memory': 0, 'firmware_version': 337, 'analog_version': 265, 'pad_version': 32028, 'mode': 'tablet'}
     
     """
+
+    _MODE_BYTE_TO_STR_MAP = {'\x01': 'mouse', '\x02': 'tablet'}
+    _MODE_STR_TO_BYTE_MAP = {'mouse': '\x01', 'tablet': '\x02'}
+    _MODE_BYTE_TO_INDICATOR_MAP = {'\x01': '\x02', '\x02': '\x01'}
 
     _PACKET_PAYLOAD_SIZE = 62
 
@@ -104,7 +108,7 @@ class M210(object):
             raise CommunicationError('Unexpected response to info request: %s'
                                      % response)
 
-        mode_str = {'\x01': 'mouse', '\x02': 'tablet'}[response[10]]
+        mode_str = M210._MODE_BYTE_TO_STR_MAP[response[10]]
 
         firmware_ver, analog_ver, pad_ver = struct.unpack('>HHH', response[3:9])
 
@@ -143,6 +147,22 @@ class M210(object):
             except:
                 pass
             raise e
+
+    def set_mode(self, new_mode):
+        """Set the operation mode of the device. 
+        Value of `new_mode` should be 'tablet' or 'mouse', ValueError
+        is raised otherwise.
+        """
+
+        try:
+            mode_byte = M210._MODE_STR_TO_BYTE_MAP[new_mode]
+        except KeyError:
+            raise ValueError("Unknown mode: %s" % new_mode)
+
+        mode_indicator = M210._MODE_BYTE_TO_INDICATOR_MAP[mode_byte]
+
+        self._wait_ready()
+        self._write(''.join(('\x80\xb5', mode_indicator, mode_byte)))
 
     def get_info(self):
         """Return a dict containing information about versions, current mode

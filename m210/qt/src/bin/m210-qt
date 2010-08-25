@@ -25,9 +25,8 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.actionQuit.triggered.connect(self.close)
         self.menuFile.addAction(self.actionQuit)
         self.daemon = m210.daemon.Interface()
+        self.current_mode = None
         self.index_map = {}
-        for devpath in self.daemon.devpaths():
-            self.device_plugged(devpath)
 
         self.listWidget.itemSelectionChanged.connect(self.device_selection_changed)
         self.daemon.connect_to_signal("device_plugged", self.device_plugged)
@@ -39,6 +38,21 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.spinBoxUsedMemory.valueChanged.connect(self.used_mem_changed)
         self.pushButtonErase.clicked.connect(self.erase_clicked)
         self.pushButtonDownload.clicked.connect(self.download_clicked)
+        self.pushButtonSetMode.clicked.connect(self.set_mode)
+        self.comboBoxMode.currentIndexChanged[str].connect(self.desired_mode_changed)
+
+        for devpath in self.daemon.devpaths():
+            self.device_plugged(devpath)
+
+    def desired_mode_changed(self, new_mode):
+        self.pushButtonSetMode.setEnabled(new_mode != self.current_mode)
+
+    def set_mode(self):
+        devpath = self.selected_devpath()
+        new_mode = unicode(self.comboBoxMode.currentText())
+        self.daemon.set_mode(devpath, new_mode)
+        self.current_mode = new_mode
+        self.pushButtonSetMode.setEnabled(False)
 
     def download_clicked(self):
         filename = QFileDialog.getSaveFileName(self, "Select download target")
@@ -49,7 +63,8 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             # group. m210-daemon is probably running under different
             # uid and will create the file if it does not exist.
             open(filename, "a").close()
-            self.daemon.download_notes(devpath, unicode(filename))
+            bytes = self.daemon.download_notes(devpath, unicode(filename))
+            self.statusBar().showMessage("Downloaded %s bytes." % bytes, 5000)
 
     def erase_clicked(self):
         result = QMessageBox.question(self, "Erase all notes?",
@@ -62,8 +77,9 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             self.spinBoxUsedMemory.setValue(0)
 
     def used_mem_changed(self, memory):
-        self.pushButtonDownload.setEnabled(bool(memory))
-        self.pushButtonErase.setEnabled(bool(memory))
+        b = self.groupBox.isChecked() and bool(memory)
+        self.pushButtonDownload.setEnabled(b)
+        self.pushButtonErase.setEnabled(b)
 
     def connection_clicked(self, is_checked):
         devpath = self.selected_devpath()
@@ -94,11 +110,14 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
     def update_details(self, devpath):
         firmware, analog, pad, mode, bytes = self.daemon.get_info(devpath)
+        self.current_mode = mode
         self.groupBox.setChecked(True)
-        self.spinBoxFirmwareVersion.setValue(int(firmware))
-        self.spinBoxAnalogVersion.setValue(int(analog))
-        self.spinBoxPadVersion.setValue(int(pad))
-        self.spinBoxUsedMemory.setValue(int(bytes))
+        self.spinBoxFirmwareVersion.setValue(firmware)
+        self.spinBoxAnalogVersion.setValue(analog)
+        self.spinBoxPadVersion.setValue(pad)
+        index = self.comboBoxMode.findText(mode)
+        self.comboBoxMode.setCurrentIndex(index)
+        self.spinBoxUsedMemory.setValue(bytes)
 
     def clear_details(self):
         self.groupBox.setChecked(False)
@@ -110,6 +129,8 @@ class MainWindow(QMainWindow, Ui_MainWindow):
     def device_plugged(self, devpath):
         self.listWidget.addItem(devpath)
         self.index_map[devpath] = self.listWidget.count() - 1
+        self.listWidget.item(self.listWidget.count() - 1).setSelected(True)
+        # self.listWidget.setCurrentRow(self.listWidget.count() - 1)
 
     def device_unplugged(self, devpath):
         i = self.index_map.pop(devpath)
