@@ -28,18 +28,23 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.current_mode = None
         self.index_map = {}
 
-        self.listWidget.itemSelectionChanged.connect(self.device_selection_changed)
+        self.listWidget.itemSelectionChanged.connect(
+            self.device_selection_changed)
         self.daemon.connect_to_signal("device_plugged", self.device_plugged)
         self.daemon.connect_to_signal("device_unplugged", self.device_unplugged)
         self.daemon.connect_to_signal("device_connected", self.device_connected)
         self.daemon.connect_to_signal("device_disconnected",
                                       self.device_disconnected)
+        self.daemon.connect_to_signal("device_erased", self.device_erased)
+        self.daemon.connect_to_signal("device_mode_changed",
+                                      self.device_mode_changed)
         self.groupBox.clicked.connect(self.connection_clicked)
         self.spinBoxUsedMemory.valueChanged.connect(self.used_mem_changed)
         self.pushButtonErase.clicked.connect(self.erase_clicked)
         self.pushButtonDownload.clicked.connect(self.download_clicked)
         self.pushButtonSetMode.clicked.connect(self.set_mode)
-        self.comboBoxMode.currentIndexChanged[str].connect(self.desired_mode_changed)
+        self.comboBoxMode.currentIndexChanged[str].connect(
+            self.desired_mode_changed)
 
         for devpath in self.daemon.devpaths():
             self.device_plugged(devpath)
@@ -138,11 +143,23 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.spinBoxPadVersion.setValue(0)
         self.spinBoxUsedMemory.setValue(0)
         
+    def device_erased(self, devpath):
+        i = self.index_map[devpath]
+        item = self.listWidget.item(i)
+        if item.isSelected():
+            self.spinBoxUsedMemory.setValue(0)
+
+    def device_mode_changed(self, devpath, new_mode):
+        i = self.index_map[devpath]
+        item = self.listWidget.item(i)
+        if item.isSelected():
+            index = self.comboBoxMode.findText(new_mode)
+            self.comboBoxMode.setCurrentIndex(index)            
+
     def device_plugged(self, devpath):
         self.listWidget.addItem(devpath)
         self.index_map[devpath] = self.listWidget.count() - 1
         self.listWidget.item(self.listWidget.count() - 1).setSelected(True)
-        # self.listWidget.setCurrentRow(self.listWidget.count() - 1)
 
     def device_unplugged(self, devpath):
         i = self.index_map.pop(devpath)
