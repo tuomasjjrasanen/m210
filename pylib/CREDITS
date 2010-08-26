@@ -1,0 +1,41 @@
+=========
+ Credits
+=========
+
+Pegasus Technologies Inc.
+=========================
+
+`Pegasus Technologies`_ `published the tentative m210-protocol
+specification`_ for developers. The specification consists of two
+documents:
+
+  - `XY Protocol document`_
+  - `Memory Management and upload protocol document`_
+
+Those documents are also mirrored as `xy.html`_ and `mem.html`_
+respectively.
+
+.. _Pegasus Technologies:
+   http://www.pegatech.com/
+
+.. _published the tentative m210-protocol specification:
+   http://pegatech.blogspot.com/2009/01/communicating-with-tablet-mobile.html
+
+.. _XY Protocol document:
+   http://docs.google.com/Doc?id=dqswcdk_7f7h4n2db
+
+.. _Memory Management and upload protocol document:
+   http://docs.google.com/Doc?id=dqswcdk_6qtgc8wgn
+
+.. _xy.html:
+   http://codegrove.org/m210/doc/xy.html
+
+.. _mem.html:
+   http://codegrove.org/m210/doc/mem.html
+
+Danny Milosavljeciv
+===================
+
+Danny shared his experiences on experimenting and reverse engineering
+m210-protocol for features not specified in the protocol
+specification.
