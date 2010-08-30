@@ -1,0 +1,7 @@
+include AUTHORS
+include INSTALL
+include CREDITS
+include qt/ui/*
+include daemon/etc/init/*
+include daemon/etc/udev/rules.d/*
+include daemon/etc/dbus-1/system.d/*

@@ -24,3 +24,5 @@ m210-info
 m210-mouse
 m210-tablet
 .installed_files
+dist
+MANIFEST
