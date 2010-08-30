@@ -1,9 +1,22 @@
-=======
+======
  M210
-=======
+======
 
-M210 is a software project which aims to provide easy-to-use tools for
+:author: `Tuomas Räsänen (tuos)`_ <tuos@codegrove.org>
+
+.. _Tuomas Räsänen (tuos): http://tuos.codegrove.org/
+
+M210_ is a software project which aims to provide easy-to-use tools for
 controlling and using `Pegasus Mobile Notetaker M210`_ in modern Linux
 desktop environments.
 
+.. _M210: http://codegrove.org/projects/m210
 .. _Pegasus Mobile Notetaker M210: http://www.pegatech.com/?CategoryID=207&ArticleID=268
+
+Requirements
+============
+
+- Python 2.6.x
+- Python development files
+- dbus-python
+- PyQt4

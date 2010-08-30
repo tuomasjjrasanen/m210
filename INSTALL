@@ -1,0 +1,57 @@
+===================
+ M210 installation
+===================
+
+M210 consist of four modules: pylib, daemon, cli and qt. Each provide
+their own setup.py script and needs to be installed
+separately. Alternatively, you can just run::
+
+  ./install.sh
+
+which does exactly the same thing.
+
+Simplified dependency chart
+===========================
+
+::
+
+  PyQt4 m210.pylib dbus-python
+     ^      ^        ^
+     |      |        |
+     +--m210.daemon--+
+         ^       ^
+         |       |
+    m210.cli  m210.qt
+
+The above chart shows, that the M210-daemon is the heart of the
+M210. M210-cli and M210-qt are just user interfaces for the
+daemon. You are not required to install them if you don't want to,
+just provide your own interface (for example GTK+). The daemon itself
+depends on M210-pylib, PyQt4 (mainloop) and Python bindings for DBus.
+                    
+Manual install
+==============
+
+Install pylib::
+
+  cd pylib
+  python setup.py build && sudo python setup.py install
+  cd ..
+
+Install daemon::
+
+  cd daemon
+  python setup.py build && sudo python setup.py install
+  cd ..
+
+Install command line tools::
+
+  cd cli
+  python setup.py build && sudo python setup.py install
+  cd ..
+
+Install graphical interface::
+
+  cd qt
+  python setup.py build && sudo python setup.py install
+  cd ..
