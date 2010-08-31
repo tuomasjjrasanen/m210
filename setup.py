@@ -56,6 +56,7 @@ setup(name='m210',
       maintainer='Tuomas Räsänen (tuos)',
       maintainer_email='tuos@codegrove.org',
       url="http://codegrove.org/projects/m210",
+      download_url="http://pypi.python.org/packages/source/m/m210/m210-0.2.tar.gz",
       description="Tools for Pegasus Mobile Notetaker M210",
       long_description="M210 is a software project which aims to provide easy-to-use tools for controlling and using Pegasus Mobile Notetaker M210 in modern Linux desktop environments.",
       keywords=[
