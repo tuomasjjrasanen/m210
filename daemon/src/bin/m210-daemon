@@ -299,7 +299,10 @@ def main():
     daemon = Daemon(bus)
 
     app = PyQt4.QtCore.QCoreApplication([])
-    app.exec_()
+    sys.exit(app.exec_())
 
 if __name__ == '__main__':
-    main()
+    try:
+        main()
+    except BaseException, e:
+        syslog.syslog(syslog.LOG_ERR, str(e))
