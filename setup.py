@@ -1,4 +1,18 @@
 # -*- coding: utf-8 -*-
+# m210
+# Copyright © 2010 Tuomas Räsänen (tuos) <tuos@codegrove.org>
+
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License version 3 as
+# published by the Free Software Foundation.
+
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import errno
 import os
@@ -50,13 +64,13 @@ setup(name='m210',
         'PyQt4',
         'dbus',
         ],
-      version='0.2',
-      author='Tuomas Räsänen (tuos)',
+      version='0.3',
+      author=u'Tuomas Räsänen (tuos)',
       author_email='tuos@codegrove.org',
-      maintainer='Tuomas Räsänen (tuos)',
+      maintainer=u'Tuomas Räsänen (tuos)',
       maintainer_email='tuos@codegrove.org',
       url="http://codegrove.org/projects/m210",
-      download_url="http://pypi.python.org/packages/source/m/m210/m210-0.2.tar.gz",
+      download_url="http://pypi.python.org/packages/source/m/m210/m210-0.3.tar.gz",
       description="Tools for Pegasus Mobile Notetaker M210",
       long_description="M210 is a software project which aims to provide easy-to-use tools for controlling and using Pegasus Mobile Notetaker M210 in modern Linux desktop environments.",
       keywords=[

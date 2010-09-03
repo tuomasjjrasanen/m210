@@ -16,6 +16,10 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+from __future__ import absolute_import
+from __future__ import print_function
+from __future__ import division
+
 # Standard modules.
 import sys
 
@@ -47,7 +51,7 @@ if __name__ == "__main__":
             devpaths = daemon.devpaths()[-1:]
 
     for devpath in devpaths:
-        print "Device directory:", devpath
+        print("Device directory:", devpath)
         try:
             firmware, analog, pad, mode, bytes = daemon.get_info(devpath)
         except dbus.exceptions.DBusException, e:
@@ -55,8 +59,8 @@ if __name__ == "__main__":
             if name == "org.freedesktop.DBus.Python.m210.daemon.NotConnectedError":
                 continue
             raise e
-        print "Firmware version:", firmware
-        print "Analog version:  ", analog
-        print "Pad version:     ", pad
-        print "Mode:            ", mode
-        print "Used memory:     ", bytes
+        print("Firmware version:", firmware)
+        print("Analog version:  ", analog)
+        print("Pad version:     ", pad)
+        print("Mode:            ", mode)
+        print("Used memory:     ", bytes)

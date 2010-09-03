@@ -16,6 +16,10 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+from __future__ import absolute_import
+from __future__ import print_function
+from __future__ import division
+
 # Standard modules.
 import sys
 
@@ -35,10 +39,10 @@ def is_confirmed():
         if answer == 'y':
             return True
         elif answer == 'n':
-            print "Aborted."
+            print("Aborted.")
             return False
         else:
-            print "Please answer y or n."
+            print("Please answer y or n.")
 
 if __name__ == "__main__":
     parser = m210.optparse.OptionParser(usage=USAGE, description=DESCRIPTION)
@@ -58,7 +62,7 @@ if __name__ == "__main__":
         devpaths = daemon.devpaths()[-1:]
 
     for devpath in devpaths:
-        print devpath
+        print(devpath)
         if options.ask_confirmation:
             if not is_confirmed():
                 continue

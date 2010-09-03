@@ -16,6 +16,10 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+from __future__ import absolute_import
+from __future__ import print_function
+from __future__ import division
+
 # Standard modules.
 import os.path
 import sys
@@ -58,4 +62,4 @@ if __name__ == "__main__":
             m210.cli.error_and_exit("%s is not connected" % devpath)
         raise e
     if options.verbose:
-        print bytes, "bytes downloaded to '%s'." % filepath
+        print(bytes, "bytes downloaded to '%s'." % filepath)
