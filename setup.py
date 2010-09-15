@@ -124,6 +124,7 @@ setup(name='m210',
         'cli/src/bin/m210-download',
         'cli/src/bin/m210-info',
         'cli/src/bin/m210-erase',
+        'cli/src/bin/m210-export-notes-as-svgs',
         'qt/src/bin/m210-qt',
         ],
       data_files=[

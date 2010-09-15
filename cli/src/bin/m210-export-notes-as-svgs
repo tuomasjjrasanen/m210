@@ -21,6 +21,7 @@ from __future__ import print_function
 from __future__ import division
 
 # Standard modules.
+import errno
 import os.path
 import sys
 
@@ -28,11 +29,11 @@ import sys
 import dbus.exceptions
 
 # Project modules.
-import m210.cli
 import m210.optparse
+import m210.pegatech
 
-USAGE = '%prog [OPTION]... FILE [DEVPATH]'
-DESCRIPTION = 'Download notes from a connected device to a file.'
+USAGE = '%prog [OPTION]... FILE [DIRECTORY]'
+DESCRIPTION = 'Export downloaded notes as SVG files.'
 
 if __name__ == "__main__":
     parser = m210.optparse.OptionParser(usage=USAGE, description=DESCRIPTION)
@@ -43,23 +44,19 @@ if __name__ == "__main__":
     options, args = parser.parse_args(sys.argv)
 
     try:
+        dirpath = os.path.abspath(args[2])
+    except IndexError:
+        dirpath = os.path.abspath(".")
+
+    try:
         filepath = os.path.abspath(args[1])
     except IndexError:
         parser.error("FILE is required.")
 
-    daemon = m210.cli.get_interface_or_exit()
-
     try:
-        devpath = args[2]
-    except IndexError:
-        devpath = daemon.devpaths()[-1]
-
-    open(filepath, "a").close()
-    try:
-        bytes = daemon.download_notes(devpath, filepath)
-    except dbus.exceptions.DBusException, e:
-        if e.get_dbus_name() == "org.freedesktop.DBus.Python.m210.daemon.NotConnectedError":
-            m210.cli.error_and_exit("%s is not connected" % devpath)
-        raise e
-    if options.verbose:
-        print(bytes, "bytes downloaded to '%s'." % filepath)
+        os.mkdir(dirpath)
+    except OSError, e:
+        if e.errno != errno.EEXIST:
+            raise e
+            
+    m210.pegatech.export_notes_as_svgs(filepath, dirpath)

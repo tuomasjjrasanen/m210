@@ -284,3 +284,75 @@ class M210(object):
         self._accept_upload()
 
         return packet_count * M210._PACKET_PAYLOAD_SIZE
+
+_NOTE_STATE_MAP = {
+    0x9f: "empty",
+    0x5f: "unfinished",
+    0x3f: "finished_by_user",
+    0x1f: "finished_by_software",
+}
+
+class FileFormatError(Exception):
+    pass
+
+def _iter_notes_in_file(notes_file):
+    notes_file.seek(0, 2)
+    byte_count = notes_file.tell()
+    if byte_count % M210._PACKET_PAYLOAD_SIZE:
+        raise FileFormatError("Byte count is not a multiple of the packet payload size.")
+    notes_file.seek(0)
+    while True:
+
+        # BEGIN HEADER.
+        next_header_bytes = notes_file.read(3)
+        if not next_header_bytes or next_header_bytes[0] == '\x00':
+            break
+        
+        next_header_pos = struct.unpack("<I", next_header_bytes + "\x00")[0]
+
+        state, note_num, note_max_num = struct.unpack("BBB", notes_file.read(3))
+        if note_num > note_max_num:
+            raise FileFormatError("Note number is bigger than the total number of notes.")
+        notes_file.read(8) # Reserved for some unknown usage, perhaps timestamp?
+        # END HEADER.
+
+        # BEGIN DATA.
+        paths = []
+        note = {
+            "paths" : paths,
+            "state" : _NOTE_STATE_MAP[state],
+            "number": note_num,
+            }
+        path = []
+        while notes_file.tell() < next_header_pos:
+            data = notes_file.read(4)
+            if data == "\x00\x00\x00\x80":
+                paths.append(path)
+                path = []
+            else:
+                point = struct.unpack("<hh", data)
+                path.append(point)
+        if path:
+            paths.append(path)
+        # END DATA.
+
+        yield note
+
+def _note_to_svg(note):
+    svg_polylines = []
+    for path in note["paths"]:
+        points = " ".join(["%d,%d" % (x, y) for x, y in path])
+        svg_polylines.append('<polyline points="%s" stroke-width="1" stroke="black" fill="none"/>' % points)
+    return """<?xml version="1.0"?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
+<svg width="210mm" height="297mm" viewBox="-7000 500 14000 20000" xmlns="http://www.w3.org/2000/svg" version="1.1">
+    %s
+</svg>
+""" % "\n    ".join(svg_polylines)
+
+def export_notes_as_svgs(filepath, dirpath):
+    with open(filepath, "rb") as f:
+        for note in _iter_notes_in_file(f):
+            svgpath = os.path.join(dirpath, str(note["number"]) + ".svg")
+            with open(svgpath, "w") as svgfile:
+                svgfile.write(_note_to_svg(note))
