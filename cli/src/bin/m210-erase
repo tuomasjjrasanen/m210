@@ -59,7 +59,7 @@ if __name__ == "__main__":
 
     devpaths = args[1:]
     if not devpaths:
-        devpaths = daemon.devpaths()[-1:]
+        devpaths = [daemon.devpaths()[-1][0]]
 
     for devpath in devpaths:
         print(devpath)

@@ -156,9 +156,9 @@ class Daemon(dbus.service.Object):
             result.append(devpath)
         return result
 
-    @dbus.service.method(m210.daemon.INTERFACE, out_signature='as')
+    @dbus.service.method(m210.daemon.INTERFACE, out_signature='a(sb)')
     def devpaths(self):
-        return self._connection_map.keys()
+        return [(k, v is not None) for (k, v) in self._connection_map.items()]
 
     @dbus.service.method(m210.daemon.INTERFACE, in_signature='ss',
                          out_signature='i')

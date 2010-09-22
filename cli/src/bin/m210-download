@@ -52,7 +52,7 @@ if __name__ == "__main__":
     try:
         devpath = args[2]
     except IndexError:
-        devpath = daemon.devpaths()[-1]
+        devpath = daemon.devpaths()[-1][0]
 
     open(filepath, "a").close()
     try:

@@ -44,11 +44,11 @@ if __name__ == "__main__":
     daemon = m210.cli.get_interface_or_exit()
 
     if options.all:
-        devpaths = daemon.devpaths()
+        devpaths = [devpath for (devpath, connected) in daemon.devpaths()]
     else:        
         devpaths = args[1:]
         if not devpaths:
-            devpaths = daemon.devpaths()[-1:]
+            devpaths = [daemon.devpaths()[-1][0]]
 
     for devpath in devpaths:
         print("Device directory:", devpath)
