@@ -342,7 +342,7 @@ def _note_to_svg(note):
     svg_polylines = []
     for path in note["paths"]:
         points = " ".join(["%d,%d" % (x, y) for x, y in path])
-        svg_polylines.append('<polyline points="%s" stroke-width="1" stroke="black" fill="none"/>' % points)
+        svg_polylines.append('<polyline points="%s" stroke-width="30" stroke="black" fill="none"/>' % points)
     return """<?xml version="1.0"?>
 <!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
 <svg width="210mm" height="297mm" viewBox="-7000 500 14000 20000" xmlns="http://www.w3.org/2000/svg" version="1.1">

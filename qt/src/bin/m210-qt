@@ -176,12 +176,14 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             self.comboBoxMode.setCurrentIndex(index)            
 
     def device_plugged(self, devpath):
+        self.groupBox.setEnabled(True)
         self.listWidget.addItem(devpath)
         self.index_map[devpath] = self.listWidget.count() - 1
         self.listWidget.item(self.listWidget.count() - 1).setSelected(True)
 
     def device_unplugged(self, devpath):
         i = self.index_map.pop(devpath)
+        self.groupBox.setEnabled(bool(self.index_map))
         self.listWidget.takeItem(i)
         self.clear_details()
 
