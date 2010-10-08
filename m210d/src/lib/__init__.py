@@ -35,6 +35,9 @@ class NotConnectedError(Exception):
 class UnknownDeviceError(Exception):
     pass
 
+class DownloadError(Exception):
+    pass
+
 class Interface(dbus.Interface):
 
     def __init__(self):
