@@ -144,19 +144,11 @@ def download(daemon, options, cmd_args):
         devpath = daemon.devpaths()[-1][0]
 
     try:
-        filepath = os.path.abspath(cmd_args[0])
-    except IndexError:
-        error_and_exit("download requires target filepath as an argument")
-
-    open(filepath, "a").close()
-    try:
-        bytes = daemon.download_notes(devpath, filepath)
+        print(daemon.download_notes(devpath, byte_arrays=True), end="")
     except dbus.exceptions.DBusException, e:
         if e.get_dbus_name() == "org.freedesktop.DBus.Python.m210.daemon.NotConnectedError":
             error_and_exit("%s is not connected" % devpath)
         raise e
-    if not options.quiet:
-        print(bytes, "bytes downloaded to '%s'." % filepath)
 
 COMMAND_MAP = {
     'connect': connect,

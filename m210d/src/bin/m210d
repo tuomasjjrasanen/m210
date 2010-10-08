@@ -163,12 +163,23 @@ class Daemon(dbus.service.Object):
 
     @dbus.service.method(m210.daemon.INTERFACE, in_signature='ss',
                          out_signature='i')
-    def download_notes(self, devpath, filename):
+    def download_notes_to_file(self, devpath, filename):
         if not os.path.exists(filename):
             raise m210.daemon.DownloadError("%s does not exist" % filename)
         f = open(filename, "wb")
         try:
             return self.get_connection(devpath).m210.download_notes_to(f)
+        finally:
+            f.close()
+
+    @dbus.service.method(m210.daemon.INTERFACE, in_signature='s',
+                         out_signature='ay', byte_arrays=True)
+    def download_notes(self, devpath):
+        f = os.tmpfile()
+        try:
+            byte_count = self.get_connection(devpath).m210.download_notes_to(f)
+            f.seek(0)
+            return f.read()
         finally:
             f.close()
 

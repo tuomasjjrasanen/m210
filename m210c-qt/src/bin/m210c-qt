@@ -105,7 +105,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             # group. m210-daemon is probably running under different
             # uid and will create the file if it does not exist.
             open(filename, "a").close()
-            bytes = self.daemon.download_notes(devpath, unicode(filename))
+            bytes = self.daemon.download_notes_to_file(devpath, unicode(filename))
             self.statusBar().showMessage("Downloaded %s bytes." % bytes, 3000)
 
     def erase_clicked(self):
