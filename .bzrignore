@@ -26,3 +26,4 @@ m210-tablet
 .installed_files
 dist
 MANIFEST
+qt/src/lib/ui/mainwindow.py
