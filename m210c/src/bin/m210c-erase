@@ -28,7 +28,7 @@ import sys
 import dbus.exceptions
 
 # Project modules.
-import m210.cli
+import m210.client
 import m210.optparse
 
 USAGE = '%prog [OPTION]... [DEVPATH]...'
@@ -56,7 +56,7 @@ if __name__ == "__main__":
 
     options, args = parser.parse_args(sys.argv)
 
-    daemon = m210.cli.get_interface_or_exit()
+    daemon = m210.client.get_interface_or_exit()
 
     devpaths = args[1:]
     if not devpaths:
@@ -71,5 +71,5 @@ if __name__ == "__main__":
             daemon.delete_notes(devpath)
         except dbus.exceptions.DBusException, e:
             if e.get_dbus_name() == "org.freedesktop.DBus.Python.m210.daemon.NotConnectedError":
-                m210.cli.error_and_exit("%s is not connected" % devpath)
+                m210.client.error_and_exit("%s is not connected" % devpath)
             raise e

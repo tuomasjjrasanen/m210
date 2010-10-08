@@ -28,7 +28,7 @@ import sys
 import dbus.exceptions
 
 # Project modules.
-import m210.cli
+import m210.client
 import m210.optparse
 
 USAGE = '%prog [OPTION]... [DEVPATH]...'
@@ -42,7 +42,7 @@ if __name__ == "__main__":
 
     options, args = parser.parse_args(sys.argv)
 
-    daemon = m210.cli.get_interface_or_exit()
+    daemon = m210.client.get_interface_or_exit()
 
     if options.all:
         devpaths = [devpath for (devpath, connected) in daemon.devpaths()]

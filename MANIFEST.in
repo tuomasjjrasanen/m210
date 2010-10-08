@@ -2,7 +2,7 @@ include AUTHORS
 include COPYING
 include CREDITS
 include NEWS
-include qt/ui/*
-include daemon/etc/init/*
-include daemon/etc/udev/rules.d/*
-include daemon/etc/dbus-1/system.d/*
+include m210c-qt/ui/*
+include m210d/etc/init/*
+include m210d/etc/udev/rules.d/*
+include m210d/etc/dbus-1/system.d/*

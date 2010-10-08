@@ -29,7 +29,7 @@ import sys
 import dbus.exceptions
 
 # Project modules.
-import m210.cli
+import m210.client
 import m210.optparse
 
 USAGE = '%prog [OPTION]... FILE [DEVPATH]'
@@ -48,7 +48,7 @@ if __name__ == "__main__":
     except IndexError:
         parser.error("FILE is required.")
 
-    daemon = m210.cli.get_interface_or_exit()
+    daemon = m210.client.get_interface_or_exit()
 
     try:
         devpath = args[2]
@@ -60,7 +60,7 @@ if __name__ == "__main__":
         bytes = daemon.download_notes(devpath, filepath)
     except dbus.exceptions.DBusException, e:
         if e.get_dbus_name() == "org.freedesktop.DBus.Python.m210.daemon.NotConnectedError":
-            m210.cli.error_and_exit("%s is not connected" % devpath)
+            m210.client.error_and_exit("%s is not connected" % devpath)
         raise e
     if options.verbose:
         print(bytes, "bytes downloaded to '%s'." % filepath)
