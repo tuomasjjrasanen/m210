@@ -1,0 +1,206 @@
+#!/usr/bin/python
+# -*- coding: utf-8 -*-
+
+# m210c
+# Copyright © 2010 Tuomas Räsänen (tuos) <tuos@codegrove.org>
+
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+from __future__ import absolute_import
+from __future__ import print_function
+from __future__ import division
+
+# Standard modules.
+import os.path
+import sys
+
+# Third-party modules.
+import dbus.exceptions
+
+# Project modules.
+import m210.client
+import m210.daemon
+import m210.optparse
+
+def error_and_exit(msg):
+    prog = os.path.basename(sys.argv[0])
+    print("%s: error: %s" % (prog, msg), file=sys.stderr)
+    sys.exit(1)
+
+def connect(daemon, options, cmd_args):
+    if options.all:
+        for devpath in daemon.connect_all():
+            if not options.quiet:
+                print("+", devpath)
+        sys.exit(0)
+
+    devpaths = cmd_args[1:]
+    if not devpaths:
+        devpaths = [daemon.devpaths()[-1][0]]
+
+    for devpath in devpaths:
+        try:
+            daemon.connect(devpath)
+        except dbus.exceptions.DBusException, e:
+            if e.get_dbus_name() == "org.freedesktop.DBus.Python.m210.daemon.AlreadyConnectedError":
+                m210.client.error_and_exit("%s is already connected" % devpath)
+            raise e           
+
+        if not options.quiet:
+            print("+", devpath)
+
+def disconnect(daemon, options, cmd_args):
+    if options.all:
+        for devpath in daemon.disconnect_all():
+            if not options.quiet:
+                print("-", devpath)
+        sys.exit(0)
+
+    devpaths = cmd_args[1:]
+    if not devpaths:
+        devpaths = [daemon.devpaths()[-1][0]]
+        
+    for devpath in devpaths:
+        try:
+            daemon.disconnect(devpath)
+        except dbus.exceptions.DBusException, e:
+            if e.get_dbus_name() == "org.freedesktop.DBus.Python.m210.daemon.NotConnectedError":
+                m210.client.error_and_exit("%s is not connected" % devpath)
+            raise e           
+
+        if not options.quiet:
+            print("-", devpath)
+
+def info(daemon, options, cmd_args):
+    if options.all:
+        devpaths = [devpath for (devpath, connected) in daemon.devpaths()]
+    else:        
+        devpaths = cmd_args[1:]
+        if not devpaths:
+            devpaths = [daemon.devpaths()[-1][0]]
+
+    for devpath in devpaths:
+        try:
+            firmware, analog, pad, mode, bytes = daemon.get_info(devpath)
+        except dbus.exceptions.DBusException, e:
+            name = e.get_dbus_name()
+            if name == "org.freedesktop.DBus.Python.m210.daemon.NotConnectedError":
+                print("- %s" % devpath)
+                continue
+            raise e
+        print("+ %s" % devpath)
+        print("  Firmware version:", firmware)
+        print("  Analog version:  ", analog)
+        print("  Pad version:     ", pad)
+        print("  Mode:            ", mode)
+        print("  Used memory:     ", bytes)
+
+def erase(daemon, options, cmd_args):
+
+    def is_confirmed():
+        while True:
+            answer = raw_input("Really erase [y/n]? ")
+            if answer == 'y':
+                return True
+            elif answer == 'n':
+                print("Aborted.")
+                return False
+            else:
+                print("Please answer y or n.")
+
+    devpaths = cmd_args[1:]
+    if not devpaths:
+        devpaths = [daemon.devpaths()[-1][0]]
+
+    for devpath in devpaths:
+        print("Preparing to erase %s" % devpath)
+        if options.erase_ask_confirmation:
+            if not is_confirmed():
+                continue
+        try:
+            daemon.delete_notes(devpath)
+        except dbus.exceptions.DBusException, e:
+            if e.get_dbus_name() == "org.freedesktop.DBus.Python.m210.daemon.NotConnectedError":
+                m210.client.error_and_exit("%s is not connected" % devpath)
+            raise e
+
+        if not options.quiet:
+            print("Erased.")
+
+def download(daemon, options, cmd_args):
+    try:
+        devpath = cmd_args[1]
+    except IndexError:
+        devpath = daemon.devpaths()[-1][0]
+
+    try:
+        filepath = os.path.abspath(cmd_args[0])
+    except IndexError:
+        error_and_exit("download requires target filepath as an argument")
+
+    open(filepath, "a").close()
+    try:
+        bytes = daemon.download_notes(devpath, filepath)
+    except dbus.exceptions.DBusException, e:
+        if e.get_dbus_name() == "org.freedesktop.DBus.Python.m210.daemon.NotConnectedError":
+            m210.client.error_and_exit("%s is not connected" % devpath)
+        raise e
+    if not options.quiet:
+        print(bytes, "bytes downloaded to '%s'." % filepath)
+
+COMMAND_MAP = {
+    'connect': connect,
+    'disconnect': disconnect,
+    'info': info,
+    'erase': erase,
+    'download': download,
+}
+
+def main():
+    parser = m210.optparse.OptionParser(usage='%prog [COMMAND] [OPTION]... [ARGS]...',
+                                        description='Client for m210d.')
+
+    parser.add_option("--quiet", "", action="store_true", default=False,
+                      help="do not print any processing messages")
+    parser.add_option("--all", "", action="store_true",
+                      help="apply COMMAND to all M210 devices")
+    parser.add_option("--erase-no-confirmation", "", action="store_false",
+                      dest="erase_ask_confirmation", default=True,
+                      help="do not ask confirmation on erasure")
+
+    options, args = parser.parse_args(sys.argv)
+
+    try:
+        cmd_name = args[1]
+    except IndexError:
+        parser.print_usage()
+        error_and_exit("missing command")
+    cmd_args = args[2:]
+
+    try:
+        daemon = m210.daemon.Interface()
+    except dbus.exceptions.DBusException, e:
+        if e.get_dbus_name() == "org.freedesktop.DBus.Error.ServiceUnknown":
+            error_and_exit("%s is not available" % m210.daemon.NAME)
+        raise e
+
+    try:
+        cmd_fn = COMMAND_MAP[cmd_name]
+    except KeyError:
+        error_and_exit("%s is invalid command" % cmd_name)
+
+    cmd_fn(daemon, options, cmd_args)
+
+if __name__ == "__main__":
+    main()
