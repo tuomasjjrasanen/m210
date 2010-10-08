@@ -2,21 +2,65 @@
  M210
 ======
 
-:author: `Tuomas Räsänen (tuos)`_ <tuos@codegrove.org>
+Author: Tuomas Räsänen (tuos) <tuos@codegrove.org>
+Homepage: http://codegrove.org/projects/m210
+License: GPLv3+ (see COPYING for details)
+Version: 0.3
 
-.. _Tuomas Räsänen (tuos): http://tuos.codegrove.org/
+Description
+===========
 
-M210_ is a software project which aims to provide easy-to-use tools for
-controlling and using `Pegasus Mobile Notetaker M210`_ in modern Linux
-desktop environments.
+M210 is a software project which aims to provide easy-to-use tools for
+controlling and using `Pegasus Tablet Mobile Notetaker M210`_ in modern
+Linux desktop environments.
 
-.. _M210: http://codegrove.org/projects/m210
-.. _Pegasus Mobile Notetaker M210: http://www.pegatech.com/?CategoryID=207&ArticleID=268
+.. _Pegasus Tablet Mobile Notetaker M210: http://www.pegatech.com/?CategoryID=207&ArticleID=268
 
-Requirements
-============
+Build requirements
+==================
 
-- Python 2.6.x
-- Python development files
-- dbus-python
-- PyQt4
+- Python 2.6.x.
+- Development files for Python.
+
+Runtime requirements
+====================
+
+- Python bindings for DBus.
+- PyQt4.
+- Upstart.
+
+Downloading
+===========
+
+- Ubuntu package: https://launchpad.net/~tuos/+archive/codegrove
+- Tarball: http://launchpad.net/m210/trunk/0.3/+download/m210-0.3.tar.gz
+- Development: http://code.launchpad.net/m210 ::
+
+    bzr clone lp:m210
+
+Installing
+==========
+
+Ubuntu
+------
+
+Add `Codegrove PPA`_ to your system and install using standard
+tools. For example with apt-get::
+
+  sudo apt-get install m210
+
+.. _Codegrove PPA: https://launchpad.net/~tuos/+archive/codegrove
+
+Other systems
+-------------
+
+Satisfy the requirements listed above and then build and install
+normally::
+
+  ./configure
+  make && make install
+
+Bug reporting
+=============
+
+Please report bugs at http://bugs.launchpad.net/m210 .
