@@ -54,8 +54,8 @@ class build_py(_build_py):
 modulehidraw = Extension('m210.hidraw',
                          sources=['python-m210/src/modulehidraw.c'])
 
-moduleinput = Extension('m210.input',
-                         sources=['python-m210/src/moduleinput.c'])
+moduleinput = Extension('m210.daemon.input',
+                        sources=['m210d/src/lib/moduleinput.c'])
 
 setup(name='m210',
       provides=[
