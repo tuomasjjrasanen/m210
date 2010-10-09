@@ -22,7 +22,6 @@ from __future__ import print_function
 from __future__ import division
 
 # Standard modules.
-import errno
 import os.path
 import sys
 
@@ -33,31 +32,27 @@ import dbus.exceptions
 import m210.optparse
 import m210.pegatech
 
-USAGE = '%prog [OPTION]... FILE [DIRECTORY]'
-DESCRIPTION = 'Export downloaded notes as SVG files.'
+USAGE = '%prog [OPTION]... [DIRECTORY]'
+DESCRIPTION = 'Export notes as SVG files.'
 
 if __name__ == "__main__":
     parser = m210.optparse.OptionParser(usage=USAGE, description=DESCRIPTION)
 
     parser.add_option("--verbose", "", action="store_true", default=False,
                       help="print processing messages")
+    parser.add_option("--input", "", dest="file",
+                      help="read notes from FILE instead of stdin")
 
     options, args = parser.parse_args(sys.argv)
 
     try:
-        dirpath = os.path.abspath(args[2])
+        output_dirpath = os.path.abspath(args[1])
     except IndexError:
-        dirpath = os.path.abspath(".")
+        output_dirpath = os.path.abspath(".")
 
-    try:
-        filepath = os.path.abspath(args[1])
-    except IndexError:
-        parser.error("FILE is required.")
+    if options.file:
+        input_file = open(options.file, "rb")
+    else:
+        input_file = sys.stdin
 
-    try:
-        os.mkdir(dirpath)
-    except OSError, e:
-        if e.errno != errno.EEXIST:
-            raise e
-            
-    m210.pegatech.export_notes_as_svgs(filepath, dirpath)
+    m210.pegatech.export_notes_as_svgs(input_file, output_dirpath)

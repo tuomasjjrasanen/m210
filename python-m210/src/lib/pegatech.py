@@ -28,6 +28,7 @@ from __future__ import absolute_import
 from __future__ import print_function
 from __future__ import division
 
+import errno
 import os
 import select
 import struct
@@ -297,24 +298,33 @@ class FileFormatError(Exception):
     pass
 
 def _iter_notes_in_file(notes_file):
-    notes_file.seek(0, 2)
-    byte_count = notes_file.tell()
-    if byte_count % M210._PACKET_PAYLOAD_SIZE:
-        raise FileFormatError("Byte count is not a multiple of the packet payload size.")
-    notes_file.seek(0)
+
+    class counting_read(object):
+
+        def __init__(self, f):
+            self.f = f
+            self.fpos = 0
+
+        def __call__(self, byte_count, *args, **kwargs):
+            bytes = self.f.read(byte_count)
+            self.fpos += len(bytes)
+            return bytes
+
+    notes_file_read = counting_read(notes_file)
+
     while True:
 
         # BEGIN HEADER.
-        next_header_bytes = notes_file.read(3)
+        next_header_bytes = notes_file_read(3)
         if not next_header_bytes or next_header_bytes[0] == '\x00':
             break
         
         next_header_pos = struct.unpack("<I", next_header_bytes + "\x00")[0]
 
-        state, note_num, note_max_num = struct.unpack("BBB", notes_file.read(3))
+        state, note_num, note_max_num = struct.unpack("BBB", notes_file_read(3))
         if note_num > note_max_num:
             raise FileFormatError("Note number is bigger than the total number of notes.")
-        notes_file.read(8) # Reserved for some unknown usage, perhaps timestamp?
+        notes_file_read(8) # Reserved for some unknown usage, perhaps timestamp?
         # END HEADER.
 
         # BEGIN DATA.
@@ -325,8 +335,8 @@ def _iter_notes_in_file(notes_file):
             "number": note_num,
             }
         path = []
-        while notes_file.tell() < next_header_pos:
-            data = notes_file.read(4)
+        while notes_file_read.fpos < next_header_pos:
+            data = notes_file_read(4)
             if data == "\x00\x00\x00\x80":
                 paths.append(path)
                 path = []
@@ -351,9 +361,14 @@ def _note_to_svg(note):
 </svg>
 """ % "\n    ".join(svg_polylines)
 
-def export_notes_as_svgs(filepath, dirpath):
-    with open(filepath, "rb") as f:
-        for note in _iter_notes_in_file(f):
-            svgpath = os.path.join(dirpath, str(note["number"]) + ".svg")
-            with open(svgpath, "w") as svgfile:
-                svgfile.write(_note_to_svg(note))
+def export_notes_as_svgs(input_file, output_dirpath):
+    try:
+        os.mkdir(output_dirpath)
+    except OSError, e:
+        if e.errno != errno.EEXIST:
+            raise e
+
+    for note in _iter_notes_in_file(input_file):
+        svgpath = os.path.join(output_dirpath, str(note["number"]) + ".svg")
+        with open(svgpath, "w") as svgfile:
+            svgfile.write(_note_to_svg(note))

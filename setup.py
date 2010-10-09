@@ -119,7 +119,7 @@ setup(name='m210',
       scripts=[
         'm210d/src/bin/m210d',
         'm210c/m210c',
-        'm210c/m210-format-notes-as-svgs',
+        'm210c/m210-export-notes',
         'm210c-qt/src/bin/m210c-qt',
         ],
       data_files=[

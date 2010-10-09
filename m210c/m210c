@@ -22,6 +22,8 @@ from __future__ import print_function
 from __future__ import division
 
 # Standard modules.
+import optparse
+from optparse import OptionGroup
 import os.path
 import sys
 
@@ -37,57 +39,33 @@ def error_and_exit(msg):
     print("%s: error: %s" % (prog, msg), file=sys.stderr)
     sys.exit(1)
 
-def connect(daemon, options, cmd_args):
-    if options.all:
-        for devpath in daemon.connect_all():
-            if not options.quiet:
-                print("+", devpath)
-        sys.exit(0)
+def connect(daemon, options, devpath):
+    try:
+        daemon.connect(devpath)
+    except dbus.exceptions.DBusException, e:
+        if e.get_dbus_name() == "org.freedesktop.DBus.Python.m210.daemon.AlreadyConnectedError":
+            error_and_exit("%s is already connected" % devpath)
+        raise e           
 
-    devpaths = cmd_args[1:]
-    if not devpaths:
-        devpaths = [daemon.devpaths()[-1][0]]
+    if not options.quiet:
+        print("+", devpath)
 
-    for devpath in devpaths:
-        try:
-            daemon.connect(devpath)
-        except dbus.exceptions.DBusException, e:
-            if e.get_dbus_name() == "org.freedesktop.DBus.Python.m210.daemon.AlreadyConnectedError":
-                error_and_exit("%s is already connected" % devpath)
-            raise e           
+def disconnect(daemon, options, devpath):
+    try:
+        daemon.disconnect(devpath)
+    except dbus.exceptions.DBusException, e:
+        if e.get_dbus_name() == "org.freedesktop.DBus.Python.m210.daemon.NotConnectedError":
+            error_and_exit("%s is not connected" % devpath)
+        raise e           
+    
+    if not options.quiet:
+        print("-", devpath)
 
-        if not options.quiet:
-            print("+", devpath)
-
-def disconnect(daemon, options, cmd_args):
-    if options.all:
-        for devpath in daemon.disconnect_all():
-            if not options.quiet:
-                print("-", devpath)
-        sys.exit(0)
-
-    devpaths = cmd_args[1:]
-    if not devpaths:
-        devpaths = [daemon.devpaths()[-1][0]]
-        
-    for devpath in devpaths:
-        try:
-            daemon.disconnect(devpath)
-        except dbus.exceptions.DBusException, e:
-            if e.get_dbus_name() == "org.freedesktop.DBus.Python.m210.daemon.NotConnectedError":
-                error_and_exit("%s is not connected" % devpath)
-            raise e           
-
-        if not options.quiet:
-            print("-", devpath)
-
-def info(daemon, options, cmd_args):
-    if options.all:
+def list_all(daemon, options, devpath):
+    if devpath:
+        devpaths = [devpath]
+    else:
         devpaths = [devpath for (devpath, connected) in daemon.devpaths()]
-    else:        
-        devpaths = cmd_args[1:]
-        if not devpaths:
-            devpaths = [daemon.devpaths()[-1][0]]
 
     for devpath in devpaths:
         try:
@@ -105,7 +83,7 @@ def info(daemon, options, cmd_args):
         print("  Mode:            ", mode)
         print("  Used memory:     ", bytes)
 
-def erase(daemon, options, cmd_args):
+def erase(daemon, options, devpath):
 
     def is_confirmed():
         while True:
@@ -113,38 +91,35 @@ def erase(daemon, options, cmd_args):
             if answer == 'y':
                 return True
             elif answer == 'n':
-                print("Aborted.")
                 return False
             else:
                 print("Please answer y or n.")
 
-    devpaths = cmd_args[1:]
-    if not devpaths:
-        devpaths = [daemon.devpaths()[-1][0]]
-
-    for devpath in devpaths:
+    if not options.quiet:
         print("Preparing to erase %s" % devpath)
-        if options.erase_ask_confirmation:
-            if not is_confirmed():
-                continue
-        try:
-            daemon.delete_notes(devpath)
-        except dbus.exceptions.DBusException, e:
-            if e.get_dbus_name() == "org.freedesktop.DBus.Python.m210.daemon.NotConnectedError":
-                error_and_exit("%s is not connected" % devpath)
-            raise e
 
+    if options.confirm_erasure and not is_confirmed():
         if not options.quiet:
-            print("Erased.")
-
-def download(daemon, options, cmd_args):
-    try:
-        devpath = cmd_args[1]
-    except IndexError:
-        devpath = daemon.devpaths()[-1][0]
+            print("Aborted.")
+        return
 
     try:
-        print(daemon.download_notes(devpath, byte_arrays=True), end="")
+        daemon.delete_notes(devpath)
+    except dbus.exceptions.DBusException, e:
+        if e.get_dbus_name() == "org.freedesktop.DBus.Python.m210.daemon.NotConnectedError":
+            error_and_exit("%s is not connected" % devpath)
+        raise e
+
+    if not options.quiet:
+        print("Erased.")
+
+def download(daemon, options, devpath):
+    if options.file:
+        target = open(options.file, "wb")
+    else:
+        target = sys.stdout
+    try:
+        print(daemon.download_notes(devpath, byte_arrays=True), end="", file=target)
     except dbus.exceptions.DBusException, e:
         if e.get_dbus_name() == "org.freedesktop.DBus.Python.m210.daemon.NotConnectedError":
             error_and_exit("%s is not connected" % devpath)
@@ -153,22 +128,114 @@ def download(daemon, options, cmd_args):
 COMMAND_MAP = {
     'connect': connect,
     'disconnect': disconnect,
-    'info': info,
+    'list': list_all,
     'erase': erase,
     'download': download,
 }
 
+class MyFormatter(optparse.IndentedHelpFormatter):
+
+    def format_description(self, description):
+        return description or ""
+
+    def format_epilog(self, epilog):
+        return epilog or ""
+
 def main():
-    parser = m210.optparse.OptionParser(usage='%prog [COMMAND] [OPTION]... [ARGS]...',
-                                        description='Client for m210d.')
+    parser = m210.optparse.OptionParser(usage='%prog [OPTION]... COMMAND [OPTION]... [DEVPATH]',
+                                        description="""Client for m210d.
+
+Commands:
+  connect              connect DEVPATH or last plugged device to m210d
+  disconnect           disconnect DEVPATH or last plugged device from m210d
+  download             download notes from DEVPATH or last plugged device
+  erase                erase notes from DEVPATH or last plugged device
+  list                 list all plugged devices and details about connected ones
+""",
+                                        epilog="""
+Usage examples:
+
+  Ask to list devices but there is not any plugged in:
+
+    $ m210c list
+    m210c: error: no devices found
+
+  Once a device is plugged in, it can be listed:
+
+    $ m210c list
+    - /sys/devices/pci0000:00/0000:00:1d.1/usb6/6-1
+
+  Hyphen at the beginning of the line indicates that the device is
+  plugged in but not connected to m210d. /sys/devices/... is the filepath
+  to the device (DEVPATH).
+
+  Connect a device to m210d:
+
+    $ m210c connect
+    + /sys/devices/pci0000:00/0000:00:1d.1/usb6/6-1
+
+  Plus-sign at the beginning of the line indicates that device is now
+  connected. Connect command accepts a device filepath (DEVPATH as an
+  argument, but if omitted, it will connect the last plugged device.
+
+  If trying to connect the same device twice, following error message
+  appears:
+
+    $ m210c connect
+    m210c: error: /sys/devices/pci0000:00/0000:00:1d.1/usb6/6-1 is already connected
+
+  List all devices and details about connected ones:
+
+    $ m210c list
+    + /sys/devices/pci0000:00/0000:00:1d.1/usb6/6-1
+      Firmware version: 337
+      Analog version:   265
+      Pad version:      32028
+      Mode:             TABLET
+      Used memory:      20956
+
+  If DEVPATH is given, then show information only on that device.
+
+  Download notes from a device:
+
+    $ m210c download --output=target_file_name
+
+  As usual, if DEVPATH is omitted, download notes from the last
+  plugged device. In most cases, this is the right thing to do,
+  because normally only one device connected to the system.
+    
+  If --output option is omitted, notes will be printed to stdout.
+
+  Erase notes from a device:
+
+    $ m210c erase
+    Preparing to erase /sys/devices/pci0000:00/0000:00:1d.1/usb6/6-1
+    Really erase [y/n]?
+
+  Erase command will confirm the erasure by default. This can be
+  suppressed with --no-confirmation option.
+
+  Disconnect a device:
+
+    $ m210c disconnect
+    - /sys/devices/pci0000:00/0000:00:1d.1/usb6/6-1
+
+""",
+                                        formatter=MyFormatter())
 
     parser.add_option("--quiet", "", action="store_true", default=False,
-                      help="do not print any processing messages")
-    parser.add_option("--all", "", action="store_true",
-                      help="apply COMMAND to all M210 devices")
-    parser.add_option("--erase-no-confirmation", "", action="store_false",
-                      dest="erase_ask_confirmation", default=True,
-                      help="do not ask confirmation on erasure")
+                      help="do not print any processing messages to stdout")
+
+    erase_group = OptionGroup(parser, "Erase Options")
+    erase_group.add_option("--no-confirmation", "", action="store_false",
+                           dest="confirm_erasure", default=True,
+                           help="do not ask confirmation for erasure")
+    parser.add_option_group(erase_group)
+
+    download_group = OptionGroup(parser, "Download Options")
+    download_group.add_option("--output", "", dest="file",
+                              help="download notes to FILE instead of stdout")
+    parser.add_option_group(download_group)
 
     options, args = parser.parse_args(sys.argv)
 
@@ -177,6 +244,12 @@ def main():
     except IndexError:
         parser.print_usage()
         error_and_exit("missing command")
+
+    try:
+        cmd_fn = COMMAND_MAP[cmd_name]
+    except KeyError:
+        error_and_exit("%s is invalid command" % cmd_name)
+
     cmd_args = args[2:]
 
     try:
@@ -187,11 +260,19 @@ def main():
         raise e
 
     try:
-        cmd_fn = COMMAND_MAP[cmd_name]
-    except KeyError:
-        error_and_exit("%s is invalid command" % cmd_name)
+        devpath = cmd_args[0]
+    except IndexError:
+        try:
+            devpath, connected = daemon.devpaths()[-1]
+        except IndexError:
+            error_and_exit("no devices found")
 
-    cmd_fn(daemon, options, cmd_args)
+    try:
+        cmd_fn(daemon, options, devpath)
+    except dbus.exceptions.DBusException, e:
+        if e.get_dbus_name() == "org.freedesktop.DBus.Python.m210.daemon.UnknownDeviceError":
+            error_and_exit("%s is not supported device" % devpath)
+        raise e
 
 if __name__ == "__main__":
     main()
