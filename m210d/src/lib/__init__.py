@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# m210
+# m210d
 # Copyright © 2010 Tuomas Räsänen (tuos) <tuos@codegrove.org>
 
 # This program is free software: you can redistribute it and/or modify

@@ -23,7 +23,6 @@ from __future__ import division
 
 # Standard modules.
 import optparse
-from optparse import OptionGroup
 import os.path
 import sys
 
@@ -32,7 +31,6 @@ import dbus.exceptions
 
 # Project modules.
 import m210.daemon
-import m210.optparse
 
 def error_and_exit(msg):
     prog = os.path.basename(sys.argv[0])
@@ -142,8 +140,9 @@ class MyFormatter(optparse.IndentedHelpFormatter):
         return epilog or ""
 
 def main():
-    parser = m210.optparse.OptionParser(usage='%prog [OPTION]... COMMAND [OPTION]... [DEVPATH]',
-                                        description="""Client for m210d.
+    parser = optparse.OptionParser(usage='%prog [OPTION]... COMMAND [OPTION]... [DEVPATH]',
+                                   version=m210.VERSION_TEXT,
+                                   description="""Client for m210d.
 
 Commands:
   connect              connect DEVPATH or last plugged device to m210d
@@ -226,13 +225,13 @@ Usage examples:
     parser.add_option("--quiet", "", action="store_true", default=False,
                       help="do not print any processing messages to stdout")
 
-    erase_group = OptionGroup(parser, "Erase Options")
+    erase_group = optparse.OptionGroup(parser, "Erase Options")
     erase_group.add_option("--no-confirmation", "", action="store_false",
                            dest="confirm_erasure", default=True,
                            help="do not ask confirmation for erasure")
     parser.add_option_group(erase_group)
 
-    download_group = OptionGroup(parser, "Download Options")
+    download_group = optparse.OptionGroup(parser, "Download Options")
     download_group.add_option("--output", "", dest="file",
                               help="download notes to FILE instead of stdout")
     parser.add_option_group(download_group)

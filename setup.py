@@ -52,10 +52,10 @@ class build_py(_build_py):
         return _build_py.run(self) # Proceed normally.
 
 modulehidraw = Extension('m210.hidraw',
-                         sources=['python-m210/src/lib/modulehidraw.c'])
+                         sources=['python-m210/src/modulehidraw.c'])
 
 moduleinput = Extension('m210.input',
-                         sources=['python-m210/src/lib/moduleinput.c'])
+                         sources=['python-m210/src/moduleinput.c'])
 
 setup(name='m210',
       provides=[
@@ -105,8 +105,8 @@ setup(name='m210',
         "Topic :: Documentation",
         "Topic :: Education",
         ],
-      package_dir={ # One for each module.
-        'm210':           'python-m210/src/lib',
+      package_dir={
+        'm210':           'python-m210/src',
         'm210.daemon':    'm210d/src/lib',
         'm210.qt':        'm210c-qt/src/lib',
         },

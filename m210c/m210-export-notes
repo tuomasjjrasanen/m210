@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
-# m210
+# m210-export-notes
 # Copyright © 2010 Tuomas Räsänen (tuos) <tuos@codegrove.org>
 
 # This program is free software: you can redistribute it and/or modify
@@ -22,6 +22,7 @@ from __future__ import print_function
 from __future__ import division
 
 # Standard modules.
+import optparse
 import os.path
 import sys
 
@@ -29,14 +30,15 @@ import sys
 import dbus.exceptions
 
 # Project modules.
-import m210.optparse
 import m210.pegatech
 
 USAGE = '%prog [OPTION]... [DIRECTORY]'
 DESCRIPTION = 'Export notes as SVG files.'
 
 if __name__ == "__main__":
-    parser = m210.optparse.OptionParser(usage=USAGE, description=DESCRIPTION)
+    parser = optparse.OptionParser(usage=USAGE,
+                                   version=m210.VERSION_TEXT,
+                                   description=DESCRIPTION)
 
     parser.add_option("--verbose", "", action="store_true", default=False,
                       help="print processing messages")
