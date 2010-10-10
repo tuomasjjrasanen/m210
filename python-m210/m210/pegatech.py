@@ -329,7 +329,7 @@ class M210(object):
             return 0
 
         self._accept_upload()
-        lost_packet_numbers = m210.collections.OrderedSet()
+        lost_packet_numbers = OrderedSet()
 
         # For some odd reason, packet numbering starts from 1 in
         # M210's memory.
