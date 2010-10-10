@@ -39,7 +39,7 @@ import PyQt4.QtCore
 
 # Project-specific modules.
 import m210.daemon
-import m210.daemon.input
+import m210.input
 import m210.pegatech
 
 USAGE='%prog [OPTION]'
@@ -78,14 +78,14 @@ class M210Connection(object):
         hidraw0, hidraw1, event = find_m210_paths(devpath)
         self._event_fd = None
         self._event_fd = os.open(event, os.O_RDWR)
-        m210.daemon.input.grab_event_device(self._event_fd)
+        m210.input.grab_event_device(self._event_fd)
         self.m210 = m210.pegatech.M210((hidraw0, hidraw1))
 
     def __del__(self):
         if self._event_fd is not None:
             # self._event_fd might be None if self.__init__ fails for
             # some reason.
-            m210.daemon.input.release_event_device(self._event_fd)
+            m210.input.release_event_device(self._event_fd)
 
 from UserDict import DictMixin
 

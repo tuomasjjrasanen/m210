@@ -52,10 +52,10 @@ class build_py(_build_py):
         return _build_py.run(self) # Proceed normally.
 
 modulehidraw = Extension('m210.hidraw',
-                         sources=['python-m210/src/modulehidraw.c'])
+                         sources=['python-m210/m210/modulehidraw.c'])
 
-moduleinput = Extension('m210.daemon.input',
-                        sources=['m210d/src/lib/moduleinput.c'])
+moduleinput = Extension('m210.input',
+                        sources=['python-m210/m210/moduleinput.c'])
 
 setup(name='m210',
       provides=[
@@ -73,7 +73,9 @@ setup(name='m210',
       url="http://codegrove.org/projects/m210",
       download_url="http://pypi.python.org/packages/source/m/m210/m210-0.3.tar.gz",
       description="Tools for Pegasus Mobile Notetaker M210",
-      long_description="M210 is a software project which aims to provide easy-to-use tools for controlling and using Pegasus Mobile Notetaker M210 in modern Linux desktop environments.",
+      long_description="""M210 is a software project which aims to provide easy-to-use tools for
+controlling and using Pegasus Mobile Notetaker M210 in modern Linux
+desktop environments.""",
       keywords=[
         "pegasus",
         "notetaker",
@@ -84,6 +86,7 @@ setup(name='m210',
         "digital pen",
         "pen",
         "irisnotes",
+        "qt",
         ],
       platforms=[
         "Operating System :: POSIX :: Linux",
@@ -106,18 +109,16 @@ setup(name='m210',
         "Topic :: Education",
         ],
       package_dir={
-        'm210':           'python-m210/src',
-        'm210.daemon':    'm210d/src/lib',
+        'm210':           'python-m210/m210',
         'm210.qt':        'm210c-qt/src/lib',
         },
       packages=[
         'm210',
-        'm210.daemon',
         'm210.qt',
         'm210.qt.ui',
         ],
       scripts=[
-        'm210d/src/bin/m210d',
+        'm210d/m210d',
         'm210c/m210c',
         'm210c/m210-export-notes',
         'm210c-qt/src/bin/m210c-qt',
