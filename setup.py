@@ -15,41 +15,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import errno
-import os
-
-from distutils.command.build_py import build_py as _build_py
 from distutils.core import setup, Extension
-
-class build_py(_build_py):
-    """Generate Python-modules from .ui files."""
-
-    def run(self):
-        try:
-            filenames = os.listdir('m210c-qt/ui')
-        except OSError, e:
-            if e.errno == errno.ENOENT:
-                # ui directory does not exists. fine, no ui-files then.
-                filenames = []
-            raise e # Something else went wrong during listing, panic!
-
-        # m210c-qt/ui/*.ui -> m210c-qt/src/lib/ui/*.py
-        for filename in os.listdir('m210c-qt/ui'):
-            filename = os.path.basename(filename)
-            name, ext = os.path.splitext(filename)
-            if ext != '.ui':
-                continue
-            src_path = 'm210c-qt/ui/%s' % filename
-            source_mtime = os.stat(src_path).st_mtime
-            dest_path = 'm210c-qt/src/lib/ui/%s.py' % name
-            if not os.path.exists(dest_path):
-                dest_mtime = -1
-            else:
-                dest_mtime = os.stat(dest_path).st_mtime
-            if source_mtime > dest_mtime:
-                os.system('pyuic4 -o m210c-qt/src/lib/ui/%s.py m210c-qt/ui/%s' % (name, filename))
-
-        return _build_py.run(self) # Proceed normally.
 
 modulehidraw = Extension('m210.hidraw',
                          sources=['python-m210/m210/modulehidraw.c'])
@@ -140,8 +106,5 @@ desktop environments.""",
                 ],
          ),
         ],
-      cmdclass={
-        'build_py': build_py,
-        },
       ext_modules=[modulehidraw, moduleinput],
       )

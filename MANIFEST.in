@@ -2,7 +2,6 @@ include AUTHORS
 include COPYING
 include CREDITS
 include NEWS
-include m210c-qt/ui/*
 include m210d/etc/init/*
 include m210d/etc/udev/rules.d/*
 include m210d/etc/dbus-1/system.d/*
