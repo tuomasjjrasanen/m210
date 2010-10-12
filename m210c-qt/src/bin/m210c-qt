@@ -46,6 +46,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
     def __init__(self, *args):
         QMainWindow.__init__(self, *args)
         self.setupUi(self)
+        self.actionDetails.setChecked(False)
         self.actionQuit.triggered.connect(self.close)
         self.menuFile.addAction(self.actionQuit)
         self.daemon = m210.daemon.Interface()
@@ -188,6 +189,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         slot = functools.partial(self.device_connection_clicked, devpath)
         checkbox.clicked.connect(slot)
         self.tableWidget.setCellWidget(row, 1, checkbox)
+        devpath_item.setSelected(True)
         self.row_map[devpath] = row
 
     def remove_row(self, devpath):
