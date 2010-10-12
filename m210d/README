@@ -1,0 +1,37 @@
+=======
+ m210d
+=======
+
+This package is part of the M210-software project. It provides the core of 
+the project, the daemon process which controls M210-devices.
+
+General information
+===================
+
+- Author: Tuomas Räsänen (tuos) <tuos@codegrove.org>
+- License: GPLv3+ (see COPYING)
+- Homepage: http://codegrove.org/projects/m210
+- Version: 0.3
+
+Requirements
+============
+
+- Upstart
+- python-m210
+- PyQt4.Core (python-qt4)
+- python-dbus
+
+Install
+=======
+
+::
+
+  python setup.py build && sudo python setup.py install
+
+By default, ``setup.py`` install files under ``./etc`` to right places
+in Ubuntu. For other systems, please modify ``setup.py`` if necessary.
+
+Bug reporting
+=============
+
+Please report bugs at http://bugs.launchpad.net/m210 .
