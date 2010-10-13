@@ -3,3 +3,4 @@ build
 dist
 MANIFEST
 m210c-qt/src/lib/ui/mainwindow.py
+src/lib/ui
