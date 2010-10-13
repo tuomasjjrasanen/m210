@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>660</width>
-    <height>302</height>
+    <width>613</width>
+    <height>280</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -73,7 +73,7 @@
          <item>
           <widget class="QGroupBox" name="groupBox_3">
            <property name="title">
-            <string>Notes</string>
+            <string>Manage notes</string>
            </property>
            <layout class="QVBoxLayout" name="verticalLayout_3">
             <item>
@@ -136,7 +136,7 @@
          <item>
           <widget class="QGroupBox" name="groupBox_4">
            <property name="title">
-            <string>Mode</string>
+            <string>Set operation mode</string>
            </property>
            <layout class="QVBoxLayout" name="verticalLayout_2">
             <item>
@@ -232,7 +232,7 @@
          <item>
           <widget class="QGroupBox" name="groupBox_2">
            <property name="title">
-            <string>Version information</string>
+            <string>Versions</string>
            </property>
            <layout class="QFormLayout" name="formLayout">
             <property name="labelAlignment">
@@ -244,7 +244,7 @@
             <item row="0" column="0">
              <widget class="QLabel" name="label">
               <property name="text">
-               <string>Firmware version:</string>
+               <string>Firmware:</string>
               </property>
               <property name="buddy">
                <cstring>spinBoxFirmwareVersion</cstring>
@@ -267,7 +267,7 @@
             <item row="1" column="0">
              <widget class="QLabel" name="label_2">
               <property name="text">
-               <string>Analog version:</string>
+               <string>Analog:</string>
               </property>
               <property name="buddy">
                <cstring>spinBoxAnalogVersion</cstring>
@@ -290,7 +290,7 @@
             <item row="2" column="0">
              <widget class="QLabel" name="label_3">
               <property name="text">
-               <string>Pad version:</string>
+               <string>Pad:</string>
               </property>
               <property name="buddy">
                <cstring>spinBoxPadVersion</cstring>
@@ -325,7 +325,7 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>660</width>
+     <width>613</width>
      <height>21</height>
     </rect>
    </property>

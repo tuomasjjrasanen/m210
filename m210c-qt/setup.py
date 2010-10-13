@@ -39,5 +39,6 @@ desktop environments.""",
         ],
       scripts=[
         'src/bin/m210c-qt',
+        'src/bin/m210-qt-noteviewer',
         ],
       )

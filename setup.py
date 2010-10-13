@@ -88,6 +88,7 @@ desktop environments.""",
         'm210c/m210c',
         'm210c/m210-export-notes',
         'm210c-qt/src/bin/m210c-qt',
+        'm210c-qt/src/bin/m210-qt-noteviewer',
         ],
       data_files=[
         ('/etc/dbus-1/system.d',
