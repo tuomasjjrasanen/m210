@@ -300,21 +300,7 @@ class M210(object):
         packet_number = struct.unpack('>H', response[:2])[0]
         return packet_number, response[2:]
 
-    def download_notes_to(self, destination_file):
-        """Download notes to an open `destination_file` in one pass.
-
-        Return the total size (bytes) of downloaded notes.
-        """
-
-        def request_lost_packets(lost_packet_numbers):
-            while lost_packet_numbers:
-                lost_packet_number = lost_packet_numbers[0]
-                self._write('\xb7' + struct.pack('>H', lost_packet_number))
-                packet_number, packet_payload = self._receive_packet()
-                if packet_number == lost_packet_number:
-                    lost_packet_numbers.remove(lost_packet_number)
-                    destination_file.write(packet_payload)
-
+    def packet_payload_iter(self):
         # Wait until the device is ready to upload packages to
         # us. This is needed because previous public API call might
         # have failed and the device hasn't had enough time to recover
@@ -326,7 +312,7 @@ class M210(object):
             # The device does not have any notes, inform that it's ok
             # and let it rest.
             self._reject_upload()
-            return 0
+            return
 
         self._accept_upload()
         lost_packet_numbers = OrderedSet()
@@ -341,17 +327,35 @@ class M210(object):
                 lost_packet_numbers.add(expected_number)
 
             if not lost_packet_numbers:
-                # It's safe to write only when all expected packets so
+                # It's safe to yield only when all expected packets so
                 # far have been received. The behavior is changed as
-                # soon as the first package is lost.
-                destination_file.write(packet_payload)
+                # soon as the first package is lost. This ensures the
+                # correct order of data.
+                yield packet_payload
 
-        request_lost_packets(lost_packet_numbers)
+        # Request resend of lost packets.
+        while lost_packet_numbers:
+            lost_packet_number = lost_packet_numbers[0]
+            self._write('\xb7' + struct.pack('>H', lost_packet_number))
+            packet_number, packet_payload = self._receive_packet()
+            if packet_number == lost_packet_number:
+                lost_packet_numbers.remove(lost_packet_number)
+                yield packet_payload
 
         # Thank the device for cooperation and let it rest.
         self._accept_upload()
 
-        return packet_count * M210._PACKET_PAYLOAD_SIZE
+    def download_notes_to(self, destination_file):
+        """Download notes to an open `destination_file` in one pass.
+
+        Return the total size (bytes) of downloaded notes.
+        """
+
+        count = 0
+        for packet_payload in self.packet_payload_iter():
+            destination_file.write(packet_payload)
+            count += 1
+        return count * M210._PACKET_PAYLOAD_SIZE
 
 _NOTE_STATE_MAP = {
     0x9f: "empty",
