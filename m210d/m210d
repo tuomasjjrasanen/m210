@@ -78,14 +78,22 @@ class M210Connection(object):
         hidraw0, hidraw1, event = find_m210_paths(devpath)
         self._event_fd = None
         self._event_fd = os.open(event, os.O_RDWR)
-        m210.input.grab_event_device(self._event_fd)
+        self.grabbed = False
         self.m210 = m210.pegatech.M210((hidraw0, hidraw1))
+
+    def set_input_enabled(self, enabled):
+        if not enabled and self.grabbed:
+            m210.input.release_event_device(self._event_fd)
+            self.grabbed = False
+        if enabled and not self.grabbed:
+            m210.input.grab_event_device(self._event_fd)
+            self.grabbed = True
 
     def __del__(self):
         if self._event_fd is not None:
             # self._event_fd might be None if self.__init__ fails for
             # some reason.
-            m210.input.release_event_device(self._event_fd)
+            self.set_input_enabled(True)
 
 from UserDict import DictMixin
 
@@ -218,6 +226,10 @@ class Daemon(dbus.service.Object):
         if conn is None:
             raise m210.daemon.NotConnectedError(devpath)
         return conn
+
+    @dbus.service.method(m210.daemon.INTERFACE, in_signature='sb')
+    def set_input_enabled(self, devpath, enabled):
+        self.get_connection(devpath).set_input_enabled(enabled)
 
     @dbus.service.method(m210.daemon.INTERFACE, in_signature='s')
     def connect(self, devpath):
