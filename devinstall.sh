@@ -1,14 +1,16 @@
 #!/bin/sh
 
 sudo stop m210d
+VERSION=`python setup.py --version`
+cat dist/m210-$VERSION/installedfiles | xargs sudo rm -rf
 
 set -e
 
 cd m210c-qt
 make
 cd ..
+rm -rf dist
 python setup.py sdist
-VERSION=`python setup.py --version`
 cd dist
 tar zxvf m210-$VERSION.tar.gz
 cd m210-$VERSION
