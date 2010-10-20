@@ -11,7 +11,6 @@ $(UI_MODULES): $(UI_MODULE_DIR)%.py: $(UI_DIR)%.ui
 	pyuic4 $< > $@
 
 ui: uidir $(UI_MODULES)
-	pyrcc4 ui/noteviewer.qrc > src/lib/ui/noteviewer_rc.py
 
 uidir:
 	mkdir -p $(UI_MODULE_DIR)
