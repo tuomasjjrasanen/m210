@@ -92,14 +92,14 @@
               <item>
                <widget class="QPushButton" name="pushButtonErase">
                 <property name="text">
-                 <string>Erase</string>
+                 <string>Erase all</string>
                 </property>
                </widget>
               </item>
               <item>
                <widget class="QPushButton" name="pushButtonDownload">
                 <property name="text">
-                 <string>Save...</string>
+                 <string>Save all...</string>
                 </property>
                </widget>
               </item>
