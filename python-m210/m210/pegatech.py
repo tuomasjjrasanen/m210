@@ -362,12 +362,30 @@ _NOTE_STATE_MAP = {
     0x5f: "unfinished",
     0x3f: "finished_by_user",
     0x1f: "finished_by_software",
-}
+    }
 
 class FileFormatError(Exception):
     pass
 
-def _iter_notes_in_file(notes_file):
+class Note(object):
+
+    def __init__(self, number):
+        self.paths = []
+        self.number = number
+
+    def as_svg(self):
+        svg_polylines = []
+        for path in self.paths:
+            points = " ".join(["%d,%d" % (x, y) for x, y in path])
+            svg_polylines.append('<polyline points="%s" stroke-width="30" stroke="black" fill="none"/>' % points)
+        return """<?xml version="1.0"?>
+    <!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
+    <svg width="210mm" height="297mm" viewBox="-7000 500 14000 20000" xmlns="http://www.w3.org/2000/svg" version="1.1">
+        %s
+    </svg>
+    """ % "\n    ".join(svg_polylines)
+
+def note_iter_from_file(notes_file):
 
     class counting_read(object):
 
@@ -398,38 +416,35 @@ def _iter_notes_in_file(notes_file):
         # END HEADER.
 
         # BEGIN DATA.
-        paths = []
-        note = {
-            "paths" : paths,
-            "state" : _NOTE_STATE_MAP[state],
-            "number": note_num,
-            }
+        note = Note(note_num)
         path = []
         while notes_file_read.fpos < next_header_pos:
             data = notes_file_read(4)
             if data == "\x00\x00\x00\x80":
-                paths.append(path)
+                note.paths.append(path)
                 path = []
             else:
                 point = struct.unpack("<hh", data)
                 path.append(point)
         if path:
-            paths.append(path)
+            note.paths.append(path)
         # END DATA.
 
         yield note
 
-def _note_to_svg(note):
-    svg_polylines = []
-    for path in note["paths"]:
-        points = " ".join(["%d,%d" % (x, y) for x, y in path])
-        svg_polylines.append('<polyline points="%s" stroke-width="30" stroke="black" fill="none"/>' % points)
-    return """<?xml version="1.0"?>
-<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
-<svg width="210mm" height="297mm" viewBox="-7000 500 14000 20000" xmlns="http://www.w3.org/2000/svg" version="1.1">
-    %s
-</svg>
-""" % "\n    ".join(svg_polylines)
+def note_iter_from_data(data):
+
+    class FileLikeWrapper(object):
+        def __init__(self, data):
+            self.data = data
+            self._i = 0
+            
+        def read(self, byte_count):
+            result = self.data[self._i:self._i + byte_count]
+            self._i += byte_count
+            return result
+
+    return note_iter_from_file(FileLikeWrapper(data))
 
 def export_notes_as_svgs(input_file, output_dirpath):
     try:
@@ -438,7 +453,7 @@ def export_notes_as_svgs(input_file, output_dirpath):
         if e.errno != errno.EEXIST:
             raise e
 
-    for note in _iter_notes_in_file(input_file):
-        svgpath = os.path.join(output_dirpath, str(note["number"]) + ".svg")
+    for note in note_iter_from_file(input_file):
+        svgpath = os.path.join(output_dirpath, str(note.number) + ".svg")
         with open(svgpath, "w") as svgfile:
-            svgfile.write(_note_to_svg(note))
+            svgfile.write(note.as_svg())
