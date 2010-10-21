@@ -3,7 +3,7 @@
 sudo stop m210d
 VERSION=`python setup.py --version`
 cat dist/m210-$VERSION/installedfiles | xargs sudo rm -rf
-
+rm MANIFEST
 set -e
 
 cd m210c-qt
