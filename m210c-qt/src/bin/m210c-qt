@@ -22,7 +22,9 @@ from __future__ import print_function
 from __future__ import division
 
 import functools
+import os
 import sys
+import zipfile
 
 import dbus.mainloop.qt
 dbus.mainloop.qt.DBusQtMainLoop(set_as_default=True)
@@ -40,29 +42,36 @@ from PyQt4.QtGui import QCheckBox
 
 from m210.qt.ui.mainwindow import Ui_MainWindow
 import m210.daemon
+import m210.pegatech
+
+import m210.qt.dataview
 
 class MainWindow(QMainWindow, Ui_MainWindow):
 
     def __init__(self, *args):
         QMainWindow.__init__(self, *args)
         self.setupUi(self)
+        self.__dataview = m210.qt.dataview.DataView(self)
+        self.horizontalLayoutDataView.addWidget(self.__dataview)
         self.actionDetails.setChecked(False)
         self.actionQuit.triggered.connect(self.close)
         self.menuFile.addAction(self.actionQuit)
         self.daemon = m210.daemon.Interface()
         self.current_mode = None
         self.row_map = {}
+        self.datas = {}
 
         self.tableWidget.itemSelectionChanged.connect(
             self.table_selection_changed)
         self.daemon.connect_to_signal("device_plugged", self.add_row)
+
         self.daemon.connect_to_signal("device_unplugged", self.remove_row)
         self.daemon.connect_to_signal("device_connected",
                                       functools.partial(
-                self.device_connection_changed, True))
+                self.device_managed_changed, True))
         self.daemon.connect_to_signal("device_disconnected",
                                       functools.partial(
-                self.device_connection_changed, False))
+                self.device_managed_changed, False))
         self.daemon.connect_to_signal("device_erased", self.device_erased)
         self.daemon.connect_to_signal("device_mode_changed",
                                       self.device_mode_changed)
@@ -73,8 +82,8 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.comboBoxMode.currentIndexChanged[str].connect(
             self.desired_mode_changed)
 
-        for devpath, connected in self.daemon.devpaths():
-            self.add_row(devpath, connected)
+        for devpath, is_managed in self.daemon.devpaths():
+            self.add_row(devpath, is_managed)
 
     def desired_mode_changed(self, new_mode):
         self.set_tablet_widgets_sensitivity(new_mode)
@@ -95,19 +104,21 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             size = self.spinBoxSize.value()
             orientation = unicode(self.comboBoxOrientation.currentText())
             self.daemon.set_tablet_settings(devpath, size, orientation)
-        self.statusBar().showMessage("%s mode activated." % new_mode, 3000)
+        self.statusBar().showMessage("%s mode activated." % new_mode,
+                                     msecs=3000)
 
     def download_clicked(self):
-        filename = QFileDialog.getSaveFileName(self, "Select download target")
-        if filename:
-            devpath = self.selected_devpath()
-            # Just create the file if it does not exist. This should
-            # to ensure that the file has a proper owner and a
-            # group. m210-daemon is probably running under different
-            # uid and will create the file if it does not exist.
-            open(filename, "a").close()
-            bytes = self.daemon.download_notes_to_file(devpath, unicode(filename))
-            self.statusBar().showMessage("Downloaded %s bytes." % bytes, 3000)
+        fname = QFileDialog.getSaveFileName(self, 
+                                            caption="Select download target",
+                                            directory=os.path.expanduser("~"),
+                                            filter="Zip (*.zip)")
+        if fname:
+            data = self.datas[self.selected_devpath()]
+            zipf = zipfile.ZipFile(unicode(fname), "w")
+            zipf.writestr("notes/raw", data)
+            for note in m210.pegatech.note_iter_from_data(data):
+                svgpath = os.path.join("notes", str(note.number) + ".svg")
+                zipf.writestr(svgpath, note.as_svg())
 
     def erase_clicked(self):
         result = QMessageBox.question(self, "Erase all notes?",
@@ -148,6 +159,10 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         return unicode(selected_item.data(Qt.DisplayRole).toString())
 
     def update_details(self, devpath):
+        try:
+            self.__dataview.set_data(self.datas[devpath])
+        except KeyError:
+            pass
         fw, analog, pad, mode, bytes = self.daemon.get_info(devpath)
         self.current_mode = mode
         self.spinBoxFirmwareVersion.setValue(fw)
@@ -159,6 +174,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.set_tablet_widgets_sensitivity(mode)
 
     def clear_details(self):
+        self.__dataview.clear_data()
         self.spinBoxFirmwareVersion.setValue(0)
         self.spinBoxAnalogVersion.setValue(0)
         self.spinBoxPadVersion.setValue(0)
@@ -176,42 +192,60 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             index = self.comboBoxMode.findText(new_mode)
             self.comboBoxMode.setCurrentIndex(index)            
 
-    def add_row(self, devpath, connected=False):
+    def add_row(self, devpath, is_managed=False):
         row = self.tableWidget.rowCount()
         self.tableWidget.setRowCount(row + 1)
+
         devpath_item = QTableWidgetItem(devpath)
         devpath_item.setFlags(Qt.ItemIsSelectable
                               | Qt.ItemIsEnabled
                               | Qt.ItemIsDragEnabled)
-        self.tableWidget.setItem(row, 0, devpath_item)
-        checkbox = QCheckBox()
-        checkbox.setChecked(connected)
-        slot = functools.partial(self.device_connection_clicked, devpath)
-        checkbox.clicked.connect(slot)
-        self.tableWidget.setCellWidget(row, 1, checkbox)
         devpath_item.setSelected(True)
+        self.tableWidget.setItem(row, 0, devpath_item)
+
+        is_input_enabled_chkbx = QCheckBox()
+        is_input_enabled_chkbx.setEnabled(is_managed)
+        is_input_enabled_chkbx.clicked.connect(
+            functools.partial(self.device_input_enabled_clicked, devpath))
+        self.tableWidget.setCellWidget(row, 2, is_input_enabled_chkbx)
+
+        is_managed_chkbx = QCheckBox()
+        is_managed_chkbx.setChecked(is_managed)
+        is_managed_chkbx.toggled.connect(is_input_enabled_chkbx.setEnabled)
+        is_managed_chkbx.clicked.connect(
+            functools.partial(self.device_managed_clicked, devpath))
+        self.tableWidget.setCellWidget(row, 1, is_managed_chkbx)
+
         self.row_map[devpath] = row
 
     def remove_row(self, devpath):
         self.tableWidget.removeRow(self.row_map.pop(devpath))
 
-    def device_connection_clicked(self, devpath, connected):
+    def device_input_enabled_clicked(self, devpath, is_input_enabled):
+        self.daemon.set_input_enabled(devpath, is_input_enabled)
+
+    def device_input_enabled_changed(self, devpath, is_input_enabled):
+        pass
+
+    def device_managed_clicked(self, devpath, is_managed):
         self.tableWidget.setCurrentCell(self.row_map[devpath], 1)
-        if connected:
+        if is_managed:
             self.daemon.connect(devpath)
         else:
             self.daemon.disconnect(devpath)
 
-    def device_connection_changed(self, connected, devpath):
+    def device_managed_changed(self, is_managed, devpath):
         row = self.row_map[devpath]
-        self.tableWidget.cellWidget(row, 1).setChecked(connected)
-        self.update_groupbox(row, devpath, connected)
-
-    def update_groupbox(self, row, devpath, connected):
+        self.tableWidget.cellWidget(row, 1).setChecked(is_managed)
         item = self.tableWidget.item(row, 0)
+        if is_managed:
+            data = self.daemon.download_data(devpath, byte_arrays=True)
+            self.datas[devpath] = data
+        else:
+            del self.datas[devpath]
         if item.isSelected():
-            self.groupBox.setEnabled(connected)
-            if connected:
+            self.groupBox.setEnabled(is_managed)
+            if is_managed:
                 self.update_details(devpath)
             else:
                 self.clear_details()

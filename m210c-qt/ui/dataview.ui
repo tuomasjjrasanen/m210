@@ -2,12 +2,15 @@
 <ui version="4.0">
  <class>DataView</class>
  <widget class="QWidget" name="DataView">
+  <property name="enabled">
+   <bool>false</bool>
+  </property>
   <property name="geometry">
    <rect>
     <x>0</x>
     <y>0</y>
     <width>218</width>
-    <height>348</height>
+    <height>343</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -38,10 +41,10 @@
         <enum>QAbstractSpinBox::UpDownArrows</enum>
        </property>
        <property name="minimum">
-        <number>1</number>
+        <number>0</number>
        </property>
        <property name="maximum">
-        <number>10</number>
+        <number>0</number>
        </property>
       </widget>
      </item>
@@ -50,30 +53,47 @@
    <item>
     <widget class="QSlider" name="horizontalSlider">
      <property name="minimum">
-      <number>1</number>
+      <number>0</number>
      </property>
      <property name="maximum">
-      <number>10</number>
+      <number>0</number>
      </property>
      <property name="orientation">
       <enum>Qt::Horizontal</enum>
      </property>
      <property name="tickPosition">
-      <enum>QSlider::TicksBelow</enum>
-     </property>
-     <property name="tickInterval">
-      <number>0</number>
+      <enum>QSlider::NoTicks</enum>
      </property>
     </widget>
    </item>
    <item>
-    <widget class="QGraphicsView" name="graphicsView"/>
+    <widget class="QGroupBox" name="groupBox">
+     <property name="sizePolicy">
+      <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+       <horstretch>0</horstretch>
+       <verstretch>0</verstretch>
+      </sizepolicy>
+     </property>
+     <property name="minimumSize">
+      <size>
+       <width>210</width>
+       <height>279</height>
+      </size>
+     </property>
+     <property name="maximumSize">
+      <size>
+       <width>210</width>
+       <height>279</height>
+      </size>
+     </property>
+     <property name="title">
+      <string>Preview</string>
+     </property>
+    </widget>
    </item>
   </layout>
  </widget>
- <resources>
-  <include location="noteviewer.qrc"/>
- </resources>
+ <resources/>
  <connections>
   <connection>
    <sender>horizontalSlider</sender>

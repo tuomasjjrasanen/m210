@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>613</width>
-    <height>280</height>
+    <width>592</width>
+    <height>641</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -19,27 +19,18 @@
      <layout class="QVBoxLayout" name="verticalLayout_4">
       <item>
        <widget class="QTableWidget" name="tableWidget">
+        <property name="sizePolicy">
+         <sizepolicy hsizetype="Expanding" vsizetype="Preferred">
+          <horstretch>0</horstretch>
+          <verstretch>0</verstretch>
+         </sizepolicy>
+        </property>
         <property name="selectionMode">
          <enum>QAbstractItemView::SingleSelection</enum>
         </property>
         <property name="selectionBehavior">
          <enum>QAbstractItemView::SelectRows</enum>
         </property>
-        <attribute name="horizontalHeaderCascadingSectionResizes">
-         <bool>true</bool>
-        </attribute>
-        <attribute name="horizontalHeaderDefaultSectionSize">
-         <number>310</number>
-        </attribute>
-        <attribute name="horizontalHeaderMinimumSectionSize">
-         <number>24</number>
-        </attribute>
-        <attribute name="horizontalHeaderStretchLastSection">
-         <bool>true</bool>
-        </attribute>
-        <attribute name="verticalHeaderVisible">
-         <bool>false</bool>
-        </attribute>
         <column>
          <property name="text">
           <string>Device path</string>
@@ -47,7 +38,12 @@
         </column>
         <column>
          <property name="text">
-          <string>Connected?</string>
+          <string>Managed?</string>
+         </property>
+        </column>
+        <column>
+         <property name="text">
+          <string>Input enabled?</string>
          </property>
         </column>
        </widget>
@@ -56,6 +52,12 @@
        <widget class="QGroupBox" name="groupBox">
         <property name="enabled">
          <bool>false</bool>
+        </property>
+        <property name="sizePolicy">
+         <sizepolicy hsizetype="Preferred" vsizetype="MinimumExpanding">
+          <horstretch>0</horstretch>
+          <verstretch>0</verstretch>
+         </sizepolicy>
         </property>
         <property name="title">
          <string/>
@@ -72,45 +74,18 @@
         <layout class="QHBoxLayout" name="horizontalLayout">
          <item>
           <widget class="QGroupBox" name="groupBox_3">
+           <property name="sizePolicy">
+            <sizepolicy hsizetype="Maximum" vsizetype="Preferred">
+             <horstretch>0</horstretch>
+             <verstretch>0</verstretch>
+            </sizepolicy>
+           </property>
            <property name="title">
-            <string>Manage notes</string>
+            <string>Notes</string>
            </property>
            <layout class="QVBoxLayout" name="verticalLayout_3">
             <item>
-             <layout class="QFormLayout" name="formLayout_2">
-              <property name="formAlignment">
-               <set>Qt::AlignHCenter|Qt::AlignTop</set>
-              </property>
-              <item row="0" column="0">
-               <widget class="QLabel" name="label_5">
-                <property name="text">
-                 <string>Used memory:</string>
-                </property>
-                <property name="buddy">
-                 <cstring>spinBoxUsedMemory</cstring>
-                </property>
-               </widget>
-              </item>
-              <item row="0" column="1">
-               <widget class="QSpinBox" name="spinBoxUsedMemory">
-                <property name="readOnly">
-                 <bool>true</bool>
-                </property>
-                <property name="buttonSymbols">
-                 <enum>QAbstractSpinBox::NoButtons</enum>
-                </property>
-                <property name="suffix">
-                 <string> B</string>
-                </property>
-                <property name="prefix">
-                 <string/>
-                </property>
-                <property name="maximum">
-                 <number>999999999</number>
-                </property>
-               </widget>
-              </item>
-             </layout>
+             <layout class="QHBoxLayout" name="horizontalLayoutDataView"/>
             </item>
             <item>
              <layout class="QHBoxLayout" name="horizontalLayout_2">
@@ -135,12 +110,21 @@
          </item>
          <item>
           <widget class="QGroupBox" name="groupBox_4">
+           <property name="sizePolicy">
+            <sizepolicy hsizetype="Expanding" vsizetype="Preferred">
+             <horstretch>0</horstretch>
+             <verstretch>0</verstretch>
+            </sizepolicy>
+           </property>
            <property name="title">
-            <string>Set operation mode</string>
+            <string>Input behavior</string>
            </property>
            <layout class="QVBoxLayout" name="verticalLayout_2">
             <item>
              <layout class="QFormLayout" name="formLayout_5">
+              <property name="fieldGrowthPolicy">
+               <enum>QFormLayout::ExpandingFieldsGrow</enum>
+              </property>
               <property name="labelAlignment">
                <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
               </property>
@@ -232,7 +216,7 @@
          <item>
           <widget class="QGroupBox" name="groupBox_2">
            <property name="title">
-            <string>Versions</string>
+            <string>Details</string>
            </property>
            <layout class="QFormLayout" name="formLayout">
             <property name="labelAlignment">
@@ -244,7 +228,7 @@
             <item row="0" column="0">
              <widget class="QLabel" name="label">
               <property name="text">
-               <string>Firmware:</string>
+               <string>Firmware version:</string>
               </property>
               <property name="buddy">
                <cstring>spinBoxFirmwareVersion</cstring>
@@ -267,7 +251,7 @@
             <item row="1" column="0">
              <widget class="QLabel" name="label_2">
               <property name="text">
-               <string>Analog:</string>
+               <string>Analog version:</string>
               </property>
               <property name="buddy">
                <cstring>spinBoxAnalogVersion</cstring>
@@ -290,7 +274,7 @@
             <item row="2" column="0">
              <widget class="QLabel" name="label_3">
               <property name="text">
-               <string>Pad:</string>
+               <string>Pad version:</string>
               </property>
               <property name="buddy">
                <cstring>spinBoxPadVersion</cstring>
@@ -310,6 +294,35 @@
               </property>
              </widget>
             </item>
+            <item row="3" column="0">
+             <widget class="QLabel" name="label_5">
+              <property name="text">
+               <string>Used memory:</string>
+              </property>
+              <property name="buddy">
+               <cstring>spinBoxUsedMemory</cstring>
+              </property>
+             </widget>
+            </item>
+            <item row="3" column="1">
+             <widget class="QSpinBox" name="spinBoxUsedMemory">
+              <property name="readOnly">
+               <bool>true</bool>
+              </property>
+              <property name="buttonSymbols">
+               <enum>QAbstractSpinBox::NoButtons</enum>
+              </property>
+              <property name="suffix">
+               <string> B</string>
+              </property>
+              <property name="prefix">
+               <string/>
+              </property>
+              <property name="maximum">
+               <number>999999999</number>
+              </property>
+             </widget>
+            </item>
            </layout>
           </widget>
          </item>
@@ -325,7 +338,7 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>613</width>
+     <width>592</width>
      <height>21</height>
     </rect>
    </property>
@@ -366,7 +379,6 @@
  </widget>
  <tabstops>
   <tabstop>groupBox</tabstop>
-  <tabstop>spinBoxUsedMemory</tabstop>
   <tabstop>pushButtonErase</tabstop>
   <tabstop>pushButtonDownload</tabstop>
   <tabstop>comboBoxMode</tabstop>
@@ -390,8 +402,8 @@
      <y>-1</y>
     </hint>
     <hint type="destinationlabel">
-     <x>543</x>
-     <y>196</y>
+     <x>600</x>
+     <y>467</y>
     </hint>
    </hints>
   </connection>
