@@ -108,16 +108,17 @@ class MainWindow(QMainWindow, Ui_MainWindow):
                                      msecs=3000)
 
     def download_clicked(self):
-        fname = QFileDialog.getSaveFileName(self, 
-                                            caption="Select download target",
-                                            directory=os.path.expanduser("~"),
-                                            filter="Zip (*.zip)")
+        fname = unicode(QFileDialog.getSaveFileName(self, 
+                                                    caption="Select download target",
+                                                    directory=os.path.expanduser("~"),
+                                                    filter="Zip (*.zip)"))
         if fname:
             data = self.datas[self.selected_devpath()]
             zipf = zipfile.ZipFile(unicode(fname), "w")
-            zipf.writestr("notes/raw", data)
+            zipdirname = os.path.splitext(os.path.basename(fname))[0]
+            zipf.writestr(os.path.join(zipdirname, "raw"), data)
             for note in m210.pegatech.note_iter_from_data(data):
-                svgpath = os.path.join("notes", str(note.number) + ".svg")
+                svgpath = os.path.join(zipdirname, str(note.number) + ".svg")
                 zipf.writestr(svgpath, note.as_svg())
 
     def erase_clicked(self):
