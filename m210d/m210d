@@ -209,6 +209,7 @@ class Daemon(dbus.service.Object):
     def device_added(self, devpath):
         self._connection_map[devpath] = None
         self.device_plugged(devpath)
+        self.connect(devpath)
 
     def device_removed(self, devpath):
         try:
