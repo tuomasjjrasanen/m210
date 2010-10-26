@@ -2,15 +2,12 @@
 <ui version="4.0">
  <class>DataView</class>
  <widget class="QWidget" name="DataView">
-  <property name="enabled">
-   <bool>false</bool>
-  </property>
   <property name="geometry">
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>218</width>
-    <height>343</height>
+    <width>228</width>
+    <height>367</height>
    </rect>
   </property>
   <property name="windowTitle">

@@ -37,8 +37,10 @@ from PyQt4.QtGui import QApplication
 from PyQt4.QtGui import QMainWindow
 from PyQt4.QtGui import QFileDialog
 from PyQt4.QtGui import QMessageBox
-from PyQt4.QtGui import QTableWidgetItem
+from PyQt4.QtGui import QListWidgetItem
 from PyQt4.QtGui import QCheckBox
+from PyQt4.QtGui import QAbstractSpinBox
+from PyQt4.QtGui import QSpinBox
 
 from m210.qt.ui.mainwindow import Ui_MainWindow
 import m210.daemon
@@ -51,69 +53,79 @@ class MainWindow(QMainWindow, Ui_MainWindow):
     def __init__(self, *args):
         QMainWindow.__init__(self, *args)
         self.setupUi(self)
-        self.__dataview = m210.qt.dataview.DataView(self)
-        self.horizontalLayoutDataView.addWidget(self.__dataview)
-        self.actionDetails.setChecked(False)
-        self.actionQuit.triggered.connect(self.close)
-        self.menuFile.addAction(self.actionQuit)
+        self.dataview = m210.qt.dataview.DataView(self)
+        self.horizontalLayoutDataView.addWidget(self.dataview)
         self.daemon = m210.daemon.Interface()
-        self.current_mode = None
         self.row_map = {}
-        self.datas = {}
 
-        self.tableWidget.itemSelectionChanged.connect(
-            self.table_selection_changed)
-        self.daemon.connect_to_signal("device_plugged", self.add_row)
-
-        self.daemon.connect_to_signal("device_unplugged", self.remove_row)
+        self.listWidget.itemSelectionChanged.connect(
+            self.list_selection_changed)
+        self.listWidget.itemDoubleClicked.connect(
+            self.list_item_double_clicked)
+        self.daemon.connect_to_signal("device_plugged",
+                                      self.dbusev_device_plugged)
+        self.daemon.connect_to_signal("device_unplugged",
+                                      self.dbusev_device_unplugged)
         self.daemon.connect_to_signal("device_connected",
                                       functools.partial(
-                self.device_managed_changed, True))
+                self.dbusev_device_managed_changed, True))
         self.daemon.connect_to_signal("device_disconnected",
                                       functools.partial(
-                self.device_managed_changed, False))
-        self.daemon.connect_to_signal("device_erased", self.device_erased)
+                self.dbusev_device_managed_changed, False))
+        self.daemon.connect_to_signal("device_erased",
+                                      self.dbusev_device_erased)
         self.daemon.connect_to_signal("device_mode_changed",
-                                      self.device_mode_changed)
-        self.spinBoxUsedMemory.valueChanged.connect(self.used_mem_changed)
-        self.pushButtonErase.clicked.connect(self.erase_clicked)
-        self.pushButtonDownload.clicked.connect(self.download_clicked)
-        self.pushButtonSetMode.clicked.connect(self.set_mode_clicked)
+                                      self.dbusev_device_mode_changed)
         self.comboBoxMode.currentIndexChanged[str].connect(
-            self.desired_mode_changed)
+            self.combo_box_mode_changed)
+        self.pushButtonEraseAll.clicked.connect(self.erase_all_clicked)
+        self.pushButtonSaveAll.clicked.connect(self.save_all_clicked)
+        self.pushButtonConfigureTablet.clicked.connect(
+            self.configure_tablet_clicked)
 
         for devpath, is_managed in self.daemon.devpaths():
-            self.add_row(devpath, is_managed)
+            self.dbusev_device_plugged(devpath)
+            if is_managed:
+                self.dbusev_device_managed_changed(True, devpath)
 
-    def desired_mode_changed(self, new_mode):
-        self.set_tablet_widgets_sensitivity(new_mode)
+    def list_item_double_clicked(self, item):
+        item_is_managed = item.data(Qt.CheckStateRole).toBool()
+        devpath = unicode(item.data(Qt.DisplayRole).toString())
+        if item_is_managed:
+            self.daemon.disconnect(devpath)
+        else:
+            self.daemon.connect(devpath)
 
-    def set_tablet_widgets_sensitivity(self, mode):
+    def combo_box_mode_changed(self, mode):
         is_tablet_mode = mode == "TABLET"
-        self.comboBoxOrientation.setEnabled(is_tablet_mode)
-        self.spinBoxSize.setEnabled(is_tablet_mode)
-        self.labelSize.setEnabled(is_tablet_mode)
-        self.labelOrientation.setEnabled(is_tablet_mode)
-
-    def set_mode_clicked(self):
+        self.comboBoxOrientation.setVisible(is_tablet_mode)
+        self.spinBoxSize.setVisible(is_tablet_mode)
+        self.labelSize.setVisible(is_tablet_mode)
+        self.labelOrientation.setVisible(is_tablet_mode)
+        self.pushButtonConfigureTablet.setVisible(is_tablet_mode)
         devpath = self.selected_devpath()
         new_mode = unicode(self.comboBoxMode.currentText())
         self.daemon.set_mode(devpath, new_mode)
-        self.current_mode = new_mode
-        if new_mode == "TABLET":
-            size = self.spinBoxSize.value()
-            orientation = unicode(self.comboBoxOrientation.currentText())
-            self.daemon.set_tablet_settings(devpath, size, orientation)
         self.statusBar().showMessage("%s mode activated." % new_mode,
-                                     msecs=3000)
+                                     msecs=5000)
 
-    def download_clicked(self):
-        fname = unicode(QFileDialog.getSaveFileName(self, 
-                                                    caption="Select download target",
-                                                    directory=os.path.expanduser("~"),
-                                                    filter="Zip (*.zip)"))
+    def configure_tablet_clicked(self):
+        devpath = self.selected_devpath()
+        size = self.spinBoxSize.value()
+        orientation = unicode(self.comboBoxOrientation.currentText())
+        self.daemon.set_tablet_settings(devpath, size, orientation)
+        self.statusBar().showMessage("TABLET configured.",
+                                     msecs=5000)
+
+    def save_all_clicked(self):
+        fname = QFileDialog.getSaveFileName(self, 
+                                            caption="Select download target",
+                                            directory=os.path.expanduser("~"),
+                                            filter="Zip (*.zip)")
+        fname = unicode(fname)
         if fname:
-            data = self.datas[self.selected_devpath()]
+            devpath = self.selected_devpath()
+            data = self.daemon.download_data(devpath, byte_arrays=True)
             zipf = zipfile.ZipFile(unicode(fname), "w")
             zipdirname = os.path.splitext(os.path.basename(fname))[0]
             zipf.writestr(os.path.join(zipdirname, "raw"), data)
@@ -121,7 +133,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
                 svgpath = os.path.join(zipdirname, str(note.number) + ".svg")
                 zipf.writestr(svgpath, note.as_svg())
 
-    def erase_clicked(self):
+    def erase_all_clicked(self):
         result = QMessageBox.question(self, "Erase all notes?",
                                       "Are you sure you want to erase all notes stored in the device?",
                                       QMessageBox.Yes | QMessageBox.No,
@@ -129,127 +141,88 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         if result == QMessageBox.Yes:
             devpath = self.selected_devpath()
             self.daemon.delete_notes(devpath)
-            self.spinBoxUsedMemory.setValue(0)
 
-    def used_mem_changed(self, memory):
-        b = bool(memory)
-        self.pushButtonDownload.setEnabled(b)
-        self.pushButtonErase.setEnabled(b)
+    def list_selection_changed(self):
+        self.update_group_box()
 
-    def table_selection_changed(self):
-        devpath = self.selected_devpath()
-        if not devpath:
-            # Selection is empty.
-            self.groupBox.setEnabled(False)
-            self.clear_details()
-            return
+    def devpath_from_item(self, item):
+        return unicode(item.data(Qt.DisplayRole).toString())
+
+    def state_from_item(self, item):
+        return bool(item.data(Qt.CheckStateRole).toBool())
+
+    def selected_item(self):
         try:
-            self.update_details(devpath)
-            self.groupBox.setEnabled(True)
+            return self.listWidget.selectedItems()[0]
+        except IndexError:
+            return None
+
+    def selected_devpath(self):
+        return self.devpath_from_item(self.selected_item())
+
+    def update_group_box(self):
+        selected_item = self.selected_item()
+        
+        devpath = self.devpath_from_item(selected_item)
+        self.groupBox.setTitle(devpath)
+
+        item_state = self.state_from_item(selected_item)
+        self.groupBox.setEnabled(item_state)
+
+        try:
+            data = self.daemon.download_data(devpath, byte_arrays=True)
+            fw, analog, pad, mode, bytes = self.daemon.get_info(devpath)
+            # TODO: size and orientation queries.
         except dbus.exceptions.DBusException, e:
             name = e.get_dbus_name()
             if name != "org.freedesktop.DBus.Python.m210.daemon.NotConnectedError":
                 raise e
-            self.groupBox.setEnabled(False)
+            data = None
+            fw, analog, pad, mode, bytes = 0, 0, 0, "TABLET", 0
+            # TODO: size and orientation defaults.
 
-    def selected_devpath(self):
-        try:
-            selected_item = self.tableWidget.selectedItems()[0]
-        except IndexError:
-            return None
-        return unicode(selected_item.data(Qt.DisplayRole).toString())
+        self.dataview.set_data(data)
 
-    def update_details(self, devpath):
-        try:
-            self.__dataview.set_data(self.datas[devpath])
-        except KeyError:
-            pass
-        fw, analog, pad, mode, bytes = self.daemon.get_info(devpath)
-        self.current_mode = mode
-        self.spinBoxFirmwareVersion.setValue(fw)
-        self.spinBoxAnalogVersion.setValue(analog)
-        self.spinBoxPadVersion.setValue(pad)
+        self.spinBoxFirmware.setValue(fw)
+        self.spinBoxAnalog.setValue(analog)
+        self.spinBoxPad.setValue(pad)
+        self.spinBoxMem.setValue(bytes)
         index = self.comboBoxMode.findText(mode)
         self.comboBoxMode.setCurrentIndex(index)
-        self.spinBoxUsedMemory.setValue(bytes)
-        self.set_tablet_widgets_sensitivity(mode)
-
-    def clear_details(self):
-        self.__dataview.clear_data()
-        self.spinBoxFirmwareVersion.setValue(0)
-        self.spinBoxAnalogVersion.setValue(0)
-        self.spinBoxPadVersion.setValue(0)
-        self.spinBoxUsedMemory.setValue(0)
-        
-    def device_erased(self, devpath):
-        if self.devpath_to_item(devpath).isSelected():
-            self.spinBoxUsedMemory.setValue(0)
+        self.groupBoxInput.setChecked(True)
 
     def devpath_to_item(self, devpath):
-        return self.tableWidget.item(self.row_map[devpath], 0)
+        return self.listWidget.item(self.row_map[devpath])
 
-    def device_mode_changed(self, devpath, new_mode):
-        if self.devpath_to_item(devpath).isSelected():
+    def dbusev_device_erased(self, devpath):
+        if devpath == self.selected_devpath():
+            self.pushButtonEraseAll.setEnabled(False)
+            self.spinBoxMem.setValue(0)
+
+    def dbusev_device_mode_changed(self, devpath, new_mode):
+        if devpath == self.selected_devpath():
             index = self.comboBoxMode.findText(new_mode)
-            self.comboBoxMode.setCurrentIndex(index)            
+            self.comboBoxMode.setCurrentIndex(index)
 
-    def add_row(self, devpath, is_managed=False):
-        row = self.tableWidget.rowCount()
-        self.tableWidget.setRowCount(row + 1)
-
-        devpath_item = QTableWidgetItem(devpath)
-        devpath_item.setFlags(Qt.ItemIsSelectable
-                              | Qt.ItemIsEnabled
-                              | Qt.ItemIsDragEnabled)
-        devpath_item.setSelected(True)
-        self.tableWidget.setItem(row, 0, devpath_item)
-
-        is_input_enabled_chkbx = QCheckBox()
-        is_input_enabled_chkbx.setEnabled(is_managed)
-        is_input_enabled_chkbx.clicked.connect(
-            functools.partial(self.device_input_enabled_clicked, devpath))
-        self.tableWidget.setCellWidget(row, 2, is_input_enabled_chkbx)
-
-        is_managed_chkbx = QCheckBox()
-        is_managed_chkbx.setChecked(is_managed)
-        is_managed_chkbx.toggled.connect(is_input_enabled_chkbx.setEnabled)
-        is_managed_chkbx.clicked.connect(
-            functools.partial(self.device_managed_clicked, devpath))
-        self.tableWidget.setCellWidget(row, 1, is_managed_chkbx)
-
+    def dbusev_device_plugged(self, devpath):
+        row = self.listWidget.count()
+        item = QListWidgetItem(devpath, self.listWidget)
+        item.setFlags(Qt.ItemIsSelectable | Qt.ItemIsEnabled)
+        item.setCheckState(Qt.Unchecked)
+        self.listWidget.addItem(item)
         self.row_map[devpath] = row
+        item.setSelected(True)
 
-    def remove_row(self, devpath):
-        self.tableWidget.removeRow(self.row_map.pop(devpath))
+    def dbusev_device_unplugged(self, devpath):
+        self.listWidget.takeItem(self.row_map.pop(devpath))
 
-    def device_input_enabled_clicked(self, devpath, is_input_enabled):
-        self.daemon.set_input_enabled(devpath, is_input_enabled)
-
-    def device_input_enabled_changed(self, devpath, is_input_enabled):
-        pass
-
-    def device_managed_clicked(self, devpath, is_managed):
-        self.tableWidget.setCurrentCell(self.row_map[devpath], 1)
+    def dbusev_device_managed_changed(self, is_managed, devpath):
+        item = self.devpath_to_item(devpath)
         if is_managed:
-            self.daemon.connect(devpath)
+            item.setCheckState(Qt.Checked)
         else:
-            self.daemon.disconnect(devpath)
-
-    def device_managed_changed(self, is_managed, devpath):
-        row = self.row_map[devpath]
-        self.tableWidget.cellWidget(row, 1).setChecked(is_managed)
-        item = self.tableWidget.item(row, 0)
-        if is_managed:
-            data = self.daemon.download_data(devpath, byte_arrays=True)
-            self.datas[devpath] = data
-        else:
-            del self.datas[devpath]
-        if item.isSelected():
-            self.groupBox.setEnabled(is_managed)
-            if is_managed:
-                self.update_details(devpath)
-            else:
-                self.clear_details()
+            item.setCheckState(Qt.Unchecked)
+        self.update_group_box()
 
 def main():
     app = QApplication(sys.argv)
