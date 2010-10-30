@@ -183,6 +183,11 @@ class M210(object):
             if iface_n == 0:
                 if response[:2] == '\x80\xb5':
                     continue # Ignore mode button events, at least for now.
+                if response[0] in '\x40\x41\x42':
+                    if response[1:6] == '\x00\x00\x00\x00\x00':
+                        continue # Ignore pen-up packets.
+                    if response[1] in '\x01\x02\x03\x08':
+                        continue # Ignore pen-data packets.
             break
 
         return response
