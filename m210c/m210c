@@ -123,12 +123,29 @@ def download(daemon, options, devpath):
             error_and_exit("%s is not connected" % devpath)
         raise e
 
+def mouse(daemon, options, devpath):
+    daemon.set_mode(devpath, "MOUSE")
+
+def tablet(daemon, options, devpath):
+    daemon.set_mode(devpath, "TABLET")
+    daemon.set_tablet_settings(devpath, int(options.size), options.orient)
+
+def enable(daemon, options, devpath):
+    daemon.set_input_enabled(devpath, True)
+
+def disable(daemon, options, devpath):
+    daemon.set_input_enabled(devpath, False)
+
 COMMAND_MAP = {
     'connect': connect,
     'disconnect': disconnect,
     'list': list_all,
     'erase': erase,
     'download': download,
+    'enable': enable,
+    'disable': disable,
+    'mouse': mouse,
+    'tablet': tablet,
 }
 
 class MyFormatter(optparse.IndentedHelpFormatter):
@@ -149,6 +166,10 @@ Commands:
   disconnect           disconnect DEVPATH or last plugged device from m210d
   download             download notes from DEVPATH or last plugged device
   erase                erase notes from DEVPATH or last plugged device
+  enable               enable input mode of DEVPATH or last plugged device
+  disable              disable input mode of DEVPATH or last plugged device
+  mouse                set input mode to mouse of DEVPATH or last plugged device
+  tablet               set input mode to tablet of DEVPATH or last plugged device
   list                 list all plugged devices and details about connected ones
 """,
                                         epilog="""
@@ -235,6 +256,16 @@ Usage examples:
     download_group.add_option("--output", "", dest="file",
                               help="download notes to FILE instead of stdout")
     parser.add_option_group(download_group)
+
+    tablet_group = optparse.OptionGroup(parser, "Tablet Options")
+    tablet_group.add_option("--size", "", dest="size",
+                            choices=[str(v) for v in range(10)],
+                            default="5",
+                            help="set size to 0-9, default=5")
+    tablet_group.add_option("--orient", "", dest="orient",
+                           choices=["NW", "N", "NE"], default="N",
+                           help="set orientation to 'NW', 'N' or 'NE', default='N'")
+    parser.add_option_group(tablet_group)
 
     options, args = parser.parse_args(sys.argv)
 
