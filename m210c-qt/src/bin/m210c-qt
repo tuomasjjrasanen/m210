@@ -76,17 +76,26 @@ class MainWindow(QMainWindow, Ui_MainWindow):
                                       self.dbusev_device_erased)
         self.daemon.connect_to_signal("device_mode_changed",
                                       self.dbusev_device_mode_changed)
+        self.daemon.connect_to_signal("device_input_enabled",
+                                      self.dbusev_device_input_enabled)
+        self.daemon.connect_to_signal("device_tablet_settings_changed",
+                                      self.dbusev_device_tablet_settings_changed)
         self.comboBoxMode.currentIndexChanged[str].connect(
             self.combo_box_mode_changed)
         self.pushButtonEraseAll.clicked.connect(self.erase_all_clicked)
         self.pushButtonSaveAll.clicked.connect(self.save_all_clicked)
         self.pushButtonConfigureTablet.clicked.connect(
             self.configure_tablet_clicked)
+        self.groupBoxInput.clicked.connect(self.input_enabled_clicked)
 
         for devpath, is_managed in self.daemon.devpaths():
             self.dbusev_device_plugged(devpath)
             if is_managed:
                 self.dbusev_device_managed_changed(True, devpath)
+
+    def input_enabled_clicked(self, enabled):
+        devpath = self.selected_devpath()
+        self.daemon.set_input_enabled(devpath, enabled)
 
     def list_item_double_clicked(self, item):
         item_is_managed = item.data(Qt.CheckStateRole).toBool()
@@ -193,6 +202,16 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
     def devpath_to_item(self, devpath):
         return self.listWidget.item(self.row_map[devpath])
+
+    def dbusev_device_tablet_settings_changed(self, devpath, size, orientation):
+        if devpath == self.selected_devpath():
+            self.spinBoxSize.setValue(size)
+            index = self.comboBoxOrientation.findText(orientation)
+            self.comboBoxOrientation.setCurrentIndex(index)
+
+    def dbusev_device_input_enabled(self, devpath, enabled):
+        if devpath == self.selected_devpath():
+            self.groupBoxInput.setChecked(bool(enabled))
 
     def dbusev_device_erased(self, devpath):
         if devpath == self.selected_devpath():
