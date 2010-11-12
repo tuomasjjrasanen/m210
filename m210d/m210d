@@ -232,7 +232,7 @@ class Daemon(dbus.service.Object):
     @dbus.service.method(m210.daemon.INTERFACE, in_signature='sb')
     def set_input_enabled(self, devpath, enabled):
         self.get_connection(devpath).set_input_enabled(enabled)
-        self.input_enabled(devpath, enabled)
+        self.device_input_enabled(devpath, enabled)
 
     @dbus.service.method(m210.daemon.INTERFACE, in_signature='s')
     def connect(self, devpath):
@@ -324,7 +324,7 @@ class Daemon(dbus.service.Object):
         return info['firmware_version'], info['analog_version'], info['pad_version'], info['mode'], info['used_memory']
 
     @dbus.service.signal(m210.daemon.INTERFACE, signature='sb')
-    def input_enabled(self, devpath, enabled):
+    def device_input_enabled(self, devpath, enabled):
         pass
 
     @dbus.service.signal(m210.daemon.INTERFACE, signature='s')
