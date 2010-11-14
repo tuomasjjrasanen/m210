@@ -90,7 +90,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
                 self.dbusev_device_managed_changed(True, devpath)
 
     def __show_message(self, msg):
-        self.statusBar().showMessage(msg, msecs=5000)
+        self.statusBar().showMessage(msg, msecs=6000)
 
     def input_enabled_clicked(self, enabled):
         devpath = self.selected_devpath()
@@ -130,6 +130,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             for note in m210.pegatech.note_iter_from_data(data):
                 svgpath = os.path.join(zipdirname, str(note.number) + ".svg")
                 zipf.writestr(svgpath, note.as_svg())
+            self.__show_message("Notes stored to: %s" % fname)
 
     def erase_all_clicked(self):
         result = QMessageBox.question(self, "Erase all notes?",
@@ -139,6 +140,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         if result == QMessageBox.Yes:
             devpath = self.selected_devpath()
             self.daemon.delete_notes(devpath)
+            self.__show_message("Notes erased.")
 
     def list_selection_changed(self):
         self.update_group_box()
@@ -160,7 +162,19 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
     def update_group_box(self):
         selected_item = self.selected_item()
-        
+        if selected_item is None:
+            self.spinBoxFirmware.setValue(0)
+            self.spinBoxAnalog.setValue(0)
+            self.spinBoxPad.setValue(0)
+            self.spinBoxMem.setValue(0)
+            self.groupBoxInput.setChecked(True)
+            self.spinBoxSize.setValue(1)
+            index = self.comboBoxOrientation.findText("N")
+            self.comboBoxOrientation.setCurrentIndex(index)
+            self.groupBox.setTitle("")
+            self.groupBox.setEnabled(False)
+            return
+
         devpath = self.devpath_from_item(selected_item)
         self.groupBox.setTitle(devpath)
 
