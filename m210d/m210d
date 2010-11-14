@@ -303,11 +303,6 @@ class Daemon(dbus.service.Object):
     def download_data(self, devpath):
         return "".join(self.get_connection(devpath).m210.packet_payload_iter())
 
-    @dbus.service.method(m210.daemon.INTERFACE, in_signature='ss')
-    def set_mode(self, devpath, new_mode):
-        self.get_connection(devpath).m210.set_mode(new_mode)
-        self.device_mode_changed(devpath, new_mode)
-
     @dbus.service.method(m210.daemon.INTERFACE, in_signature='sis')
     def set_tablet_settings(self, devpath, size, orientation):
         self.get_connection(devpath).m210.set_tablet_settings(size, orientation)
@@ -319,10 +314,10 @@ class Daemon(dbus.service.Object):
         self.device_erased(devpath)
 
     @dbus.service.method(m210.daemon.INTERFACE, in_signature='s',
-                         out_signature='iiisi')
+                         out_signature='iiii')
     def get_info(self, devpath):
         info = self.get_connection(devpath).m210.get_info()
-        return info['firmware_version'], info['analog_version'], info['pad_version'], info['mode'], info['used_memory']
+        return info['firmware_version'], info['analog_version'], info['pad_version'], info['used_memory']
 
     @dbus.service.signal(m210.daemon.INTERFACE, signature='sb')
     def device_input_enabled(self, devpath, enabled):
@@ -346,10 +341,6 @@ class Daemon(dbus.service.Object):
 
     @dbus.service.signal(m210.daemon.INTERFACE, signature='s')
     def device_erased(self, devpath):
-        pass
-
-    @dbus.service.signal(m210.daemon.INTERFACE, signature='ss')
-    def device_mode_changed(self, devpath, new_mode):
         pass
 
     @dbus.service.signal(m210.daemon.INTERFACE, signature='sis')

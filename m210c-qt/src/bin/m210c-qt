@@ -74,14 +74,10 @@ class MainWindow(QMainWindow, Ui_MainWindow):
                 self.dbusev_device_managed_changed, False))
         self.daemon.connect_to_signal("device_erased",
                                       self.dbusev_device_erased)
-        self.daemon.connect_to_signal("device_mode_changed",
-                                      self.dbusev_device_mode_changed)
         self.daemon.connect_to_signal("device_input_enabled",
                                       self.dbusev_device_input_enabled)
         self.daemon.connect_to_signal("device_tablet_settings_changed",
                                       self.dbusev_device_tablet_settings_changed)
-        self.comboBoxMode.currentIndexChanged[str].connect(
-            self.combo_box_mode_changed)
         self.pushButtonEraseAll.clicked.connect(self.erase_all_clicked)
         self.pushButtonSaveAll.clicked.connect(self.save_all_clicked)
         self.pushButtonConfigureTablet.clicked.connect(
@@ -104,19 +100,6 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             self.daemon.disconnect(devpath)
         else:
             self.daemon.connect(devpath)
-
-    def combo_box_mode_changed(self, mode):
-        is_tablet_mode = mode == "TABLET"
-        self.comboBoxOrientation.setVisible(is_tablet_mode)
-        self.spinBoxSize.setVisible(is_tablet_mode)
-        self.labelSize.setVisible(is_tablet_mode)
-        self.labelOrientation.setVisible(is_tablet_mode)
-        self.pushButtonConfigureTablet.setVisible(is_tablet_mode)
-        devpath = self.selected_devpath()
-        new_mode = unicode(self.comboBoxMode.currentText())
-        self.daemon.set_mode(devpath, new_mode)
-        self.statusBar().showMessage("%s mode activated." % new_mode,
-                                     msecs=5000)
 
     def configure_tablet_clicked(self):
         devpath = self.selected_devpath()
@@ -180,14 +163,14 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
         try:
             data = self.daemon.download_data(devpath, byte_arrays=True)
-            fw, analog, pad, mode, bytes = self.daemon.get_info(devpath)
+            fw, analog, pad, bytes = self.daemon.get_info(devpath)
             # TODO: size and orientation queries.
         except dbus.exceptions.DBusException, e:
             name = e.get_dbus_name()
             if name != "org.freedesktop.DBus.Python.m210.daemon.NotConnectedError":
                 raise e
             data = None
-            fw, analog, pad, mode, bytes = 0, 0, 0, "TABLET", 0
+            fw, analog, pad, bytes = 0, 0, 0, 0
             # TODO: size and orientation defaults.
 
         self.dataview.set_data(data)
@@ -196,8 +179,6 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.spinBoxAnalog.setValue(analog)
         self.spinBoxPad.setValue(pad)
         self.spinBoxMem.setValue(bytes)
-        index = self.comboBoxMode.findText(mode)
-        self.comboBoxMode.setCurrentIndex(index)
         self.groupBoxInput.setChecked(True)
 
     def devpath_to_item(self, devpath):
@@ -217,11 +198,6 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         if devpath == self.selected_devpath():
             self.pushButtonEraseAll.setEnabled(False)
             self.spinBoxMem.setValue(0)
-
-    def dbusev_device_mode_changed(self, devpath, new_mode):
-        if devpath == self.selected_devpath():
-            index = self.comboBoxMode.findText(new_mode)
-            self.comboBoxMode.setCurrentIndex(index)
 
     def dbusev_device_plugged(self, devpath):
         row = self.listWidget.count()

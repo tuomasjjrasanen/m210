@@ -18,7 +18,7 @@
     <item>
      <widget class="QGroupBox" name="groupBox_5">
       <property name="title">
-       <string>Devices plugged in</string>
+       <string>Managed devices</string>
       </property>
       <layout class="QVBoxLayout" name="verticalLayout_2">
        <item>
@@ -100,7 +100,7 @@
               </sizepolicy>
              </property>
              <property name="title">
-              <string>Enable input</string>
+              <string>Enable tablet</string>
              </property>
              <property name="checkable">
               <bool>true</bool>
@@ -109,31 +109,10 @@
               <bool>true</bool>
              </property>
              <layout class="QFormLayout" name="formLayout_2">
+              <property name="fieldGrowthPolicy">
+               <enum>QFormLayout::AllNonFixedFieldsGrow</enum>
+              </property>
               <item row="0" column="0">
-               <widget class="QLabel" name="label_4">
-                <property name="text">
-                 <string>Mode:</string>
-                </property>
-                <property name="buddy">
-                 <cstring>comboBoxMode</cstring>
-                </property>
-               </widget>
-              </item>
-              <item row="0" column="1">
-               <widget class="QComboBox" name="comboBoxMode">
-                <item>
-                 <property name="text">
-                  <string>TABLET</string>
-                 </property>
-                </item>
-                <item>
-                 <property name="text">
-                  <string>MOUSE</string>
-                 </property>
-                </item>
-               </widget>
-              </item>
-              <item row="1" column="0">
                <widget class="QLabel" name="labelSize">
                 <property name="text">
                  <string>Tablet size:</string>
@@ -143,7 +122,7 @@
                 </property>
                </widget>
               </item>
-              <item row="1" column="1">
+              <item row="0" column="1">
                <widget class="QSpinBox" name="spinBoxSize">
                 <property name="minimum">
                  <number>0</number>
@@ -153,7 +132,7 @@
                 </property>
                </widget>
               </item>
-              <item row="2" column="0">
+              <item row="1" column="0">
                <widget class="QLabel" name="labelOrientation">
                 <property name="text">
                  <string>Tablet orientation:</string>
@@ -163,7 +142,7 @@
                 </property>
                </widget>
               </item>
-              <item row="2" column="1">
+              <item row="1" column="1">
                <widget class="QComboBox" name="comboBoxOrientation">
                 <item>
                  <property name="text">
@@ -182,7 +161,7 @@
                 </item>
                </widget>
               </item>
-              <item row="3" column="0">
+              <item row="2" column="0">
                <widget class="QPushButton" name="pushButtonConfigureTablet">
                 <property name="text">
                  <string>Configure tablet</string>
