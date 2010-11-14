@@ -32,6 +32,5 @@ desktop environments.""",
         ],
       scripts=[
         'm210c',
-        'm210-export-notes',
         ],
       )

@@ -86,7 +86,6 @@ desktop environments.""",
       scripts=[
         'm210d/m210d',
         'm210c/m210c',
-        'm210c/m210-export-notes',
         'm210c-qt/src/bin/m210c-qt',
         ],
       data_files=[
