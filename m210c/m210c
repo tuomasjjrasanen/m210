@@ -59,7 +59,7 @@ def disconnect(daemon, options, devpath):
     if not options.quiet:
         print("-", devpath)
 
-def list_all(daemon, options, devpath):
+def info(daemon, options, devpath):
     if devpath:
         devpaths = [devpath]
     else:
@@ -123,16 +123,26 @@ def download(daemon, options, devpath):
         raise e
 
 def enable(daemon, options, devpath):
-    daemon.set_input_enabled(devpath, True)
-    daemon.set_tablet_settings(devpath, int(options.size), options.orient)
+    try:
+        daemon.set_input_enabled(devpath, True)
+        daemon.set_tablet_settings(devpath, int(options.size), options.orient)
+    except dbus.exceptions.DBusException, e:
+        if e.get_dbus_name() == "org.freedesktop.DBus.Python.m210.daemon.NotConnectedError":
+            error_and_exit("%s is not connected" % devpath)
+        raise e
 
 def disable(daemon, options, devpath):
-    daemon.set_input_enabled(devpath, False)
+    try:
+        daemon.set_input_enabled(devpath, False)
+    except dbus.exceptions.DBusException, e:
+        if e.get_dbus_name() == "org.freedesktop.DBus.Python.m210.daemon.NotConnectedError":
+            error_and_exit("%s is not connected" % devpath)
+        raise e
 
 COMMAND_MAP = {
     'connect': connect,
     'disconnect': disconnect,
-    'list': list_all,
+    'info': info,
     'erase': erase,
     'download': download,
     'enable': enable,
@@ -159,19 +169,19 @@ Commands:
   erase                erase notes from DEVPATH or last plugged device
   enable               enable tablet of DEVPATH or last plugged device
   disable              disable tablet of DEVPATH or last plugged device
-  list                 list all plugged devices and details about connected ones
+  info                 print information about devices
 """,
                                         epilog="""
 Usage examples:
 
-  Ask to list devices but there is not any plugged in:
+  Ask for information about devices but there is not any plugged in:
 
-    $ m210c list
+    $ m210c info
     m210c: error: no devices found
 
-  Once a device is plugged in, it can be listed:
+  Once a device is plugged in, information can be printed:
 
-    $ m210c list
+    $ m210c info
     - /sys/devices/pci0000:00/0000:00:1d.1/usb6/6-1
 
   Hyphen at the beginning of the line indicates that the device is
@@ -193,9 +203,9 @@ Usage examples:
     $ m210c connect
     m210c: error: /sys/devices/pci0000:00/0000:00:1d.1/usb6/6-1 is already connected
 
-  List all devices and details about connected ones:
+  Print information about all devices and details about connected ones:
 
-    $ m210c list
+    $ m210c info
     + /sys/devices/pci0000:00/0000:00:1d.1/usb6/6-1
       Firmware version: 337
       Analog version:   265
