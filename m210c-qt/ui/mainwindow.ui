@@ -125,7 +125,7 @@
               <item row="0" column="1">
                <widget class="QSpinBox" name="spinBoxSize">
                 <property name="minimum">
-                 <number>0</number>
+                 <number>1</number>
                 </property>
                 <property name="maximum">
                  <number>9</number>
@@ -146,12 +146,12 @@
                <widget class="QComboBox" name="comboBoxOrientation">
                 <item>
                  <property name="text">
-                  <string>NW</string>
+                  <string>N</string>
                  </property>
                 </item>
                 <item>
                  <property name="text">
-                  <string>N</string>
+                  <string>NW</string>
                  </property>
                 </item>
                 <item>

@@ -230,7 +230,7 @@ Usage examples:
 
   Enable tablet:
 
-    $ m210c enable --size=0 --orient=N
+    $ m210c enable --size=1 --orient=N
 
   Disable tablet:
 
@@ -255,9 +255,9 @@ Usage examples:
 
     enable_group = optparse.OptionGroup(parser, "Enable Options")
     enable_group.add_option("--size", "", dest="size",
-                            choices=[str(v) for v in range(10)],
+                            choices=[str(v) for v in range(1, 10)],
                             default="5",
-                            help="set size to 0-9, default=5")
+                            help="set size to 1-9, default=5")
     enable_group.add_option("--orient", "", dest="orient",
                            choices=["NW", "N", "NE"], default="N",
                            help="set orientation to 'NW', 'N' or 'NE', default='N'")

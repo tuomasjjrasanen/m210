@@ -251,7 +251,7 @@ class M210(object):
             raise e
 
     def set_tablet_settings(self, size, orientation):
-        if size not in range(10):
+        if size not in range(1, 10):
             raise TabletSizeError(size)
 
         try:
@@ -259,10 +259,14 @@ class M210(object):
         except KeyError:
             raise TabletOrientationError(orientation)
 
-        # Size byte in M210 is counter-intuitive: 0x00 means the largest,
+        # Size byte in M210 is counter-intuitive: 0x01 means the largest,
         # 0x09 the smallest. However, in our API, sizes are handled
         # intuitively and therefore needs to be changed here.
-        size_byte = chr(abs(size - 9))
+        size_byte = chr(abs(size - 9) + 1)
+
+        # Their protocol-specificaion (docs/xy.html) says, that size
+        # can in the range of [0,9]. However, 0 does not seem to
+        # change the size.
 
         self._wait_ready()
         self._write(''.join(('\x80\xb6', size_byte, orient_byte)))
