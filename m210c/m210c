@@ -25,12 +25,14 @@ from __future__ import division
 import optparse
 import os.path
 import sys
+import zipfile
 
 # Third-party modules.
 import dbus.exceptions
 
 # Project modules.
 import m210.daemon
+import m210.pegatech
 
 def error_and_exit(msg):
     prog = os.path.basename(sys.argv[0])
@@ -111,16 +113,30 @@ def erase(daemon, options, devpath):
         print("Erased.")
 
 def download(daemon, options, devpath):
-    if options.file:
-        target = open(options.file, "wb")
-    else:
-        target = sys.stdout
     try:
-        print(daemon.download_notes(devpath, byte_arrays=True), end="", file=target)
+        data = daemon.download_data(devpath, byte_arrays=True)
     except dbus.exceptions.DBusException, e:
         if e.get_dbus_name() == "org.freedesktop.DBus.Python.m210.daemon.NotConnectedError":
             error_and_exit("%s is not connected" % devpath)
         raise e
+
+    if options.zip:
+        if options.file:
+            target = options.file
+        else:
+            target = raw_input("Target Zip archive filepath: ")
+        zipf = zipfile.ZipFile(target, "w")
+        zipf.writestr("raw", data)
+        for note in m210.pegatech.note_iter_from_data(data):
+            svgpath = str(note.number) + ".svg"
+            zipf.writestr(svgpath, note.as_svg())
+
+    else:
+        if options.file:
+            target = open(options.file, "wb")
+        else:
+            target = sys.stdout
+        print(data, end="", file=target)
 
 def enable(daemon, options, devpath):
     try:
@@ -261,6 +277,9 @@ Usage examples:
     download_group = optparse.OptionGroup(parser, "Download Options")
     download_group.add_option("--output", "", dest="file",
                               help="download notes to FILE instead of stdout")
+    download_group.add_option("--raw", "", dest="zip", action="store_false",
+                              default=True,
+                              help="download notes a binary data instead of svg")
     parser.add_option_group(download_group)
 
     enable_group = optparse.OptionGroup(parser, "Enable Options")
