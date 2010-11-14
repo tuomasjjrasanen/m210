@@ -124,11 +124,10 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         if fname:
             devpath = self.selected_devpath()
             data = self.daemon.download_data(devpath, byte_arrays=True)
-            zipf = zipfile.ZipFile(unicode(fname), "w")
-            zipdirname = os.path.splitext(os.path.basename(fname))[0]
-            zipf.writestr(os.path.join(zipdirname, "raw"), data)
+            zipf = zipfile.ZipFile(fname, "w")
+            zipf.writestr("raw", data)
             for note in m210.pegatech.note_iter_from_data(data):
-                svgpath = os.path.join(zipdirname, str(note.number) + ".svg")
+                svgpath = str(note.number) + ".svg"
                 zipf.writestr(svgpath, note.as_svg())
             self.__show_message("Notes stored to: %s" % fname)
 
