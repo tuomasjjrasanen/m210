@@ -89,9 +89,16 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             if is_managed:
                 self.dbusev_device_managed_changed(True, devpath)
 
+    def __show_message(self, msg):
+        self.statusBar().showMessage(msg, msecs=5000)
+
     def input_enabled_clicked(self, enabled):
         devpath = self.selected_devpath()
         self.daemon.set_input_enabled(devpath, enabled)
+        if enabled:
+            self.__show_message("Tablet enabled.")
+        else:
+            self.__show_message("Tablet disabled.")
 
     def list_item_double_clicked(self, item):
         item_is_managed = item.data(Qt.CheckStateRole).toBool()
@@ -106,8 +113,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         size = self.spinBoxSize.value()
         orientation = unicode(self.comboBoxOrientation.currentText())
         self.daemon.set_tablet_settings(devpath, size, orientation)
-        self.statusBar().showMessage("TABLET configured.",
-                                     msecs=5000)
+        self.__show_message("Tablet configured.")
 
     def save_all_clicked(self):
         fname = QFileDialog.getSaveFileName(self, 
