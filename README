@@ -5,7 +5,7 @@
 Author: Tuomas Räsänen (tuos) <tuos@codegrove.org>
 Homepage: http://codegrove.org/projects/m210
 License: GPLv3+ (see COPYING for details)
-Version: 0.3
+Version: 0.4
 
 Description
 ===========
@@ -33,7 +33,7 @@ Downloading
 ===========
 
 - Ubuntu package: https://launchpad.net/~tuos/+archive/codegrove
-- Tarball: http://launchpad.net/m210/trunk/0.3/+download/m210-0.3.tar.gz
+- Tarball: http://launchpad.net/m210/trunk/0.4/+download/m210-0.4.tar.gz
 - Development: http://code.launchpad.net/m210 ::
 
     bzr clone lp:m210

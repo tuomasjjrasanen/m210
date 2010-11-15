@@ -18,7 +18,7 @@
 from distutils.core import setup
 
 setup(name="m210c",
-      version="0.3",
+      version="0.4",
       author="Tuomas Räsänen (tuos)",
       author_email="tuos@codegrove.org",
       url="http://codegrove.org/projects/m210",
