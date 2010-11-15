@@ -7,3 +7,4 @@ include m210d/etc/udev/rules.d/*
 include m210d/etc/dbus-1/system.d/*
 include m210c-qt/share/applications/m210c-qt.desktop
 include m210c-qt/share/pixmaps/m210c-qt.png
+include python-m210/doc/*
