@@ -80,6 +80,8 @@ class M210Connection(object):
         self.__event_fd = os.open(event, os.O_RDWR)
         self.__is_enabled = True
         self.m210 = m210.pegatech.M210((hidraw0, hidraw1))
+        self.m210.set_mode("TABLET")
+        self.m210.set_tablet_settings(9, "N")
 
     def set_input_enabled(self, enable):
         if not enable and self.__is_enabled:
