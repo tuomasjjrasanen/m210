@@ -1,1 +1,3 @@
 include COPYING
+include share/icons/hicolor/48x48/apps/m210c-qt.png
+include share/icons/hicolor/24x24/apps/m210c-qt.png

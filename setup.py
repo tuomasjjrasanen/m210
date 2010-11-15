@@ -104,6 +104,16 @@ desktop environments.""",
                 'm210d/etc/udev/rules.d/50-m210d.rules',
                 ],
          ),
+        ('/usr/share/icons/hicolor/48x48/apps',
+         [
+                'm210c-qt/share/icons/hicolor/48x48/apps/m210c-qt.png',
+                ],
+         ),
+        ('/usr/share/icons/hicolor/24x24/apps',
+         [
+                'm210c-qt/share/icons/hicolor/24x24/apps/m210c-qt.png',
+                ],
+         ),
         ],
       ext_modules=[modulehidraw, moduleinput],
       )

@@ -40,4 +40,16 @@ desktop environments.""",
       scripts=[
         'src/bin/m210c-qt',
         ],
+      data_files=[
+        ('/usr/share/icons/hicolor/48x48/apps',
+         [
+                'share/icons/hicolor/48x48/apps/m210c-qt.png',
+                ],
+         ),
+        ('/usr/share/icons/hicolor/24x24/apps',
+         [
+                'share/icons/hicolor/24x24/apps/m210c-qt.png',
+                ],
+         ),
+        ],
       )
