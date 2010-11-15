@@ -41,14 +41,14 @@ desktop environments.""",
         'src/bin/m210c-qt',
         ],
       data_files=[
-        ('/usr/share/icons/hicolor/48x48/apps',
+        ('/usr/share/applications',
          [
-                'share/icons/hicolor/48x48/apps/m210c-qt.png',
+                'share/applications/m210c-qt.desktop',
                 ],
          ),
-        ('/usr/share/icons/hicolor/24x24/apps',
+        ('/usr/share/pixmaps',
          [
-                'share/icons/hicolor/24x24/apps/m210c-qt.png',
+                'share/pixmaps/m210c-qt.png',
                 ],
          ),
         ],

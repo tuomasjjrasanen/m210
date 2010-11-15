@@ -5,5 +5,5 @@ include NEWS
 include m210d/etc/init/*
 include m210d/etc/udev/rules.d/*
 include m210d/etc/dbus-1/system.d/*
-include m210c-qt/share/icons/hicolor/48x48/apps/m210c-qt.png
-include m210c-qt/share/icons/hicolor/24x24/apps/m210c-qt.png
+include m210c-qt/share/applications/m210c-qt.desktop
+include m210c-qt/share/pixmaps/m210c-qt.png
