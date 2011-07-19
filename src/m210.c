@@ -48,12 +48,12 @@ static const struct hidraw_devinfo DEVINFO_M210 = {
   Bytes:  0    1    2        3      4          rpt_size
   Values: 0x00 0x02 rpt_size rpt[0] rpt[1] ... rpt[rpt_size - 1]
 */
-static enum m210_err m210_write(const struct m210 *m210,
-                                const uint8_t *rpt, size_t rpt_size)
+static enum m210_err m210_write(const struct m210 *const m210,
+                                const uint8_t *const rpt, const size_t rpt_size)
 {
     enum m210_err err;
     uint8_t *request;
-    size_t request_size = rpt_size + 3;
+    const size_t request_size = rpt_size + 3;
 
     request = (uint8_t *) malloc(request_size);
     if (request == NULL)
@@ -83,13 +83,13 @@ static enum m210_err m210_write(const struct m210 *m210,
 static const size_t m210_interface_response_sizes[M210_USB_INTERFACE_COUNT] = {
     M210_RESPONSE_SIZE_IFACE0, M210_RESPONSE_SIZE_IFACE1};
 
-static enum m210_err m210_read(const struct m210 *m210, int interface,
-                               void *response, size_t response_size)
+static enum m210_err m210_read(const struct m210 *const m210, const int interface,
+                               void *const response, const size_t response_size)
 {
     fd_set readfds;
-    int fd = m210->fds[interface];
+    const int fd = m210->fds[interface];
     static struct timeval select_interval;
-    size_t max_response_size = m210_interface_response_sizes[interface];
+    const size_t max_response_size = m210_interface_response_sizes[interface];
     uint8_t *buf;
     enum m210_err err;
 
@@ -161,8 +161,8 @@ static enum m210_err m210_read(const struct m210 *m210, int interface,
     return err;
 }
 
-static enum m210_err m210_find_hidraw_devnode(uint8_t *found, int iface,
-                                              char *path, size_t path_size)
+static enum m210_err m210_find_hidraw_devnode(uint8_t *const found, const int iface,
+                                              char *const path, const size_t path_size)
 {
     int err = M210_ERR_SYS;
     struct udev_list_entry *list_entry = NULL;
@@ -189,9 +189,9 @@ static enum m210_err m210_find_hidraw_devnode(uint8_t *found, int iface,
         int ifn;
         uint16_t vendor;
         uint16_t product;
-        const char *syspath = udev_list_entry_get_name(list_entry);
-        struct udev_device *dev = udev_device_new_from_syspath(udev, syspath);
-        const char *devnode = udev_device_get_devnode(dev);
+        const char *const syspath = udev_list_entry_get_name(list_entry);
+        struct udev_device *const dev = udev_device_new_from_syspath(udev, syspath);
+        const char *const devnode = udev_device_get_devnode(dev);
         struct udev_device *parent = udev_device_get_parent(dev);
 
         parent = udev_device_get_parent(parent); /* Second parent: usb */
@@ -239,10 +239,10 @@ static enum m210_err m210_find_hidraw_devnode(uint8_t *found, int iface,
   pvh = Pad version high
   pvl = Pad version low
 */
-enum m210_err m210_get_info(const struct m210 *m210, struct m210_info *info)
+enum m210_err m210_get_info(const struct m210 *const m210, struct m210_info *const info)
 {
-    uint8_t rpt[] = {0x95};
-    uint8_t resp[11];
+    const uint8_t rpt[] = {0x95};
+    const uint8_t resp[11];
 
     while (1) {
         enum m210_err err = M210_ERR_SYS;
@@ -288,36 +288,36 @@ enum m210_err m210_get_info(const struct m210 *m210, struct m210_info *info)
     return M210_ERR_OK;
 }
 
-static enum m210_err m210_wait_ready(const struct m210 *m210)
+static enum m210_err m210_wait_ready(const struct m210 *const m210)
 {
     return m210_get_info(m210, NULL);
 }
 
-static enum m210_err m210_accept(const struct m210 *m210)
+static enum m210_err m210_accept(const struct m210 *const m210)
 {
-    uint8_t rpt[] = {0xb6};
+    const uint8_t rpt[] = {0xb6};
 
     return m210_write(m210, rpt, sizeof(rpt));
 }
 
-static enum m210_err m210_write_and_wait(const struct m210 *m210,
-                                         const uint8_t *rpt,
-                                         size_t rpt_size)
+static enum m210_err m210_write_and_wait(const struct m210 *const m210,
+                                         const uint8_t *const rpt,
+                                         const size_t rpt_size)
 {
-    enum m210_err err = m210_write(m210, rpt, rpt_size);
+    const enum m210_err err = m210_write(m210, rpt, rpt_size);
     if (err)
         return err;
 
     return m210_wait_ready(m210);
 }
 
-static enum m210_err m210_reject_and_wait(const struct m210 *m210)
+static enum m210_err m210_reject_and_wait(const struct m210 *const m210)
 {
-    uint8_t rpt[] = {0xb7};
+    const uint8_t rpt[] = {0xb7};
     return m210_write_and_wait(m210, rpt, sizeof(rpt));
 }
 
-static enum m210_err m210_open_from_hidraw_paths(struct m210 *m210, char **hidraw_paths)
+static enum m210_err m210_open_from_hidraw_paths(struct m210 *const m210, char*const *const hidraw_paths)
 {
     int err = M210_ERR_SYS;
     int i;
@@ -329,7 +329,7 @@ static enum m210_err m210_open_from_hidraw_paths(struct m210 *m210, char **hidra
 
     for (i = 0; i < M210_USB_INTERFACE_COUNT; ++i) {
         int fd;
-        const char *path = hidraw_paths[i];
+        const char *const path = hidraw_paths[i];
         struct hidraw_devinfo devinfo;
         memset(&devinfo, 0, sizeof(struct hidraw_devinfo));
 
@@ -357,7 +357,7 @@ static enum m210_err m210_open_from_hidraw_paths(struct m210 *m210, char **hidra
     return err;
 }
 
-enum m210_err m210_open(struct m210 *m210, char** hidraw_paths)
+enum m210_err m210_open(struct m210 *const m210, char**const hidraw_paths)
 {
     if (hidraw_paths == NULL) {
         int i;
@@ -388,7 +388,7 @@ enum m210_err m210_open(struct m210 *m210, char** hidraw_paths)
     return m210_open_from_hidraw_paths(m210, hidraw_paths);
 }
 
-enum m210_err m210_close(struct m210 *m210)
+enum m210_err m210_close(struct m210 *const m210)
 {
     int i;
 
@@ -402,9 +402,9 @@ enum m210_err m210_close(struct m210 *m210)
     return M210_ERR_OK;
 }
 
-enum m210_err m210_delete_notes(const struct m210 *m210)
+enum m210_err m210_delete_notes(const struct m210 *const m210)
 {
-    uint8_t rpt[] = {0xb0};
+    const uint8_t rpt[] = {0xb0};
     return m210_write_and_wait(m210, rpt, sizeof(rpt));
 }
 
@@ -446,8 +446,8 @@ enum m210_err m210_delete_notes(const struct m210 *m210)
   Bytes:  0    1    2    3    4    5          6         7    8
   Values: 0xaa 0xaa 0xaa 0xaa 0xaa count_high count_low 0x55 0x55
 */
-static enum m210_err m210_upload_begin(const struct m210 *m210,
-                                       uint16_t *packetc_ptr)
+static enum m210_err m210_upload_begin(const struct m210 *const m210,
+                                       uint16_t *const packetc_ptr)
 {
     static const uint8_t sig1[] = {0xaa, 0xaa, 0xaa, 0xaa, 0xaa};
     static const uint8_t sig2[] = {0x55, 0x55};
@@ -514,8 +514,8 @@ static enum m210_err m210_upload_begin(const struct m210 *m210,
   +-----+------------+-+-+-+-+-+-+-+-+
 
 */
-static enum m210_err m210_read_note_data_packet(const struct m210 *m210,
-                                                struct m210_packet *packet)
+static enum m210_err m210_read_note_data_packet(const struct m210 *const m210,
+                                                struct m210_packet *const packet)
 {
     enum m210_err err;
 
@@ -528,7 +528,7 @@ static enum m210_err m210_read_note_data_packet(const struct m210 *m210,
     return M210_ERR_OK;
 }
 
-enum m210_err m210_get_notes_size(const struct m210 *m210, uint32_t *size)
+enum m210_err m210_get_notes_size(const struct m210 *const m210, uint32_t *const size)
 {
     enum m210_err err;
     uint16_t packet_count;
@@ -542,7 +542,7 @@ enum m210_err m210_get_notes_size(const struct m210 *m210, uint32_t *size)
     return m210_reject_and_wait(m210);
 }
 
-enum m210_err m210_fwrite_note_data(const struct m210 *m210, FILE *f)
+enum m210_err m210_fwrite_note_data(const struct m210 *const m210, FILE *const f)
 {
     int i;
     enum m210_err err;
@@ -572,7 +572,7 @@ enum m210_err m210_fwrite_note_data(const struct m210 *m210, FILE *f)
 
     for (i = 0; i < packetc; ++i) {
         struct m210_packet packet;
-        uint16_t expected_packet_number = i + 1;
+        const uint16_t expected_packet_number = i + 1;
 
         err = m210_read_note_data_packet(m210, &packet);
         if (err) {
@@ -585,7 +585,7 @@ enum m210_err m210_fwrite_note_data(const struct m210 *m210, FILE *f)
                 */
                 int j;
                 for (j = i; j < packetc; ++j) {
-                    uint16_t lost_packet_num = j + 1;
+                    const uint16_t lost_packet_num = j + 1;
                     lost_packet_numv[lost_packet_numc++] = lost_packet_num;
                 }
                 err = M210_ERR_OK; /* This error has been handled. */
@@ -662,15 +662,15 @@ enum m210_err m210_fwrite_note_data(const struct m210 *m210, FILE *f)
     return m210_wait_ready(m210);
 }
 
-inline uint32_t m210_note_header_next_header_pos(const struct m210_note_header *header)
+inline uint32_t m210_note_header_next_header_pos(const struct m210_note_header *const header)
 {
     return le32toh(header->next_header_pos[0] + header->next_header_pos[1] * 0x100
                    + header->next_header_pos[2] * 0x10000);
 }
 
-const char *m210_err_str(enum m210_err err)
+const char *m210_err_str(const enum m210_err err)
 {
-    static const char *m210_errlist[] = {
+    static const char *const m210_errlist[] = {
         "no error",
         "syscall error",
         "device is not m210",
@@ -683,18 +683,18 @@ const char *m210_err_str(enum m210_err err)
 
 extern char *program_invocation_name;
 
-int m210_err_printf(enum m210_err err, const char *s)
+int m210_err_printf(const enum m210_err err, const char *const s)
 {
-    int original_errno = errno;
-    const char *m210_errstr = m210_err_str(err);
+    const int original_errno = errno;
+    const char *const m210_errstr = m210_err_str(err);
     /* +2 == a colon and a blank */
-    size_t progname_len = strlen(program_invocation_name) + 2;
+    const size_t progname_len = strlen(program_invocation_name) + 2;
     /* +2 == a colon and a blank */
-    size_t s_len = s == NULL ? 0 : strlen(s) + 2;
-    size_t m210_errstr_len = strlen(m210_errstr);
+    const size_t s_len = s == NULL ? 0 : strlen(s) + 2;
+    const size_t m210_errstr_len = strlen(m210_errstr);
 
     /* +1 == a terminating null byte. */
-    size_t total_len = progname_len + s_len + m210_errstr_len + 1;
+    const size_t total_len = progname_len + s_len + m210_errstr_len + 1;
     char *errstr;
 
     errstr = (char *)calloc(total_len, sizeof(char));
@@ -717,15 +717,15 @@ int m210_err_printf(enum m210_err err, const char *s)
     return 0;
 }
 
-inline int m210_note_data_is_pen_up(const struct m210_note_data *data)
+inline int m210_note_data_is_pen_up(const struct m210_note_data *const data)
 {
-    static struct m210_note_data penup = {0x0000, htole16(0x0080)};
+    static const struct m210_note_data penup = {0x0000, htole16(0x0080)};
     return memcmp(data, &penup, sizeof(struct m210_note_data)) == 0;
 }
 
-enum m210_err m210_set_mode(const struct m210 *m210,
-                            enum m210_mode_indicator mode_indicator,
-                            enum m210_mode mode)
+enum m210_err m210_set_mode(const struct m210 *const m210,
+                            const enum m210_mode_indicator mode_indicator,
+                            const enum m210_mode mode)
 {
     uint8_t rpt[] = {0x80, 0xb5, 0x00, 0x00};
     rpt[2] = mode_indicator;
@@ -733,9 +733,9 @@ enum m210_err m210_set_mode(const struct m210 *m210,
     return m210_write_and_wait(m210, rpt, sizeof(rpt));
 }
 
-enum m210_err m210_config_tablet_mode(const struct m210 *m210,
-                                      enum m210_area_size area_size,
-                                      enum m210_orientation orientation)
+enum m210_err m210_config_tablet_mode(const struct m210 *const m210,
+                                      const enum m210_area_size area_size,
+                                      const enum m210_orientation orientation)
 {
     /* Area size byte in M210 is counter-intuitive: 0x00 means the largest,
      * 0x09 the smallest. However, in our API, area sizes are handled
@@ -746,11 +746,11 @@ enum m210_err m210_config_tablet_mode(const struct m210 *m210,
     return m210_write_and_wait(m210, rpt, sizeof(rpt));
 }
 
-enum m210_err m210_fwrite_tablet_data(const struct m210 *m210, FILE *stream)
+enum m210_err m210_fwrite_tablet_data(const struct m210 *const m210, FILE *const stream)
 {
     enum m210_err err;
     uint8_t rpt[M210_RESPONSE_SIZE_IFACE1];
-    uint8_t sig[] = {0x08};
+    const uint8_t sig[] = {0x08};
 
     memset(&rpt, 0, sizeof(rpt));
 
@@ -775,7 +775,7 @@ enum m210_err m210_fwrite_tablet_data(const struct m210 *m210, FILE *stream)
     return M210_ERR_OK;
 }
 
-enum m210_err m210_fwrite_mouse_data(const struct m210 *m210, FILE *stream)
+enum m210_err m210_fwrite_mouse_data(const struct m210 *const m210, FILE *const stream)
 {
     enum m210_err err;
     uint8_t rpt[M210_RESPONSE_SIZE_IFACE0];
