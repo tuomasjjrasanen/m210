@@ -355,7 +355,7 @@ enum m210_err m210_fwrite_note_data(const struct m210 *m210, FILE *stream);
 
 enum m210_mode_indicator {
     M210_MODE_INDICATOR_TABLET=0x01,
-    M210_MODE_INDICATOR_MOUSE=0x02,
+    M210_MODE_INDICATOR_MOUSE=0x02
 };
 
 enum m210_mode {
@@ -449,7 +449,7 @@ enum m210_mouse_pen {
     M210_MOUSE_PEN_HOVERING=0x08,
     M210_MOUSE_PEN_TIP_PRESSED=0x01,
     M210_MOUSE_PEN_SWITCH_PRESSED=0x02,
-    M210_MOUSE_PEN_BOTH_PRESSED=0x03,
+    M210_MOUSE_PEN_BOTH_PRESSED=0x03
 };
 
 /**

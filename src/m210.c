@@ -363,7 +363,9 @@ enum m210_err m210_open(struct m210 *m210, char** hidraw_paths)
         int i;
         char iface0_path[PATH_MAX];
         char iface1_path[PATH_MAX];
-        char *paths[M210_USB_INTERFACE_COUNT] = {iface0_path, iface1_path};
+        char *paths[M210_USB_INTERFACE_COUNT] = {NULL, NULL};
+        paths[0] = iface0_path;
+        paths[1] = iface1_path;
         for (i = 0; i < M210_USB_INTERFACE_COUNT; ++i) {
             enum m210_err err = M210_ERR_SYS;
             uint8_t found = 0;
@@ -620,7 +622,8 @@ enum m210_err m210_fwrite_note_data(const struct m210 *m210, FILE *f)
           |  3  |Packet# LOW |n|n|n|n|n|n|n|n|
           +-----+------------+-+-+-+-+-+-+-+-+
         */
-        uint8_t resend_request[] = {0xb7, htobe16(lost_packet_numv[0])};
+        uint8_t resend_request[] = {0xb7, 0x00};
+        resend_request[1] = htobe16(lost_packet_numv[0]);
 
         err = m210_write(m210, resend_request, sizeof(resend_request));
         if (err)
@@ -724,7 +727,9 @@ enum m210_err m210_set_mode(const struct m210 *m210,
                             enum m210_mode_indicator mode_indicator,
                             enum m210_mode mode)
 {
-    uint8_t rpt[] = {0x80, 0xb5, mode_indicator, mode};
+    uint8_t rpt[] = {0x80, 0xb5, 0x00, 0x00};
+    rpt[2] = mode_indicator;
+    rpt[3] = mode;
     return m210_write_and_wait(m210, rpt, sizeof(rpt));
 }
 
@@ -735,7 +740,9 @@ enum m210_err m210_config_tablet_mode(const struct m210 *m210,
     /* Area size byte in M210 is counter-intuitive: 0x00 means the largest,
      * 0x09 the smallest. However, in our API, area sizes are handled
      * intuitively and therefore needs to be changed here. */
-    uint8_t rpt[] = {0x80, 0xb6, abs(area_size - 0x09), orientation};
+    uint8_t rpt[] = {0x80, 0xb6, 0x00, 0x00};
+    rpt[2] = abs(area_size - 0x09);
+    rpt[3] = orientation;
     return m210_write_and_wait(m210, rpt, sizeof(rpt));
 }
 
