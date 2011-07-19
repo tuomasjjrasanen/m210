@@ -52,7 +52,7 @@ enum m210_err {
 
    \param err a m210 error code
  */
-const char *m210_err_str(enum m210_err err);
+char const *m210_err_str(enum m210_err err);
 
 /**
    Produce an error message on the standard error output describing
@@ -66,7 +66,7 @@ const char *m210_err_str(enum m210_err err);
    \param err a m210 error code
    \param s error message
  */
-int m210_err_printf(enum m210_err err, const char *s);
+int m210_err_printf(enum m210_err err, char const *s);
 
 /**
    An object representing a note data block in a stream. A data block
@@ -123,7 +123,7 @@ struct m210_note_data {
 
    \param data an address of data block object
  */
-int m210_note_data_is_pen_up(const struct m210_note_data *data);
+int m210_note_data_is_pen_up(struct m210_note_data const *data);
 
 /**
    Note state values.
@@ -213,7 +213,7 @@ struct m210_note_header {
    \param header an address of a header block object
    \return value
  */
-uint32_t m210_note_header_next_header_pos(const struct m210_note_header *header);
+uint32_t m210_note_header_next_header_pos(struct m210_note_header const *header);
 
 /**
    Number of M210 usb interfaces.
@@ -249,7 +249,7 @@ struct m210 {
    proper nodes are searched with udev.
 
 */
-enum m210_err m210_open(struct m210 *m210, char** hidraw_paths);
+enum m210_err m210_open(struct m210 *m210, char **hidraw_paths);
 
 /**
    Close the M210 device connection.
@@ -277,7 +277,7 @@ enum m210_err m210_close(struct m210 *m210);
    \param info an address where the info will be stored.
 
 */
-enum m210_err m210_get_info(const struct m210 *m210, struct m210_info *info);
+enum m210_err m210_get_info(struct m210 const *m210, struct m210_info *info);
 
 /**
    Requests the M210 device to delete all notes stored in it's memory.
@@ -293,7 +293,7 @@ enum m210_err m210_get_info(const struct m210 *m210, struct m210_info *info);
    \param m210 an object represeting the M210 device.
 
 */
-enum m210_err m210_delete_notes(const struct m210 *m210);
+enum m210_err m210_delete_notes(struct m210 const  *m210);
 
 /**
    Return the total size of notes in bytes. Theoretical maximum size
@@ -320,7 +320,7 @@ enum m210_err m210_delete_notes(const struct m210 *m210);
    \param size an address where the size will be stored.
 
 */
-enum m210_err m210_get_notes_size(const struct m210 *m210, uint32_t *size);
+enum m210_err m210_get_notes_size(struct m210 const *m210, uint32_t *size);
 
 /**
    Read notes from a M210 device and write them to a stream. Each note
@@ -351,7 +351,7 @@ enum m210_err m210_get_notes_size(const struct m210 *m210, uint32_t *size);
    \param stream a writable destination stream.
 
  */
-enum m210_err m210_fwrite_note_data(const struct m210 *m210, FILE *stream);
+enum m210_err m210_fwrite_note_data(struct m210 const *m210, FILE *stream);
 
 enum m210_mode_indicator {
     M210_MODE_INDICATOR_TABLET=0x01,
@@ -363,7 +363,7 @@ enum m210_mode {
     M210_MODE_TABLET=0x02
 };
 
-enum m210_err m210_set_mode(const struct m210 *m210,
+enum m210_err m210_set_mode(struct m210 const *m210,
                             enum m210_mode_indicator mode_indicator,
                             enum m210_mode mode);
 
@@ -388,7 +388,7 @@ enum m210_area_size {
     M210_AREA_SIZE_MAX=0x09
 };
 
-enum m210_err m210_config_tablet_mode(const struct m210 *m210,
+enum m210_err m210_config_tablet_mode(struct m210 const *m210,
                                       enum m210_area_size area_size,
                                       enum m210_orientation orientation);
 
@@ -432,7 +432,7 @@ struct m210_tablet_data {
     uint16_t pressure;
 } __attribute__((packed));
 
-enum m210_err m210_fwrite_tablet_data(const struct m210 *m210, FILE *stream);
+enum m210_err m210_fwrite_tablet_data(struct m210 const *m210, FILE *stream);
 
 enum m210_mouse_battery {
     M210_MOUSE_BATTERY_UNKNOWN=0x40,
@@ -474,6 +474,6 @@ struct m210_mouse_data {
     uint16_t y;
 } __attribute__((packed));
 
-enum m210_err m210_fwrite_mouse_data(const struct m210 *m210, FILE *stream);
+enum m210_err m210_fwrite_mouse_data(struct m210 const *m210, FILE *stream);
 
 #endif /* M210_H */
