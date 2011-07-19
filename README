@@ -1,63 +1,31 @@
-=================================================
-libm210 - API for Pegasus Mobile NoteTaker M210.
-=================================================
-
-.. contents::
+=========
+ Libm210
+=========
 
 Description
 ===========
 
-The Code Grove libm210 project provides a library to communicate with
-Pegasus Mobile NoteTaker Tablet.
+Libm210 provides C API for communicating with Pegasus Tablet Mobile
+NoteTaker (M210) devices.
 
 General information
 ===================
 
-- **Author**: Tuomas Räsänen (tuos) <tuos@codegrove.org>
-- **Homepage**: http://codegrove.org/libm210/
-- **License**: GPLv3+ (see COPYING for details)
-- **Version**: 0.2
+Author:   Tuomas Jorma Juhani Räsänen <tuomas.rasanen@tjjr.fi>
+Version:  0.1
+License:  GPLv3+ (see COPYING for details)
+Homepage: <http://codegrove.org/projects/libm210/>
+Tarballs: <https://launchpad.net/libm210/+download>
+Source:   <http://github.com/tuos/libm210/>
+Bugs:     <https://bugs.launchpad.net/libm210>
 
 Build requirements
 ==================
 
+- cmake 2.8
 - libudev-dev
 
 Runtime requirements
 ====================
 
-- libudev
-
-Downloading
-===========
-
-- Ubuntu package: https://launchpad.net/~tuos/+archive/codegrove
-- Tarball is available at: http://codegrove.org/libm210/releases/libm210-0.2.tar.gz
-- Tarballs of every release at: http://codegrove.org/libm210/releases/
-- Latest sources from public git-repository: http://github.com/tuos/libm210/ ::
-
-    git clone git://github.com/tuos/libm210.git
-
-Installing
-==========
-
-Ubuntu
-------
-
-The recommended way to install libm210 is to
-`add it's PPA to your system <https://launchpad.net/~tuos/+archive/codegrove>`_.
-This allows you to treat libm210 as any other Ubuntu package.
-
-Other systems
--------------
-
-The install-procedure adheres the "standard"::
-
-  ./configure
-  make && make install
-
-Bug reporting
-=============
-
-Report bugs by sending email to tuos@codegrove.org or by opening an issue
-at http://github.com/tuos/libm210/issues .
+- libudev0
