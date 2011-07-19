@@ -772,7 +772,7 @@ enum m210_err m210_fwrite_mouse_data(const struct m210 *m210, FILE *stream)
 {
     enum m210_err err;
     uint8_t rpt[M210_RESPONSE_SIZE_IFACE0];
-    int i;
+    size_t i;
 
     memset(&rpt, 0, sizeof(rpt));
 
