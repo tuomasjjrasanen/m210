@@ -1,6 +1,6 @@
 /*
-  libm210 - API for Pegasus Mobile NoteTaker M210
-  Copyright © 2010 Tuomas Räsänen (tuos) <tuos@codegrove.org>
+  libm210 - C API for Pegasus Tablet Mobile NoteTaker (M210)
+  Copyright © 2011 Tuomas Jorma Juhani Räsänen <tuomas.rasanen@tjjr.fi>
 
   This program is free software: you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
