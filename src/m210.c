@@ -743,7 +743,7 @@ enum m210_err m210_fwrite_tablet_data(const struct m210 *m210, FILE *stream)
 {
     enum m210_err err;
     uint8_t rpt[M210_RESPONSE_SIZE_IFACE1];
-    uint8_t sig[] = {0x00, 0x08};
+    uint8_t sig[] = {0x08};
 
     memset(&rpt, 0, sizeof(rpt));
 
@@ -753,7 +753,7 @@ enum m210_err m210_fwrite_tablet_data(const struct m210 *m210, FILE *stream)
             return err;
         if (memcmp(rpt, sig, sizeof(sig)) != 0)
             return M210_ERR_BADMSG;
-        switch (rpt[6]) {
+        switch (rpt[5]) {
         case M210_TABLET_PEN_RELEASED:
         case M210_TABLET_PEN_PRESSED:
             break;
