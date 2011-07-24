@@ -254,7 +254,7 @@ uint32_t m210_note_header_next_header_pos(struct m210_note_header const *header)
    it. Succesfully opened device must be closed with m210_close().
 
 */
-enum m210_err m210_open(struct m210 *m210, char **hidraw_paths);
+enum m210_err m210_open(struct m210 *m210);
 
 enum m210_err m210_close(struct m210 *m210);
 
