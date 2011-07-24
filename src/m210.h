@@ -250,11 +250,9 @@ int m210_note_data_is_pen_up(struct m210_note_data const *data);
 */
 uint32_t m210_note_header_next_header_pos(struct m210_note_header const *header);
 
-/*
-  Open a hid connetion to a device and return an object representing
-  it.
+/* Open a hid connetion to a device and return an object representing
+   it. Succesfully opened device must be closed with m210_close().
 
-  Succesfully opened device must be closed with m210_close().
 */
 enum m210_err m210_open(struct m210 *m210, char **hidraw_paths);
 
@@ -269,14 +267,14 @@ enum m210_err m210_delete_notes(struct m210 const  *m210);
   is 4063232:
 
   * Packets are numbered with 16 bit integers.
-  => Maximum number of packets: 2**16 = 65536
+    => Maximum number of packets: 2**16 = 65536
 
   * Each packet is 64 bytes wide, last 62 bytes represent bytes in
-  memory. The first two bytes represent the packet sequence number.
-  => Maximum number of bytes in memory: 2**16 * 62 = 4063232
+    memory. The first two bytes represent the packet sequence number.
+    => Maximum number of bytes in memory: 2**16 * 62 = 4063232
 
   * A 32bit integer can address 2**32 different bytes which is way
-  more than the maximum number of bytes in devices memory.
+    more than the maximum number of bytes in devices memory.
 
 */
 enum m210_err m210_get_notes_size(struct m210 const *m210, uint32_t *size);
@@ -295,10 +293,10 @@ enum m210_err m210_get_notes_size(struct m210 const *m210, uint32_t *size);
   +------------------------+     +------------------------+
    header data1  ...  dataN       header data1  ...  dataN
 
-  Structs m210_note_header and m210_note_data are defined to
-  represent header and data block respectively. Data block can
-  represent a position or a pen up -event. m210_note_data_is_pen_up()
-  can be used to determine if a data block represents the latter.
+  Structs m210_note_header and m210_note_data are defined to represent
+  header and data block respectively. Data block can represent a
+  position or a pen up -event. m210_note_data_is_pen_up() can be used
+  to determine if a data block represents the latter.
 
 */
 enum m210_err m210_fwrite_note_data(struct m210 const *m210, FILE *stream);

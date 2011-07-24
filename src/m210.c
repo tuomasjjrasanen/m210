@@ -122,15 +122,15 @@ static enum m210_err m210_read(struct m210 const *const m210, int const interfac
         goto err;
     }
 
-    /**
-       Ignore mode button data. Otherwise it might mess up
-       then communication sequence.
+    /*
+       Ignore mode button data. Otherwise it might mess up the
+       communication sequence.
 
        TODO: Better communication handling probably based on generic
        events and their handlers.
 
        Mode button:
-       \verbatim
+
        +-----+-----------+-+-+-+-+-+-+-+-+
        |Byte#|Description|7|6|5|4|3|2|1|0|
        +-----+-----------+-+-+-+-+-+-+-+-+
@@ -138,7 +138,7 @@ static enum m210_err m210_read(struct m210 const *const m210, int const interfac
        +-----+-----------+-+-+-+-+-+-+-+-+
        |  2  |0xB5       |1|0|1|1|0|1|0|1|
        +-----+-----------+-+-+-+-+-+-+-+-+
-       \endverbatim
+
     */
     if (interface == 0) {
         uint8_t mode_button_rpt[M210_RESPONSE_SIZE_IFACE0];
@@ -738,9 +738,12 @@ enum m210_err m210_config_tablet_mode(struct m210 const *const m210,
                                       enum m210_area_size const area_size,
                                       enum m210_orientation const orientation)
 {
-    /* Area size byte in M210 is counter-intuitive: 0x00 means the largest,
-     * 0x09 the smallest. However, in our API, area sizes are handled
-     * intuitively and therefore needs to be changed here. */
+    /* Area size byte in M210-protocol is counter-intuitive: 0x00
+       means the largest, 0x09 the smallest. However, in our API, area
+       sizes are handled intuitively and therefore needs to be changed
+       here.
+     */
+
     uint8_t rpt[] = {0x80, 0xb6, 0x00, 0x00};
     rpt[2] = abs(area_size - 0x09);
     rpt[3] = orientation;
