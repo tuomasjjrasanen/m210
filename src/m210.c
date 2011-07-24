@@ -253,14 +253,13 @@ static enum m210_err m210_reject_and_wait(struct m210 const *const m210)
 static enum m210_err m210_open_from_hidraw_paths(struct m210 *const m210, char *const *const hidraw_paths)
 {
     int err = M210_ERR_SYS;
-    int i;
     int original_errno;
 
-    for (i = 0; i < M210_USB_INTERFACE_COUNT; ++i) {
+    for (int i = 0; i < M210_USB_INTERFACE_COUNT; ++i) {
         m210->fds[i] = -1;
     }
 
-    for (i = 0; i < M210_USB_INTERFACE_COUNT; ++i) {
+    for (int i = 0; i < M210_USB_INTERFACE_COUNT; ++i) {
         int fd;
         char const *const path = hidraw_paths[i];
         struct hidraw_devinfo devinfo;
@@ -478,13 +477,10 @@ enum m210_err m210_get_info(struct m210 const *const m210, struct m210_info *con
 
 enum m210_err m210_open(struct m210 *const m210)
 {
-    int i;
     char iface0_path[PATH_MAX];
     char iface1_path[PATH_MAX];
-    char *paths[M210_USB_INTERFACE_COUNT] = {NULL, NULL};
-    paths[0] = iface0_path;
-    paths[1] = iface1_path;
-    for (i = 0; i < M210_USB_INTERFACE_COUNT; ++i) {
+    char *paths[M210_USB_INTERFACE_COUNT] = {iface0_path, iface1_path};
+    for (int i = 0; i < M210_USB_INTERFACE_COUNT; ++i) {
         enum m210_err err = M210_ERR_SYS;
         
         memset(paths[i], 0, PATH_MAX);
@@ -502,9 +498,7 @@ enum m210_err m210_open(struct m210 *const m210)
 
 enum m210_err m210_close(struct m210 *const m210)
 {
-    int i;
-
-    for (i = 0; i < M210_USB_INTERFACE_COUNT; ++i) {
+    for (int i = 0; i < M210_USB_INTERFACE_COUNT; ++i) {
         if (m210->fds[i] != -1) {
             if (close(m210->fds[i]) == -1)
                 return M210_ERR_SYS;
@@ -536,7 +530,6 @@ enum m210_err m210_get_notes_size(struct m210 const *const m210, uint32_t *const
 
 enum m210_err m210_fwrite_note_data(struct m210 const *const m210, FILE *const f)
 {
-    int i;
     enum m210_err err;
     uint16_t *lost_packet_numv;
     uint16_t lost_packet_numc = 0;
@@ -562,7 +555,7 @@ enum m210_err m210_fwrite_note_data(struct m210 const *const m210, FILE *const f
     if (err)
         goto err;
 
-    for (i = 0; i < packetc; ++i) {
+    for (int i = 0; i < packetc; ++i) {
         struct m210_packet packet;
         uint16_t const expected_packet_number = i + 1;
 
@@ -575,8 +568,7 @@ enum m210_err m210_fwrite_note_data(struct m210 const *const m210, FILE *const f
                   so we mark all the rest packet numbers as lost and
                   proceed with resending.
                 */
-                int j;
-                for (j = i; j < packetc; ++j) {
+                for (int j = i; j < packetc; ++j) {
                     uint16_t const lost_packet_num = j + 1;
                     lost_packet_numv[lost_packet_numc++] = lost_packet_num;
                 }
@@ -774,7 +766,6 @@ enum m210_err m210_fwrite_mouse_data(struct m210 const *const m210, FILE *const 
 {
     enum m210_err err;
     uint8_t rpt[M210_RESPONSE_SIZE_IFACE0];
-    size_t i;
 
     memset(&rpt, 0, sizeof(rpt));
 
@@ -782,7 +773,7 @@ enum m210_err m210_fwrite_mouse_data(struct m210 const *const m210, FILE *const 
         err = m210_read(m210, 0, &rpt, sizeof(rpt));
         if (err)
             return err;
-        for (i = 0; i < sizeof(rpt); i = i + 6) {
+        for (size_t i = 0; i < sizeof(rpt); i = i + 6) {
             if (rpt[i] == 0x00)
                 break; /* No more mouse data in this report. */
             switch (rpt[i]) {

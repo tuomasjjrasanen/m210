@@ -2,7 +2,7 @@ CMAKE_MINIMUM_REQUIRED(VERSION 2.8)
 PROJECT(libm210)
 
 SET(CMAKE_MODULE_PATH ${libm210_SOURCE_DIR}/cmake/modules)
-ADD_DEFINITIONS(-Wall -Werror -Wextra -pedantic)
+ADD_DEFINITIONS(-Wall -Werror -Wextra -pedantic -std=gnu99)
 
 ADD_SUBDIRECTORY(src)
 
