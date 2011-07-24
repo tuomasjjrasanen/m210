@@ -161,7 +161,7 @@ static enum m210_err m210_read(struct m210 const *const m210, int const interfac
     return err;
 }
 
-static enum m210_err m210_find_hidraw_devnode(uint8_t *const found, int const iface,
+static enum m210_err m210_find_hidraw_devnode(int const iface,
                                               char *const path, size_t const path_size)
 {
     int err = M210_ERR_SYS;
@@ -205,7 +205,6 @@ static enum m210_err m210_find_hidraw_devnode(uint8_t *const found, int const if
             && product == DEVINFO_M210.product
             && iface == ifn) {
             err = M210_ERR_OK;
-            *found = 1;
             strncpy(path, devnode, path_size);
             udev_device_unref(dev);
             goto out;
@@ -213,8 +212,7 @@ static enum m210_err m210_find_hidraw_devnode(uint8_t *const found, int const if
         list_entry = udev_list_entry_get_next(list_entry);
         udev_device_unref(dev);
     }
-    err = M210_ERR_OK;
-    *found = 0;
+    err = M210_ERR_NODEV;
   out:
     if (enumerate)
         udev_enumerate_unref(enumerate);
@@ -488,20 +486,16 @@ enum m210_err m210_open(struct m210 *const m210)
     paths[1] = iface1_path;
     for (i = 0; i < M210_USB_INTERFACE_COUNT; ++i) {
         enum m210_err err = M210_ERR_SYS;
-        uint8_t found = 0;
         
         memset(paths[i], 0, PATH_MAX);
         
-        err = m210_find_hidraw_devnode(&found, i, paths[i], PATH_MAX);
+        err = m210_find_hidraw_devnode(i, paths[i], PATH_MAX);
         switch (err) {
         case M210_ERR_OK:
             break;
         default:
             return err;
         }
-        
-        if (!found)
-            return M210_ERR_NODEV;
     }
     return m210_open_from_hidraw_paths(m210, paths);
 }
