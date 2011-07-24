@@ -227,7 +227,7 @@ struct m210 {
     int fds[M210_USB_INTERFACE_COUNT];
 };
 
-char const *m210_err_str(enum m210_err err);
+char const *m210_strerror(enum m210_err err);
 
 /*
   Produce an error message on the standard error output describing the
@@ -238,7 +238,7 @@ char const *m210_err_str(enum m210_err err);
   message as printed by perror(). A new line is printed at the end.
 
 */
-int m210_err_printf(enum m210_err err, char const *s);
+int m210_perror(enum m210_err err, char const *s);
 
 int m210_note_data_is_pen_up(struct m210_note_data const *data);
 

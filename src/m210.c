@@ -31,8 +31,9 @@
 #include "m210.h"
 
 #define M210_READ_INTERVAL 1000000 /* Microseconds. */
-
 #define M210_PACKET_DATA_LEN 62
+#define M210_RESPONSE_SIZE_IFACE0 64
+#define M210_RESPONSE_SIZE_IFACE1 9
 
 struct m210_packet {
     uint16_t num;
@@ -79,8 +80,6 @@ static enum m210_err m210_write(struct m210 const *const m210,
     return err;
 }
 
-#define M210_RESPONSE_SIZE_IFACE0 64
-#define M210_RESPONSE_SIZE_IFACE1 9
 static size_t const m210_interface_response_sizes[M210_USB_INTERFACE_COUNT] = {
     M210_RESPONSE_SIZE_IFACE0, M210_RESPONSE_SIZE_IFACE1};
 
@@ -224,71 +223,6 @@ static enum m210_err m210_find_hidraw_devnode(uint8_t *const found, int const if
     return err;
 }
 
-/*
-  Get info request:
-  Bytes:  0
-  Values: 0x95
-
-  Info response:
-  Bytes:  0    1    2    3   4   5   6   7   8   9    10
-  Values: 0x80 0xa9 0x28 fvh fvl avh avl pvh pvl 0x0e mode
-
-  fvh = Firmware version high
-  fvl = Firmware version low
-  avh = Analog version high
-  avl = Analog version low
-  pvh = Pad version high
-  pvl = Pad version low
-*/
-enum m210_err m210_get_info(struct m210 const *const m210, struct m210_info *const info)
-{
-    uint8_t const rpt[] = {0x95};
-    uint8_t const resp[11];
-
-    while (1) {
-        enum m210_err err = M210_ERR_SYS;
-
-        memset(&resp, 0, sizeof(resp));
-
-        err = m210_write(m210, rpt, sizeof(rpt));
-        if (err)
-            return err;
-
-        err = m210_read(m210, 0, &resp, sizeof(resp));
-        if (err == M210_ERR_TIMEOUT)
-            continue;
-        else if (err == M210_ERR_OK)
-            break;
-        else
-            return err;
-    }
-
-    /* Check that the received packet is correct. */
-    if (resp[0] != 0x80
-        || resp[1] != 0xa9
-        || resp[2] != 0x28
-        || resp[9] != 0x0e)
-        return M210_ERR_BADMSG;
-
-    if (info != NULL) {
-        /* Fill in only if caller is interested in the info. */
-        uint16_t firmware_version;
-        uint16_t analog_version;
-        uint16_t pad_version;
-
-        memcpy(&firmware_version, resp + 3, 2);
-        memcpy(&analog_version, resp + 5, 2);
-        memcpy(&pad_version, resp + 7, 2);
-
-        info->firmware_version = be16toh(firmware_version);
-        info->analog_version = be16toh(analog_version);
-        info->pad_version = be16toh(pad_version);
-        info->mode = resp[10];
-    }
-
-    return M210_ERR_OK;
-}
-
 static enum m210_err m210_wait_ready(struct m210 const *const m210)
 {
     return m210_get_info(m210, NULL);
@@ -356,57 +290,6 @@ static enum m210_err m210_open_from_hidraw_paths(struct m210 *const m210, char *
     m210_close(m210);
     errno = original_errno;
     return err;
-}
-
-enum m210_err m210_open(struct m210 *const m210, char **const hidraw_paths)
-{
-    if (hidraw_paths == NULL) {
-        int i;
-        char iface0_path[PATH_MAX];
-        char iface1_path[PATH_MAX];
-        char *paths[M210_USB_INTERFACE_COUNT] = {NULL, NULL};
-        paths[0] = iface0_path;
-        paths[1] = iface1_path;
-        for (i = 0; i < M210_USB_INTERFACE_COUNT; ++i) {
-            enum m210_err err = M210_ERR_SYS;
-            uint8_t found = 0;
-
-            memset(paths[i], 0, PATH_MAX);
-
-            err = m210_find_hidraw_devnode(&found, i, paths[i], PATH_MAX);
-            switch (err) {
-            case M210_ERR_OK:
-                break;
-            default:
-                return err;
-            }
-
-            if (!found)
-                return M210_ERR_NODEV;
-        }
-        return m210_open_from_hidraw_paths(m210, paths);
-    }
-    return m210_open_from_hidraw_paths(m210, hidraw_paths);
-}
-
-enum m210_err m210_close(struct m210 *const m210)
-{
-    int i;
-
-    for (i = 0; i < M210_USB_INTERFACE_COUNT; ++i) {
-        if (m210->fds[i] != -1) {
-            if (close(m210->fds[i]) == -1)
-                return M210_ERR_SYS;
-            m210->fds[i] = -1;
-        }
-    }
-    return M210_ERR_OK;
-}
-
-enum m210_err m210_delete_notes(struct m210 const *const m210)
-{
-    uint8_t const rpt[] = {0xb0};
-    return m210_write_and_wait(m210, rpt, sizeof(rpt));
 }
 
 /*
@@ -529,6 +412,123 @@ static enum m210_err m210_read_note_data_packet(struct m210 const *const m210,
     return M210_ERR_OK;
 }
 
+/*
+  Get info request:
+  Bytes:  0
+  Values: 0x95
+
+  Info response:
+  Bytes:  0    1    2    3   4   5   6   7   8   9    10
+  Values: 0x80 0xa9 0x28 fvh fvl avh avl pvh pvl 0x0e mode
+
+  fvh = Firmware version high
+  fvl = Firmware version low
+  avh = Analog version high
+  avl = Analog version low
+  pvh = Pad version high
+  pvl = Pad version low
+*/
+enum m210_err m210_get_info(struct m210 const *const m210, struct m210_info *const info)
+{
+    uint8_t const rpt[] = {0x95};
+    uint8_t const resp[11];
+
+    while (1) {
+        enum m210_err err = M210_ERR_SYS;
+
+        memset(&resp, 0, sizeof(resp));
+
+        err = m210_write(m210, rpt, sizeof(rpt));
+        if (err)
+            return err;
+
+        err = m210_read(m210, 0, &resp, sizeof(resp));
+        if (err == M210_ERR_TIMEOUT)
+            continue;
+        else if (err == M210_ERR_OK)
+            break;
+        else
+            return err;
+    }
+
+    /* Check that the received packet is correct. */
+    if (resp[0] != 0x80
+        || resp[1] != 0xa9
+        || resp[2] != 0x28
+        || resp[9] != 0x0e)
+        return M210_ERR_BADMSG;
+
+    if (info != NULL) {
+        /* Fill in only if caller is interested in the info. */
+        uint16_t firmware_version;
+        uint16_t analog_version;
+        uint16_t pad_version;
+
+        memcpy(&firmware_version, resp + 3, 2);
+        memcpy(&analog_version, resp + 5, 2);
+        memcpy(&pad_version, resp + 7, 2);
+
+        info->firmware_version = be16toh(firmware_version);
+        info->analog_version = be16toh(analog_version);
+        info->pad_version = be16toh(pad_version);
+        info->mode = resp[10];
+    }
+
+    return M210_ERR_OK;
+}
+
+
+enum m210_err m210_open(struct m210 *const m210, char **const hidraw_paths)
+{
+    if (hidraw_paths == NULL) {
+        int i;
+        char iface0_path[PATH_MAX];
+        char iface1_path[PATH_MAX];
+        char *paths[M210_USB_INTERFACE_COUNT] = {NULL, NULL};
+        paths[0] = iface0_path;
+        paths[1] = iface1_path;
+        for (i = 0; i < M210_USB_INTERFACE_COUNT; ++i) {
+            enum m210_err err = M210_ERR_SYS;
+            uint8_t found = 0;
+
+            memset(paths[i], 0, PATH_MAX);
+
+            err = m210_find_hidraw_devnode(&found, i, paths[i], PATH_MAX);
+            switch (err) {
+            case M210_ERR_OK:
+                break;
+            default:
+                return err;
+            }
+
+            if (!found)
+                return M210_ERR_NODEV;
+        }
+        return m210_open_from_hidraw_paths(m210, paths);
+    }
+    return m210_open_from_hidraw_paths(m210, hidraw_paths);
+}
+
+enum m210_err m210_close(struct m210 *const m210)
+{
+    int i;
+
+    for (i = 0; i < M210_USB_INTERFACE_COUNT; ++i) {
+        if (m210->fds[i] != -1) {
+            if (close(m210->fds[i]) == -1)
+                return M210_ERR_SYS;
+            m210->fds[i] = -1;
+        }
+    }
+    return M210_ERR_OK;
+}
+
+enum m210_err m210_delete_notes(struct m210 const *const m210)
+{
+    uint8_t const rpt[] = {0xb0};
+    return m210_write_and_wait(m210, rpt, sizeof(rpt));
+}
+
 enum m210_err m210_get_notes_size(struct m210 const *const m210, uint32_t *const size)
 {
     enum m210_err err;
@@ -580,7 +580,7 @@ enum m210_err m210_fwrite_note_data(struct m210 const *const m210, FILE *const f
             if (err == M210_ERR_TIMEOUT) {
                 /*
                   Timeout because there is not any packets left to
-                  read. However, the M210 has promised to send more,
+                  read. However, the device has promised to send more,
                   so we mark all the rest packet numbers as lost and
                   proceed with resending.
                 */
@@ -669,13 +669,13 @@ inline uint32_t m210_note_header_next_header_pos(struct m210_note_header const *
                    + header->next_header_pos[2] * 0x10000);
 }
 
-char const *m210_err_str(enum m210_err const err)
+char const *m210_strerror(enum m210_err const err)
 {
     static char const *const m210_errlist[] = {
-        "no error",
-        "syscall error",
-        "device is not m210",
-        "m210 not found",
+        "",
+        "system call failed",
+        "unknown devices",
+        "device not found",
         "unexpected response",
         "request timeouted"
     };
@@ -684,10 +684,10 @@ char const *m210_err_str(enum m210_err const err)
 
 extern char *program_invocation_name;
 
-int m210_err_printf(enum m210_err const err, char const *const s)
+int m210_perror(enum m210_err const err, char const *const s)
 {
     int const original_errno = errno;
-    char const *const m210_errstr = m210_err_str(err);
+    char const *const m210_errstr = m210_strerror(err);
     /* +2 == a colon and a blank */
     size_t const progname_len = strlen(program_invocation_name) + 2;
     /* +2 == a colon and a blank */
@@ -720,7 +720,7 @@ int m210_err_printf(enum m210_err const err, char const *const s)
 
 inline int m210_note_data_is_pen_up(struct m210_note_data const *const data)
 {
-    static struct m210_note_data const penup = {0x0000, htole16(0x0080)};
+    static uint8_t penup[] = {0x00, 0x00, 0x00, 0x80};
     return memcmp(data, &penup, sizeof(struct m210_note_data)) == 0;
 }
 
