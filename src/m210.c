@@ -31,9 +31,10 @@
 #include "m210.h"
 
 #define M210_READ_INTERVAL 1000000 /* Microseconds. */
-#define M210_PACKET_DATA_LEN 62
-#define M210_RESPONSE_SIZE_IFACE0 64
-#define M210_RESPONSE_SIZE_IFACE1 9
+/* #define M210_PACKET_DATA_LEN 62 */
+/* #define M210_RESPONSE_SIZE_IFACE0 64 */
+/* #define M210_RESPONSE_SIZE_IFACE1 9 */
+#define M210_RESPONSE_SIZE 64
 
 /* struct m210_packet { */
 /*     uint16_t num; */
@@ -51,11 +52,12 @@ static struct hidraw_devinfo const DEVINFO_M210 = {
   Values: 0x00 0x02 rpt_size rpt[0] rpt[1] ... rpt[rpt_size - 1]
 */
 static enum m210_err m210_write(struct m210 const *const m210,
-                                uint8_t const *const rpt, size_t const rpt_size)
+                                uint8_t const *const command,
+                                size_t const command_size)
 {
     enum m210_err err;
     uint8_t *request;
-    size_t const request_size = rpt_size + 3;
+    size_t const request_size = command_size + 3;
 
     request = (uint8_t *) malloc(request_size);
     if (request == NULL) {
@@ -64,10 +66,10 @@ static enum m210_err m210_write(struct m210 const *const m210,
 
     request[0] = 0x00;     /* Without this, response is not sent. Why?? */
     request[1] = 0x02;     /* report id */
-    request[2] = rpt_size;
+    request[2] = command_size;
 
     /* Copy report paylod to the end of the request. */
-    memcpy(request + 3, rpt, rpt_size);
+    memcpy(request + 3, command, command_size);
 
     /* Send request to the interface 0. */
     if (write(m210->fds[0], request, request_size) == -1) {
@@ -81,8 +83,8 @@ static enum m210_err m210_write(struct m210 const *const m210,
     return err;
 }
 
-static size_t const m210_interface_response_sizes[M210_USB_INTERFACE_COUNT] = {
-    M210_RESPONSE_SIZE_IFACE0, M210_RESPONSE_SIZE_IFACE1};
+/* static size_t const m210_interface_response_sizes[M210_USB_INTERFACE_COUNT] = { */
+/*     M210_RESPONSE_SIZE_IFACE0, M210_RESPONSE_SIZE_IFACE1}; */
 
 static enum m210_err m210_read(struct m210 const *const m210, int const interface,
                                void *const response, size_t const response_size)
@@ -90,17 +92,17 @@ static enum m210_err m210_read(struct m210 const *const m210, int const interfac
     fd_set readfds;
     int const fd = m210->fds[interface];
     static struct timeval select_interval;
-    size_t const max_response_size = m210_interface_response_sizes[interface];
-    uint8_t *buf;
+    /* size_t const max_response_size = m210_interface_response_sizes[interface]; */
+    /* uint8_t *buf; */
     enum m210_err err;
 
-    buf = (uint8_t *) malloc(max_response_size * sizeof(uint8_t));
-    if (buf == NULL) {
-        return M210_ERR_SYS;
-    }
+    /* buf = (uint8_t *) malloc(max_response_size * sizeof(uint8_t)); */
+    /* if (buf == NULL) { */
+    /*     return M210_ERR_SYS; */
+    /* } */
 
-  again:
-    memset(buf, 0, max_response_size);
+  /* again: */
+    /* memset(buf, 0, max_response_size); */
     memset(&select_interval, 0, sizeof(struct timeval));
     FD_ZERO(&readfds);
     FD_SET(fd, &readfds);
@@ -118,7 +120,7 @@ static enum m210_err m210_read(struct m210 const *const m210, int const interfac
         break;
     }
 
-    if (read(fd, buf, max_response_size) == -1) {
+    if (read(fd, response, response_size) == -1) {
         err = M210_ERR_SYS;
         goto err;
     }
@@ -141,26 +143,26 @@ static enum m210_err m210_read(struct m210 const *const m210, int const interfac
        +-----+-----------+-+-+-+-+-+-+-+-+
 
     */
-    if (interface == 0) {
-        uint8_t mode_button_rpt[M210_RESPONSE_SIZE_IFACE0];
-        memset(mode_button_rpt, 0, M210_RESPONSE_SIZE_IFACE0);
-        mode_button_rpt[0] = 0x80;
-        mode_button_rpt[1] = 0xb5;
-        if (memcmp(mode_button_rpt, buf, M210_RESPONSE_SIZE_IFACE0) == 0) {
-            goto again;
-        }
-    }
+    /* if (interface == 0) { */
+    /*     uint8_t mode_button_rpt[M210_RESPONSE_SIZE_IFACE0]; */
+    /*     memset(mode_button_rpt, 0, M210_RESPONSE_SIZE_IFACE0); */
+    /*     mode_button_rpt[0] = 0x80; */
+    /*     mode_button_rpt[1] = 0xb5; */
+    /*     if (memcmp(mode_button_rpt, buf, M210_RESPONSE_SIZE_IFACE0) == 0) { */
+    /*         goto again; */
+    /*     } */
+    /* } */
 
-    memset(response, 0, response_size);
-    if (response_size > max_response_size) {
-        memcpy(response, buf, max_response_size);
-    } else {
-        memcpy(response, buf, response_size);
-    }
+    /* memset(response, 0, response_size); */
+    /* if (response_size > max_response_size) { */
+    /*     memcpy(response, buf, max_response_size); */
+    /* } else { */
+    /*     memcpy(response, buf, response_size); */
+    /* } */
 
     err = M210_ERR_OK;
   err:
-    free(buf);
+    /* free(buf); */
     return err;
 }
 
@@ -428,41 +430,42 @@ static enum m210_err m210_open_from_hidraw_paths(struct m210 *const m210, char *
 enum m210_err m210_get_info(struct m210 const *const m210, struct m210_info *const info)
 {
     enum m210_err err;
-    uint8_t const rpt[] = {0x95};
-    uint8_t const resp[11];
-
-    memset(&resp, 0, sizeof(resp));
-    
-    err = m210_write(m210, rpt, sizeof(rpt));
+    uint8_t const command[] = {0x95};
+    uint8_t const response[M210_RESPONSE_SIZE];
+  
+    err = m210_write(m210, command, sizeof(command));
     if (err) {
         return err;
     }
     
-    err = m210_read(m210, 0, &resp, sizeof(resp));
-    if (err) {
-        return err;
-    }
-
-    /* Check that the received packet is correct. */
-    if (resp[0] != 0x80
-        || resp[1] != 0xa9
-        || resp[2] != 0x28
-        || resp[9] != 0x0e) {
-        return M210_ERR_BADMSG;
+    while (1) {
+        memset(&response, 0, sizeof(response));
+        err = m210_read(m210, 0, &response, sizeof(response));
+        if (err) {
+            return err;
+        }
+        
+        /* Check that the response is correct. */
+        if (response[0] == 0x80
+            && response[1] == 0xa9
+            && response[2] == 0x28
+            && response[9] == 0x0e) {
+            break;
+        }
     }
 
     uint16_t firmware_version;
     uint16_t analog_version;
     uint16_t pad_version;
    
-    memcpy(&firmware_version, resp + 3, 2);
-    memcpy(&analog_version, resp + 5, 2);
-    memcpy(&pad_version, resp + 7, 2);
+    memcpy(&firmware_version, response + 3, 2);
+    memcpy(&analog_version, response + 5, 2);
+    memcpy(&pad_version, response + 7, 2);
     
     info->firmware_version = be16toh(firmware_version);
     info->analog_version = be16toh(analog_version);
     info->pad_version = be16toh(pad_version);
-    info->mode = resp[10];
+    info->mode = response[10];
 
     return M210_ERR_OK;
 }
