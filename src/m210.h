@@ -54,6 +54,23 @@ enum m210_err m210_close(struct m210 *m210);
 
 enum m210_err m210_get_info(struct m210 const *m210, struct m210_info *info);
 
+/*
+  Return the total size of notes in bytes. Theoretical maximum size
+  is 4063232:
+
+  * Packets are numbered with 16 bit integers.
+    => Maximum number of packets: 2**16 = 65536
+
+  * Each packet is 64 bytes wide, last 62 bytes represent bytes in
+    memory. The first two bytes represent the packet sequence number.
+    => Maximum number of bytes in memory: 2**16 * 62 = 4063232
+
+  * A 32bit integer can address 2**32 different bytes which is way
+    more than the maximum number of bytes in devices memory.
+
+*/
+enum m210_err m210_get_notes_size(struct m210 const *m210, uint32_t *size);
+
 /* enum m210_mode_indicator { */
 /*     M210_MODE_INDICATOR_TABLET=0x01, */
 /*     M210_MODE_INDICATOR_MOUSE=0x02 */
@@ -177,23 +194,6 @@ enum m210_err m210_get_info(struct m210 const *m210, struct m210_info *info);
 /* uint32_t m210_note_header_next_header_pos(struct m210_note_header const *header); */
 
 /* enum m210_err m210_delete_notes(struct m210 const  *m210); */
-
-/* /\* */
-/*   Return the total size of notes in bytes. Theoretical maximum size */
-/*   is 4063232: */
-
-/*   * Packets are numbered with 16 bit integers. */
-/*     => Maximum number of packets: 2**16 = 65536 */
-
-/*   * Each packet is 64 bytes wide, last 62 bytes represent bytes in */
-/*     memory. The first two bytes represent the packet sequence number. */
-/*     => Maximum number of bytes in memory: 2**16 * 62 = 4063232 */
-
-/*   * A 32bit integer can address 2**32 different bytes which is way */
-/*     more than the maximum number of bytes in devices memory. */
-
-/* *\/ */
-/* enum m210_err m210_get_notes_size(struct m210 const *m210, uint32_t *size); */
 
 /* /\* */
 /*   Read notes from a device and write them to a stream. Each note */

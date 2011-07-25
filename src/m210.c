@@ -33,6 +33,8 @@
 #define M210_READ_INTERVAL 1000000 /* Microseconds. */
 #define M210_RESPONSE_SIZE 64
 
+#define M210_PACKET_DATA_LEN 62
+
 /* struct m210_packet { */
 /*     uint16_t num; */
 /*     uint8_t data[M210_PACKET_DATA_LEN]; */
@@ -198,11 +200,11 @@ static enum m210_err m210_find_hidraw_devnode(int const iface,
 /*     return m210_wait_ready(m210); */
 /* } */
 
-/* static enum m210_err m210_reject_and_wait(struct m210 const *const m210) */
-/* { */
-/*     uint8_t const rpt[] = {0xb7}; */
-/*     return m210_write_and_wait(m210, rpt, sizeof(rpt)); */
-/* } */
+static enum m210_err m210_reject_and_wait(struct m210 const *const m210)
+{
+    uint8_t const command[] = {0xb7};
+    return m210_write(m210, command, sizeof(command));
+}
 
 static enum m210_err m210_open_from_hidraw_paths(struct m210 *const m210, char *const *const hidraw_paths)
 {
@@ -275,63 +277,62 @@ static enum m210_err m210_open_from_hidraw_paths(struct m210 *const m210, char *
   < PACKET #Y
   ACCEPT            >
 
-  Packet count request:
-  Bytes:  0
-  Values: 0xb5
-
-  Packet count response:
-  Bytes:  0    1    2    3    4    5          6         7    8
-  Values: 0xaa 0xaa 0xaa 0xaa 0xaa count_high count_low 0x55 0x55
 */
-/* static enum m210_err m210_upload_begin(struct m210 const *const m210, */
-/*                                        uint16_t *const packetc_ptr) */
-/* { */
-/*     static uint8_t const sig1[] = {0xaa, 0xaa, 0xaa, 0xaa, 0xaa}; */
-/*     static uint8_t const sig2[] = {0x55, 0x55}; */
-/*     static uint8_t const rpt[] = {0xb5}; */
-/*     uint8_t resp[9]; */
-/*     enum m210_err err; */
+static enum m210_err m210_upload_begin(struct m210 const *const m210,
+                                       uint16_t *const packet_count_ptr)
+{
+    static uint8_t const command[] = {0xb5};
+    uint8_t response[9];
+    enum m210_err err;
 
-/*     memset(resp, 0, sizeof(resp)); */
+    memset(response, 0, sizeof(response));
 
-/*     err = m210_write(m210, rpt, sizeof(rpt)); */
-/*     if (err) { */
-/*         return err; */
-/*     } */
+    err = m210_write(m210, command, sizeof(command));
+    if (err) {
+        return err;
+    }
 
-/*     err = m210_read(m210, 0, resp, sizeof(resp)); */
-/*     switch (err) { */
-/*     case M210_ERR_TIMEOUT: */
-/*         /\* */
-/*           It seems, that a M210 device with zero notes does not send */
-/*           any response. */
-/*         *\/ */
-/*         *packetc_ptr = 0; */
-/*         return M210_ERR_OK; */
-/*     case M210_ERR_OK: */
-/*         break; */
-/*     default: */
-/*         goto err; */
-/*     } */
+    while (1) {
+        err = m210_read(m210, 0, response, sizeof(response));
+        switch (err) {
+        case M210_ERR_TIMEOUT:
+            /*
+              It seems, that a M210 device with zero notes does not send
+              any response.
+            */
+            *packet_count_ptr = 0;
+            return M210_ERR_OK;
+        case M210_ERR_OK:
+            break;
+        default:
+            goto err;
+        }
 
-/*     /\* Check that the packet we received is correct. *\/ */
-/*     if (memcmp(resp, sig1, sizeof(sig1)) */
-/*         || memcmp(resp + sizeof(sig1) + 2, sig2, sizeof(sig2))) { */
-/*         err = M210_ERR_BADMSG; */
-/*         goto err; */
-/*     } */
+        /* Check that the response is correct. */
+        if (response[0] == 0xaa
+            && response[1] == 0xaa
+            && response[2] == 0xaa
+            && response[3] == 0xaa
+            && response[4] == 0xaa
+            && response[7] == 0x55
+            && response[8] == 0x55) {
+            break;
+        }
 
-/*     /\* Packet count is reported in big-endian format. *\/ */
-/*     memcpy(packetc_ptr, resp + sizeof(sig1), 2); */
-/*     *packetc_ptr = be16toh(*packetc_ptr); */
+    }
 
-/*     return M210_ERR_OK; */
+    uint16_t packet_count;
 
-/*   err: */
-/*     /\* Try to leave the device as it was before the error. *\/ */
-/*     m210_reject_and_wait(m210); */
-/*     return err; */
-/* } */
+    memcpy(&packet_count, response + 5, 2);
+    *packet_count_ptr = be16toh(packet_count);
+
+    return M210_ERR_OK;
+
+  err:
+    /* Try to leave the device as it was before the error. */
+    m210_reject_and_wait(m210);
+    return err;
+}
 
 /*
   Data packet:
@@ -370,8 +371,8 @@ static enum m210_err m210_open_from_hidraw_paths(struct m210 *const m210, char *
 enum m210_err m210_get_info(struct m210 const *const m210, struct m210_info *const info)
 {
     enum m210_err err;
-    uint8_t const command[] = {0x95};
-    uint8_t const response[M210_RESPONSE_SIZE];
+    static uint8_t const command[] = {0x95};
+    uint8_t response[M210_RESPONSE_SIZE];
   
     err = m210_write(m210, command, sizeof(command));
     if (err) {
@@ -379,8 +380,8 @@ enum m210_err m210_get_info(struct m210 const *const m210, struct m210_info *con
     }
     
     while (1) {
-        memset(&response, 0, sizeof(response));
-        err = m210_read(m210, 0, &response, sizeof(response));
+        memset(response, 0, sizeof(response));
+        err = m210_read(m210, 0, response, sizeof(response));
         if (err) {
             return err;
         }
@@ -445,25 +446,25 @@ enum m210_err m210_close(struct m210 *const m210)
     return M210_ERR_OK;
 }
 
+enum m210_err m210_get_notes_size(struct m210 const *const m210, uint32_t *const size)
+{
+    enum m210_err err;
+    uint16_t packet_count;
+
+    err = m210_upload_begin(m210, &packet_count);
+    if (err) {
+        return err;
+    }
+
+    *size = packet_count * M210_PACKET_DATA_LEN;
+
+    return m210_reject_and_wait(m210);
+}
+
 /* enum m210_err m210_delete_notes(struct m210 const *const m210) */
 /* { */
 /*     uint8_t const rpt[] = {0xb0}; */
 /*     return m210_write_and_wait(m210, rpt, sizeof(rpt)); */
-/* } */
-
-/* enum m210_err m210_get_notes_size(struct m210 const *const m210, uint32_t *const size) */
-/* { */
-/*     enum m210_err err; */
-/*     uint16_t packet_count; */
-
-/*     err = m210_upload_begin(m210, &packet_count); */
-/*     if (err) { */
-/*         return err; */
-/*     } */
-
-/*     *size = packet_count * M210_PACKET_DATA_LEN; */
-
-/*     return m210_reject_and_wait(m210); */
 /* } */
 
 /* enum m210_err m210_fwrite_note_data(struct m210 const *const m210, FILE *const f) */
