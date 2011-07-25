@@ -35,10 +35,10 @@
 #define M210_RESPONSE_SIZE_IFACE0 64
 #define M210_RESPONSE_SIZE_IFACE1 9
 
-struct m210_packet {
-    uint16_t num;
-    uint8_t data[M210_PACKET_DATA_LEN];
-} __attribute__((packed));
+/* struct m210_packet { */
+/*     uint16_t num; */
+/*     uint8_t data[M210_PACKET_DATA_LEN]; */
+/* } __attribute__((packed)); */
 
 static struct hidraw_devinfo const DEVINFO_M210 = {
     BUS_USB,
@@ -232,35 +232,35 @@ static enum m210_err m210_find_hidraw_devnode(int const iface,
     return err;
 }
 
-static enum m210_err m210_wait_ready(struct m210 const *const m210)
-{
-    return m210_get_info(m210, NULL);
-}
+/* static enum m210_err m210_wait_ready(struct m210 const *const m210) */
+/* { */
+/*     return m210_get_info(m210, NULL); */
+/* } */
 
-static enum m210_err m210_accept(struct m210 const *const m210)
-{
-    uint8_t const rpt[] = {0xb6};
+/* static enum m210_err m210_accept(struct m210 const *const m210) */
+/* { */
+/*     uint8_t const rpt[] = {0xb6}; */
 
-    return m210_write(m210, rpt, sizeof(rpt));
-}
+/*     return m210_write(m210, rpt, sizeof(rpt)); */
+/* } */
 
-static enum m210_err m210_write_and_wait(struct m210 const *const m210,
-                                         uint8_t const *const rpt,
-                                         size_t const rpt_size)
-{
-    enum m210_err const err = m210_write(m210, rpt, rpt_size);
-    if (err) {
-        return err;
-    }
+/* static enum m210_err m210_write_and_wait(struct m210 const *const m210, */
+/*                                          uint8_t const *const rpt, */
+/*                                          size_t const rpt_size) */
+/* { */
+/*     enum m210_err const err = m210_write(m210, rpt, rpt_size); */
+/*     if (err) { */
+/*         return err; */
+/*     } */
 
-    return m210_wait_ready(m210);
-}
+/*     return m210_wait_ready(m210); */
+/* } */
 
-static enum m210_err m210_reject_and_wait(struct m210 const *const m210)
-{
-    uint8_t const rpt[] = {0xb7};
-    return m210_write_and_wait(m210, rpt, sizeof(rpt));
-}
+/* static enum m210_err m210_reject_and_wait(struct m210 const *const m210) */
+/* { */
+/*     uint8_t const rpt[] = {0xb7}; */
+/*     return m210_write_and_wait(m210, rpt, sizeof(rpt)); */
+/* } */
 
 static enum m210_err m210_open_from_hidraw_paths(struct m210 *const m210, char *const *const hidraw_paths)
 {
@@ -341,55 +341,55 @@ static enum m210_err m210_open_from_hidraw_paths(struct m210 *const m210, char *
   Bytes:  0    1    2    3    4    5          6         7    8
   Values: 0xaa 0xaa 0xaa 0xaa 0xaa count_high count_low 0x55 0x55
 */
-static enum m210_err m210_upload_begin(struct m210 const *const m210,
-                                       uint16_t *const packetc_ptr)
-{
-    static uint8_t const sig1[] = {0xaa, 0xaa, 0xaa, 0xaa, 0xaa};
-    static uint8_t const sig2[] = {0x55, 0x55};
-    static uint8_t const rpt[] = {0xb5};
-    uint8_t resp[9];
-    enum m210_err err;
+/* static enum m210_err m210_upload_begin(struct m210 const *const m210, */
+/*                                        uint16_t *const packetc_ptr) */
+/* { */
+/*     static uint8_t const sig1[] = {0xaa, 0xaa, 0xaa, 0xaa, 0xaa}; */
+/*     static uint8_t const sig2[] = {0x55, 0x55}; */
+/*     static uint8_t const rpt[] = {0xb5}; */
+/*     uint8_t resp[9]; */
+/*     enum m210_err err; */
 
-    memset(resp, 0, sizeof(resp));
+/*     memset(resp, 0, sizeof(resp)); */
 
-    err = m210_write(m210, rpt, sizeof(rpt));
-    if (err) {
-        return err;
-    }
+/*     err = m210_write(m210, rpt, sizeof(rpt)); */
+/*     if (err) { */
+/*         return err; */
+/*     } */
 
-    err = m210_read(m210, 0, resp, sizeof(resp));
-    switch (err) {
-    case M210_ERR_TIMEOUT:
-        /*
-          It seems, that a M210 device with zero notes does not send
-          any response.
-        */
-        *packetc_ptr = 0;
-        return M210_ERR_OK;
-    case M210_ERR_OK:
-        break;
-    default:
-        goto err;
-    }
+/*     err = m210_read(m210, 0, resp, sizeof(resp)); */
+/*     switch (err) { */
+/*     case M210_ERR_TIMEOUT: */
+/*         /\* */
+/*           It seems, that a M210 device with zero notes does not send */
+/*           any response. */
+/*         *\/ */
+/*         *packetc_ptr = 0; */
+/*         return M210_ERR_OK; */
+/*     case M210_ERR_OK: */
+/*         break; */
+/*     default: */
+/*         goto err; */
+/*     } */
 
-    /* Check that the packet we received is correct. */
-    if (memcmp(resp, sig1, sizeof(sig1))
-        || memcmp(resp + sizeof(sig1) + 2, sig2, sizeof(sig2))) {
-        err = M210_ERR_BADMSG;
-        goto err;
-    }
+/*     /\* Check that the packet we received is correct. *\/ */
+/*     if (memcmp(resp, sig1, sizeof(sig1)) */
+/*         || memcmp(resp + sizeof(sig1) + 2, sig2, sizeof(sig2))) { */
+/*         err = M210_ERR_BADMSG; */
+/*         goto err; */
+/*     } */
 
-    /* Packet count is reported in big-endian format. */
-    memcpy(packetc_ptr, resp + sizeof(sig1), 2);
-    *packetc_ptr = be16toh(*packetc_ptr);
+/*     /\* Packet count is reported in big-endian format. *\/ */
+/*     memcpy(packetc_ptr, resp + sizeof(sig1), 2); */
+/*     *packetc_ptr = be16toh(*packetc_ptr); */
 
-    return M210_ERR_OK;
+/*     return M210_ERR_OK; */
 
-  err:
-    /* Try to leave the device as it was before the error. */
-    m210_reject_and_wait(m210);
-    return err;
-}
+/*   err: */
+/*     /\* Try to leave the device as it was before the error. *\/ */
+/*     m210_reject_and_wait(m210); */
+/*     return err; */
+/* } */
 
 /*
   Data packet:
@@ -410,60 +410,37 @@ static enum m210_err m210_upload_begin(struct m210 const *const m210,
   +-----+------------+-+-+-+-+-+-+-+-+
 
 */
-static enum m210_err m210_read_note_data_packet(struct m210 const *const m210,
-                                                struct m210_packet *const packet)
-{
-    enum m210_err err;
+/* static enum m210_err m210_read_note_data_packet(struct m210 const *const m210, */
+/*                                                 struct m210_packet *const packet) */
+/* { */
+/*     enum m210_err err; */
 
-    err = m210_read(m210, 0, packet, sizeof(struct m210_packet));
-    if (err) {
-        return err;
-    }
+/*     err = m210_read(m210, 0, packet, sizeof(struct m210_packet)); */
+/*     if (err) { */
+/*         return err; */
+/*     } */
 
-    packet->num = be16toh(packet->num);
+/*     packet->num = be16toh(packet->num); */
 
-    return M210_ERR_OK;
-}
+/*     return M210_ERR_OK; */
+/* } */
 
-/*
-  Get info request:
-  Bytes:  0
-  Values: 0x95
-
-  Info response:
-  Bytes:  0    1    2    3   4   5   6   7   8   9    10
-  Values: 0x80 0xa9 0x28 fvh fvl avh avl pvh pvl 0x0e mode
-
-  fvh = Firmware version high
-  fvl = Firmware version low
-  avh = Analog version high
-  avl = Analog version low
-  pvh = Pad version high
-  pvl = Pad version low
-*/
 enum m210_err m210_get_info(struct m210 const *const m210, struct m210_info *const info)
 {
+    enum m210_err err;
     uint8_t const rpt[] = {0x95};
     uint8_t const resp[11];
 
-    while (1) {
-        enum m210_err err = M210_ERR_SYS;
-
-        memset(&resp, 0, sizeof(resp));
-
-        err = m210_write(m210, rpt, sizeof(rpt));
-        if (err) {
-            return err;
-        }
-
-        err = m210_read(m210, 0, &resp, sizeof(resp));
-        if (err == M210_ERR_TIMEOUT) {
-            continue;
-        } else if (err == M210_ERR_OK) {
-            break;
-        } else {
-            return err;
-        }
+    memset(&resp, 0, sizeof(resp));
+    
+    err = m210_write(m210, rpt, sizeof(rpt));
+    if (err) {
+        return err;
+    }
+    
+    err = m210_read(m210, 0, &resp, sizeof(resp));
+    if (err) {
+        return err;
     }
 
     /* Check that the received packet is correct. */
@@ -474,21 +451,18 @@ enum m210_err m210_get_info(struct m210 const *const m210, struct m210_info *con
         return M210_ERR_BADMSG;
     }
 
-    if (info != NULL) {
-        /* Fill in only if caller is interested in the info. */
-        uint16_t firmware_version;
-        uint16_t analog_version;
-        uint16_t pad_version;
-
-        memcpy(&firmware_version, resp + 3, 2);
-        memcpy(&analog_version, resp + 5, 2);
-        memcpy(&pad_version, resp + 7, 2);
-
-        info->firmware_version = be16toh(firmware_version);
-        info->analog_version = be16toh(analog_version);
-        info->pad_version = be16toh(pad_version);
-        info->mode = resp[10];
-    }
+    uint16_t firmware_version;
+    uint16_t analog_version;
+    uint16_t pad_version;
+   
+    memcpy(&firmware_version, resp + 3, 2);
+    memcpy(&analog_version, resp + 5, 2);
+    memcpy(&pad_version, resp + 7, 2);
+    
+    info->firmware_version = be16toh(firmware_version);
+    info->analog_version = be16toh(analog_version);
+    info->pad_version = be16toh(pad_version);
+    info->mode = resp[10];
 
     return M210_ERR_OK;
 }
@@ -528,156 +502,156 @@ enum m210_err m210_close(struct m210 *const m210)
     return M210_ERR_OK;
 }
 
-enum m210_err m210_delete_notes(struct m210 const *const m210)
-{
-    uint8_t const rpt[] = {0xb0};
-    return m210_write_and_wait(m210, rpt, sizeof(rpt));
-}
+/* enum m210_err m210_delete_notes(struct m210 const *const m210) */
+/* { */
+/*     uint8_t const rpt[] = {0xb0}; */
+/*     return m210_write_and_wait(m210, rpt, sizeof(rpt)); */
+/* } */
 
-enum m210_err m210_get_notes_size(struct m210 const *const m210, uint32_t *const size)
-{
-    enum m210_err err;
-    uint16_t packet_count;
+/* enum m210_err m210_get_notes_size(struct m210 const *const m210, uint32_t *const size) */
+/* { */
+/*     enum m210_err err; */
+/*     uint16_t packet_count; */
 
-    err = m210_upload_begin(m210, &packet_count);
-    if (err) {
-        return err;
-    }
+/*     err = m210_upload_begin(m210, &packet_count); */
+/*     if (err) { */
+/*         return err; */
+/*     } */
 
-    *size = packet_count * M210_PACKET_DATA_LEN;
+/*     *size = packet_count * M210_PACKET_DATA_LEN; */
 
-    return m210_reject_and_wait(m210);
-}
+/*     return m210_reject_and_wait(m210); */
+/* } */
 
-enum m210_err m210_fwrite_note_data(struct m210 const *const m210, FILE *const f)
-{
-    enum m210_err err;
-    uint16_t *lost_packet_numv;
-    uint16_t lost_packet_numc = 0;
-    int original_errno;
-    uint16_t packetc;
+/* enum m210_err m210_fwrite_note_data(struct m210 const *const m210, FILE *const f) */
+/* { */
+/*     enum m210_err err; */
+/*     uint16_t *lost_packet_numv; */
+/*     uint16_t lost_packet_numc = 0; */
+/*     int original_errno; */
+/*     uint16_t packetc; */
 
-    err = m210_upload_begin(m210, &packetc);
-    if (err) {
-        return err;
-    }
+/*     err = m210_upload_begin(m210, &packetc); */
+/*     if (err) { */
+/*         return err; */
+/*     } */
 
-    if (packetc == 0) {
-        return m210_reject_and_wait(m210);
-    }
+/*     if (packetc == 0) { */
+/*         return m210_reject_and_wait(m210); */
+/*     } */
 
-    lost_packet_numv = (uint16_t *)calloc(packetc, sizeof(uint16_t));
-    if (lost_packet_numv == NULL) {
-        original_errno = errno;
-        m210_reject_and_wait(m210);
-        errno = original_errno;
-        return M210_ERR_SYS;
-    }
+/*     lost_packet_numv = (uint16_t *)calloc(packetc, sizeof(uint16_t)); */
+/*     if (lost_packet_numv == NULL) { */
+/*         original_errno = errno; */
+/*         m210_reject_and_wait(m210); */
+/*         errno = original_errno; */
+/*         return M210_ERR_SYS; */
+/*     } */
 
-    err = m210_accept(m210);
-    if (err) {
-        goto err;
-    }
+/*     err = m210_accept(m210); */
+/*     if (err) { */
+/*         goto err; */
+/*     } */
 
-    for (int i = 0; i < packetc; ++i) {
-        struct m210_packet packet;
-        uint16_t const expected_packet_number = i + 1;
+/*     for (int i = 0; i < packetc; ++i) { */
+/*         struct m210_packet packet; */
+/*         uint16_t const expected_packet_number = i + 1; */
 
-        err = m210_read_note_data_packet(m210, &packet);
-        if (err) {
-            if (err == M210_ERR_TIMEOUT) {
-                /*
-                  Timeout because there is not any packets left to
-                  read. However, the device has promised to send more,
-                  so we mark all the rest packet numbers as lost and
-                  proceed with resending.
-                */
-                for (int j = i; j < packetc; ++j) {
-                    uint16_t const lost_packet_num = j + 1;
-                    lost_packet_numv[lost_packet_numc++] = lost_packet_num;
-                }
-                err = M210_ERR_OK; /* This error has been handled. */
-                goto resend;
-            } else {
-                goto err;
-            }
-        }
+/*         err = m210_read_note_data_packet(m210, &packet); */
+/*         if (err) { */
+/*             if (err == M210_ERR_TIMEOUT) { */
+/*                 /\* */
+/*                   Timeout because there is not any packets left to */
+/*                   read. However, the device has promised to send more, */
+/*                   so we mark all the rest packet numbers as lost and */
+/*                   proceed with resending. */
+/*                 *\/ */
+/*                 for (int j = i; j < packetc; ++j) { */
+/*                     uint16_t const lost_packet_num = j + 1; */
+/*                     lost_packet_numv[lost_packet_numc++] = lost_packet_num; */
+/*                 } */
+/*                 err = M210_ERR_OK; /\* This error has been handled. *\/ */
+/*                 goto resend; */
+/*             } else { */
+/*                 goto err; */
+/*             } */
+/*         } */
 
-        if (packet.num != expected_packet_number) {
-            lost_packet_numv[lost_packet_numc++] = expected_packet_number;
-        }
+/*         if (packet.num != expected_packet_number) { */
+/*             lost_packet_numv[lost_packet_numc++] = expected_packet_number; */
+/*         } */
 
-        if (!lost_packet_numc) {
-            if (fwrite(packet.data, sizeof(packet.data), 1, f) != 1) {
-                err = M210_ERR_SYS;
-                goto err;
-            }
-        }
-    }
+/*         if (!lost_packet_numc) { */
+/*             if (fwrite(packet.data, sizeof(packet.data), 1, f) != 1) { */
+/*                 err = M210_ERR_SYS; */
+/*                 goto err; */
+/*             } */
+/*         } */
+/*     } */
 
-  resend:
-    while (lost_packet_numc > 0) {
-        struct m210_packet packet;
+/*   resend: */
+/*     while (lost_packet_numc > 0) { */
+/*         struct m210_packet packet; */
 
-        /*
-          Resend packet:
-          +-----+------------+-+-+-+-+-+-+-+-+
-          |Byte#|Description |7|6|5|4|3|2|1|0|
-          +-----+------------+-+-+-+-+-+-+-+-+
-          |  1  |NACK        |1|0|1|1|0|1|1|1|
-          +-----+------------+-+-+-+-+-+-+-+-+
-          |  2  |Packet# HIGH|N|N|N|N|N|N|N|N|
-          +-----+------------+-+-+-+-+-+-+-+-+
-          |  3  |Packet# LOW |n|n|n|n|n|n|n|n|
-          +-----+------------+-+-+-+-+-+-+-+-+
-        */
-        uint8_t resend_request[] = {0xb7, 0x00};
-        resend_request[1] = htobe16(lost_packet_numv[0]);
+/*         /\* */
+/*           Resend packet: */
+/*           +-----+------------+-+-+-+-+-+-+-+-+ */
+/*           |Byte#|Description |7|6|5|4|3|2|1|0| */
+/*           +-----+------------+-+-+-+-+-+-+-+-+ */
+/*           |  1  |NACK        |1|0|1|1|0|1|1|1| */
+/*           +-----+------------+-+-+-+-+-+-+-+-+ */
+/*           |  2  |Packet# HIGH|N|N|N|N|N|N|N|N| */
+/*           +-----+------------+-+-+-+-+-+-+-+-+ */
+/*           |  3  |Packet# LOW |n|n|n|n|n|n|n|n| */
+/*           +-----+------------+-+-+-+-+-+-+-+-+ */
+/*         *\/ */
+/*         uint8_t resend_request[] = {0xb7, 0x00}; */
+/*         resend_request[1] = htobe16(lost_packet_numv[0]); */
 
-        err = m210_write(m210, resend_request, sizeof(resend_request));
-        if (err) {
-            goto err;
-        }
+/*         err = m210_write(m210, resend_request, sizeof(resend_request)); */
+/*         if (err) { */
+/*             goto err; */
+/*         } */
 
-        err = m210_read_note_data_packet(m210, &packet);
-        if (err) {
-            if (err == M210_ERR_TIMEOUT) {
-                /*
-                  Request resend as many times as needed to get the
-                  expected packet. The M210 device has made a promise
-                  and we blindly believe that it's going to keep it.
-                */
-                continue;
-            } else {
-                goto err;
-            }
-        }
+/*         err = m210_read_note_data_packet(m210, &packet); */
+/*         if (err) { */
+/*             if (err == M210_ERR_TIMEOUT) { */
+/*                 /\* */
+/*                   Request resend as many times as needed to get the */
+/*                   expected packet. The M210 device has made a promise */
+/*                   and we blindly believe that it's going to keep it. */
+/*                 *\/ */
+/*                 continue; */
+/*             } else { */
+/*                 goto err; */
+/*             } */
+/*         } */
 
-        if (packet.num == lost_packet_numv[0]) {
-            lost_packet_numv[0] = lost_packet_numv[--lost_packet_numc];
-            if (fwrite(packet.data, sizeof(packet.data), 1, f) != 1) {
-                err = M210_ERR_SYS;
-                goto err;
-            }
-        }
-    }
+/*         if (packet.num == lost_packet_numv[0]) { */
+/*             lost_packet_numv[0] = lost_packet_numv[--lost_packet_numc]; */
+/*             if (fwrite(packet.data, sizeof(packet.data), 1, f) != 1) { */
+/*                 err = M210_ERR_SYS; */
+/*                 goto err; */
+/*             } */
+/*         } */
+/*     } */
 
-    /*
-      All packets have been received, time to thank the device for
-      cooperation.
-    */
-    err = m210_accept(m210);
+/*     /\* */
+/*       All packets have been received, time to thank the device for */
+/*       cooperation. */
+/*     *\/ */
+/*     err = m210_accept(m210); */
 
-  err:
-    free(lost_packet_numv);
-    return m210_wait_ready(m210);
-}
+/*   err: */
+/*     free(lost_packet_numv); */
+/*     return m210_wait_ready(m210); */
+/* } */
 
-inline uint32_t m210_note_header_next_header_pos(struct m210_note_header const *const header)
-{
-    return le32toh(header->next_header_pos[0] + header->next_header_pos[1] * 0x100
-                   + header->next_header_pos[2] * 0x10000);
-}
+/* inline uint32_t m210_note_header_next_header_pos(struct m210_note_header const *const header) */
+/* { */
+/*     return le32toh(header->next_header_pos[0] + header->next_header_pos[1] * 0x100 */
+/*                    + header->next_header_pos[2] * 0x10000); */
+/* } */
 
 char const *m210_strerror(enum m210_err const err)
 {
@@ -730,114 +704,114 @@ int m210_perror(enum m210_err const err, char const *const s)
     return 0;
 }
 
-inline int m210_note_data_is_pen_up(struct m210_note_data const *const data)
-{
-    static uint8_t penup[] = {0x00, 0x00, 0x00, 0x80};
-    return memcmp(data, &penup, sizeof(struct m210_note_data)) == 0;
-}
+/* inline int m210_note_data_is_pen_up(struct m210_note_data const *const data) */
+/* { */
+/*     static uint8_t penup[] = {0x00, 0x00, 0x00, 0x80}; */
+/*     return memcmp(data, &penup, sizeof(struct m210_note_data)) == 0; */
+/* } */
 
-enum m210_err m210_set_mode(struct m210 const *const m210,
-                            enum m210_mode_indicator const mode_indicator,
-                            enum m210_mode const mode)
-{
-    uint8_t rpt[] = {0x80, 0xb5, 0x00, 0x00};
-    rpt[2] = mode_indicator;
-    rpt[3] = mode;
-    return m210_write_and_wait(m210, rpt, sizeof(rpt));
-}
+/* enum m210_err m210_set_mode(struct m210 const *const m210, */
+/*                             enum m210_mode_indicator const mode_indicator, */
+/*                             enum m210_mode const mode) */
+/* { */
+/*     uint8_t rpt[] = {0x80, 0xb5, 0x00, 0x00}; */
+/*     rpt[2] = mode_indicator; */
+/*     rpt[3] = mode; */
+/*     return m210_write_and_wait(m210, rpt, sizeof(rpt)); */
+/* } */
 
-enum m210_err m210_config_tablet_mode(struct m210 const *const m210,
-                                      enum m210_area_size const area_size,
-                                      enum m210_orientation const orientation)
-{
-    /* Area size byte in M210-protocol is counter-intuitive: 0x00
-       means the largest, 0x09 the smallest. However, in our API, area
-       sizes are handled intuitively and therefore needs to be changed
-       here.
-     */
+/* enum m210_err m210_config_tablet_mode(struct m210 const *const m210, */
+/*                                       enum m210_area_size const area_size, */
+/*                                       enum m210_orientation const orientation) */
+/* { */
+/*     /\* Area size byte in M210-protocol is counter-intuitive: 0x00 */
+/*        means the largest, 0x09 the smallest. However, in our API, area */
+/*        sizes are handled intuitively and therefore needs to be changed */
+/*        here. */
+/*      *\/ */
 
-    uint8_t rpt[] = {0x80, 0xb6, 0x00, 0x00};
-    rpt[2] = abs(area_size - 0x09);
-    rpt[3] = orientation;
-    return m210_write_and_wait(m210, rpt, sizeof(rpt));
-}
+/*     uint8_t rpt[] = {0x80, 0xb6, 0x00, 0x00}; */
+/*     rpt[2] = abs(area_size - 0x09); */
+/*     rpt[3] = orientation; */
+/*     return m210_write_and_wait(m210, rpt, sizeof(rpt)); */
+/* } */
 
-enum m210_err m210_fwrite_tablet_data(struct m210 const *const m210, FILE *const stream)
-{
-    enum m210_err err;
-    uint8_t rpt[M210_RESPONSE_SIZE_IFACE1];
-    uint8_t const sig[] = {0x08};
+/* enum m210_err m210_fwrite_tablet_data(struct m210 const *const m210, FILE *const stream) */
+/* { */
+/*     enum m210_err err; */
+/*     uint8_t rpt[M210_RESPONSE_SIZE_IFACE1]; */
+/*     uint8_t const sig[] = {0x08}; */
 
-    memset(&rpt, 0, sizeof(rpt));
+/*     memset(&rpt, 0, sizeof(rpt)); */
 
-    while (1) {
-        err = m210_read(m210, 1, &rpt, sizeof(rpt));
-        if (err) {
-            return err;
-        }
-        if (memcmp(rpt, sig, sizeof(sig)) != 0) {
-            return M210_ERR_BADMSG;
-        }
-        switch (rpt[5]) {
-        case M210_TABLET_PEN_RELEASED:
-        case M210_TABLET_PEN_PRESSED:
-            break;
-        default:
-            return M210_ERR_BADMSG;
-        }
-        if (fwrite(rpt+sizeof(sig), sizeof(rpt)-sizeof(sig), 1, stream) != 1) {
-            return M210_ERR_SYS;
-        }
-        if (fflush(stream)) {
-            return M210_ERR_SYS;
-        }
-    }
-    return M210_ERR_OK;
-}
+/*     while (1) { */
+/*         err = m210_read(m210, 1, &rpt, sizeof(rpt)); */
+/*         if (err) { */
+/*             return err; */
+/*         } */
+/*         if (memcmp(rpt, sig, sizeof(sig)) != 0) { */
+/*             return M210_ERR_BADMSG; */
+/*         } */
+/*         switch (rpt[5]) { */
+/*         case M210_TABLET_PEN_RELEASED: */
+/*         case M210_TABLET_PEN_PRESSED: */
+/*             break; */
+/*         default: */
+/*             return M210_ERR_BADMSG; */
+/*         } */
+/*         if (fwrite(rpt+sizeof(sig), sizeof(rpt)-sizeof(sig), 1, stream) != 1) { */
+/*             return M210_ERR_SYS; */
+/*         } */
+/*         if (fflush(stream)) { */
+/*             return M210_ERR_SYS; */
+/*         } */
+/*     } */
+/*     return M210_ERR_OK; */
+/* } */
 
-enum m210_err m210_fwrite_mouse_data(struct m210 const *const m210, FILE *const stream)
-{
-    enum m210_err err;
-    uint8_t rpt[M210_RESPONSE_SIZE_IFACE0];
+/* enum m210_err m210_fwrite_mouse_data(struct m210 const *const m210, FILE *const stream) */
+/* { */
+/*     enum m210_err err; */
+/*     uint8_t rpt[M210_RESPONSE_SIZE_IFACE0]; */
 
-    memset(&rpt, 0, sizeof(rpt));
+/*     memset(&rpt, 0, sizeof(rpt)); */
 
-    while (1) {
-        err = m210_read(m210, 0, &rpt, sizeof(rpt));
-        if (err) {
-            return err;
-        }
-        for (size_t i = 0; i < sizeof(rpt); i = i + 6) {
-            if (rpt[i] == 0x00) {
-                break; /* No more mouse data in this report. */
-            }
-            switch (rpt[i]) {
-            case M210_MOUSE_BATTERY_UNKNOWN:
-            case M210_MOUSE_BATTERY_LOW:
-            case M210_MOUSE_BATTERY_HIGH:
-                break;
-            default:
-                /* Unexpected battery state. */
-                return M210_ERR_BADMSG;
-            }
-            switch (rpt[i+1]) {
-            case M210_MOUSE_PEN_OUT_OF_RANGE:
-            case M210_MOUSE_PEN_HOVERING:
-            case M210_MOUSE_PEN_TIP_PRESSED:
-            case M210_MOUSE_PEN_SWITCH_PRESSED:
-            case M210_MOUSE_PEN_BOTH_PRESSED:
-                break;
-            default:
-                /* Unexpected pen state. */
-                return M210_ERR_BADMSG;
-            }
-            if (fwrite(rpt+i, 6, 1, stream) != 1) {
-                return M210_ERR_SYS;
-            }
-            if (fflush(stream)) {
-                return M210_ERR_SYS;
-            }
-        }
-    }
-    return M210_ERR_OK;
-}
+/*     while (1) { */
+/*         err = m210_read(m210, 0, &rpt, sizeof(rpt)); */
+/*         if (err) { */
+/*             return err; */
+/*         } */
+/*         for (size_t i = 0; i < sizeof(rpt); i = i + 6) { */
+/*             if (rpt[i] == 0x00) { */
+/*                 break; /\* No more mouse data in this report. *\/ */
+/*             } */
+/*             switch (rpt[i]) { */
+/*             case M210_MOUSE_BATTERY_UNKNOWN: */
+/*             case M210_MOUSE_BATTERY_LOW: */
+/*             case M210_MOUSE_BATTERY_HIGH: */
+/*                 break; */
+/*             default: */
+/*                 /\* Unexpected battery state. *\/ */
+/*                 return M210_ERR_BADMSG; */
+/*             } */
+/*             switch (rpt[i+1]) { */
+/*             case M210_MOUSE_PEN_OUT_OF_RANGE: */
+/*             case M210_MOUSE_PEN_HOVERING: */
+/*             case M210_MOUSE_PEN_TIP_PRESSED: */
+/*             case M210_MOUSE_PEN_SWITCH_PRESSED: */
+/*             case M210_MOUSE_PEN_BOTH_PRESSED: */
+/*                 break; */
+/*             default: */
+/*                 /\* Unexpected pen state. *\/ */
+/*                 return M210_ERR_BADMSG; */
+/*             } */
+/*             if (fwrite(rpt+i, 6, 1, stream) != 1) { */
+/*                 return M210_ERR_SYS; */
+/*             } */
+/*             if (fflush(stream)) { */
+/*                 return M210_ERR_SYS; */
+/*             } */
+/*         } */
+/*     } */
+/*     return M210_ERR_OK; */
+/* } */
