@@ -31,9 +31,6 @@
 #include "m210.h"
 
 #define M210_READ_INTERVAL 1000000 /* Microseconds. */
-/* #define M210_PACKET_DATA_LEN 62 */
-/* #define M210_RESPONSE_SIZE_IFACE0 64 */
-/* #define M210_RESPONSE_SIZE_IFACE1 9 */
 #define M210_RESPONSE_SIZE 64
 
 /* struct m210_packet { */
@@ -47,10 +44,6 @@ static struct hidraw_devinfo const DEVINFO_M210 = {
     0x0101,
 };
 
-/*
-  Bytes:  0    1    2        3      4          rpt_size
-  Values: 0x00 0x02 rpt_size rpt[0] rpt[1] ... rpt[rpt_size - 1]
-*/
 static enum m210_err m210_write(struct m210 const *const m210,
                                 uint8_t const *const command,
                                 size_t const command_size)
@@ -83,26 +76,14 @@ static enum m210_err m210_write(struct m210 const *const m210,
     return err;
 }
 
-/* static size_t const m210_interface_response_sizes[M210_USB_INTERFACE_COUNT] = { */
-/*     M210_RESPONSE_SIZE_IFACE0, M210_RESPONSE_SIZE_IFACE1}; */
-
-static enum m210_err m210_read(struct m210 const *const m210, int const interface,
+static enum m210_err m210_read(struct m210 const *const m210,
+                               int const interface,
                                void *const response, size_t const response_size)
 {
     fd_set readfds;
     int const fd = m210->fds[interface];
     static struct timeval select_interval;
-    /* size_t const max_response_size = m210_interface_response_sizes[interface]; */
-    /* uint8_t *buf; */
-    enum m210_err err;
 
-    /* buf = (uint8_t *) malloc(max_response_size * sizeof(uint8_t)); */
-    /* if (buf == NULL) { */
-    /*     return M210_ERR_SYS; */
-    /* } */
-
-  /* again: */
-    /* memset(buf, 0, max_response_size); */
     memset(&select_interval, 0, sizeof(struct timeval));
     FD_ZERO(&readfds);
     FD_SET(fd, &readfds);
@@ -111,59 +92,18 @@ static enum m210_err m210_read(struct m210 const *const m210, int const interfac
 
     switch (select(fd + 1, &readfds, NULL, NULL, &select_interval)) {
     case 0:
-        err = M210_ERR_TIMEOUT;
-        goto err;
+        return M210_ERR_TIMEOUT;
     case -1:
-        err = M210_ERR_SYS;
-        goto err;
+        return M210_ERR_SYS;
     default:
         break;
     }
 
     if (read(fd, response, response_size) == -1) {
-        err = M210_ERR_SYS;
-        goto err;
+        return M210_ERR_SYS;
     }
 
-    /*
-       Ignore mode button data. Otherwise it might mess up the
-       communication sequence.
-
-       TODO: Better communication handling probably based on generic
-       events and their handlers.
-
-       Mode button:
-
-       +-----+-----------+-+-+-+-+-+-+-+-+
-       |Byte#|Description|7|6|5|4|3|2|1|0|
-       +-----+-----------+-+-+-+-+-+-+-+-+
-       |  1  |0x80       |1|0|0|0|0|0|0|0|
-       +-----+-----------+-+-+-+-+-+-+-+-+
-       |  2  |0xB5       |1|0|1|1|0|1|0|1|
-       +-----+-----------+-+-+-+-+-+-+-+-+
-
-    */
-    /* if (interface == 0) { */
-    /*     uint8_t mode_button_rpt[M210_RESPONSE_SIZE_IFACE0]; */
-    /*     memset(mode_button_rpt, 0, M210_RESPONSE_SIZE_IFACE0); */
-    /*     mode_button_rpt[0] = 0x80; */
-    /*     mode_button_rpt[1] = 0xb5; */
-    /*     if (memcmp(mode_button_rpt, buf, M210_RESPONSE_SIZE_IFACE0) == 0) { */
-    /*         goto again; */
-    /*     } */
-    /* } */
-
-    /* memset(response, 0, response_size); */
-    /* if (response_size > max_response_size) { */
-    /*     memcpy(response, buf, max_response_size); */
-    /* } else { */
-    /*     memcpy(response, buf, response_size); */
-    /* } */
-
-    err = M210_ERR_OK;
-  err:
-    /* free(buf); */
-    return err;
+    return M210_ERR_OK;
 }
 
 static enum m210_err m210_find_hidraw_devnode(int const iface,
