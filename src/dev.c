@@ -223,8 +223,8 @@ m210_dev_reject(struct m210_dev const *const dev_ptr)
 }
 
 static enum m210_dev_err
-m210_dev_open_from_hidraw_paths(struct m210_dev *const dev_ptr,
-                                char *const *const hidraw_path_ptrs)
+m210_dev_connect_hidraw(struct m210_dev *const dev_ptr,
+                        char *const *const hidraw_path_ptrs)
 {
         int err = M210_DEV_ERR_SYS;
         int original_errno;
@@ -297,8 +297,8 @@ err:
 
 */
 static enum m210_dev_err
-m210_dev_upload_begin(struct m210_dev const *const dev_ptr,
-                      uint16_t *const packet_count_ptr)
+m210_dev_begin_download(struct m210_dev const *const dev_ptr,
+                        uint16_t *const packet_count_ptr)
 {
         static uint8_t const bytes[] = {0xb5};
         uint8_t response[9];
@@ -389,7 +389,7 @@ m210_dev_connect(struct m210_dev *const dev_ptr)
                         return err;
                 }
         }
-        return m210_dev_open_from_hidraw_paths(dev_ptr, paths);
+        return m210_dev_connect_hidraw(dev_ptr, paths);
 }
 
 enum m210_dev_err
@@ -458,7 +458,7 @@ m210_dev_get_notes_size(struct m210_dev const *const dev_ptr,
         enum m210_dev_err err;
         uint16_t packet_count;
 
-        err = m210_dev_upload_begin(dev_ptr, &packet_count);
+        err = m210_dev_begin_download(dev_ptr, &packet_count);
         if (err) {
                 return err;
         }
@@ -476,14 +476,14 @@ m210_dev_get_notes_size(struct m210_dev const *const dev_ptr,
 
 enum m210_dev_err
 m210_dev_download_notes(struct m210_dev const *const dev_ptr,
-                        FILE *const file_ptr)
+                        FILE *const stream_ptr)
 {
         enum m210_dev_err err;
         uint16_t *lost_nums;
         uint16_t lost_count = 0;
         uint16_t packet_count;
 
-        err = m210_dev_upload_begin(dev_ptr, &packet_count);
+        err = m210_dev_begin_download(dev_ptr, &packet_count);
         if (err) {
                 return err;
         }
@@ -520,7 +520,7 @@ m210_dev_download_notes(struct m210_dev const *const dev_ptr,
 
                 if (!lost_count) {
                         if (fwrite(packet.data, sizeof(packet.data), 1,
-                                   file_ptr) != 1) {
+                                   stream_ptr) != 1) {
                                 err = M210_DEV_ERR_SYS;
                                 goto err;
                         }
@@ -558,7 +558,7 @@ m210_dev_download_notes(struct m210_dev const *const dev_ptr,
                 if (packet.num == lost_nums[0]) {
                         lost_nums[0] = lost_nums[--lost_count];
                         if (fwrite(packet.data, sizeof(packet.data), 1,
-                                   file_ptr) != 1) {
+                                   stream_ptr) != 1) {
                                 err = M210_DEV_ERR_SYS;
                                 goto err;
                         }
