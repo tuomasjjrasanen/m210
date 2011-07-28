@@ -194,7 +194,7 @@ enum m210_dev_err m210_dev_download_notes(struct m210_dev const *dev_ptr,
 /*     uint16_t y; */
 /* } __attribute__((packed)); */
 
-/* enum m210_err m210_delete_notes(struct m210 const  *m210); */
+enum m210_dev_err m210_dev_delete_notes(struct m210_dev const *const dev_ptr);
 
 /* enum m210_err m210_set_mode(struct m210 const *m210, */
 /*                             enum m210_mode_indicator mode_indicator, */

@@ -487,11 +487,12 @@ err:
         return result;
 }
 
-/* enum m210_err m210_delete_notes(struct m210 const *const m210) */
-/* { */
-/*     uint8_t const rpt[] = {0xb0}; */
-/*     return m210_write_and_wait(m210, rpt, sizeof(rpt)); */
-/* } */
+enum m210_dev_err
+m210_dev_delete_notes(struct m210_dev const *const dev_ptr)
+{
+    uint8_t const bytes[] = {0xb0};
+    return m210_dev_write(dev_ptr, bytes, sizeof(bytes));
+}
 
 static enum m210_dev_err
 m210_dev_download(struct m210_dev const *const dev_ptr,
