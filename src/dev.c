@@ -46,13 +46,13 @@ static struct hidraw_devinfo const DEVINFO_M210 = {
     0x0101,
 };
 
-static enum m210_dev_err m210_dev_write(struct m210_dev const *const m210,
-                                        uint8_t const *const command,
-                                        size_t const command_size)
+static enum m210_dev_err m210_dev_write(struct m210_dev const *const dev_ptr,
+                                        uint8_t const *const bytes,
+                                        size_t const bytes_size)
 {
     enum m210_dev_err err;
     uint8_t *request;
-    size_t const request_size = command_size + 3;
+    size_t const request_size = bytes_size + 3;
 
     request = (uint8_t *) malloc(request_size);
     if (request == NULL) {
@@ -61,13 +61,13 @@ static enum m210_dev_err m210_dev_write(struct m210_dev const *const m210,
 
     request[0] = 0x00;     /* Without this, response is not sent. Why?? */
     request[1] = 0x02;     /* report id */
-    request[2] = command_size;
+    request[2] = bytes_size;
 
     /* Copy report paylod to the end of the request. */
-    memcpy(request + 3, command, command_size);
+    memcpy(request + 3, bytes, bytes_size);
 
     /* Send request to the interface 0. */
-    if (write(m210->fds[0], request, request_size) == -1) {
+    if (write(dev_ptr->fds[0], request, request_size) == -1) {
         err = M210_DEV_ERR_SYS;
         goto err;
     }
@@ -78,13 +78,13 @@ static enum m210_dev_err m210_dev_write(struct m210_dev const *const m210,
     return err;
 }
 
-static enum m210_dev_err m210_dev_read(struct m210_dev const *const m210,
+static enum m210_dev_err m210_dev_read(struct m210_dev const *const dev_ptr,
                                        int const interface,
                                        void *const response,
                                        size_t const response_size)
 {
     fd_set readfds;
-    int const fd = m210->fds[interface];
+    int const fd = dev_ptr->fds[interface];
     static struct timeval select_interval;
 
     memset(&select_interval, 0, sizeof(struct timeval));
@@ -110,7 +110,7 @@ static enum m210_dev_err m210_dev_read(struct m210_dev const *const m210,
 }
 
 static enum m210_dev_err m210_dev_find_hidraw_devnode(int const iface,
-                                                      char *const path,
+                                                      char *const path_ptr,
                                                       size_t const path_size)
 {
     int err = M210_DEV_ERR_SYS;
@@ -159,7 +159,7 @@ static enum m210_dev_err m210_dev_find_hidraw_devnode(int const iface,
             && product == DEVINFO_M210.product
             && iface == ifn) {
             err = M210_DEV_ERR_OK;
-            strncpy(path, devnode, path_size);
+            strncpy(path_ptr, devnode, path_size);
             udev_device_unref(dev);
             goto out;
         }
@@ -186,8 +186,8 @@ static enum m210_dev_err m210_dev_find_hidraw_devnode(int const iface,
 
 static enum m210_dev_err m210_dev_accept(struct m210_dev const *const dev_ptr)
 {
-    uint8_t const command[] = {0xb6};
-    return m210_dev_write(dev_ptr, command, sizeof(command));
+    uint8_t const bytes[] = {0xb6};
+    return m210_dev_write(dev_ptr, bytes, sizeof(bytes));
 }
 
 /* static enum m210_err m210_write_and_wait(struct m210 const *const m210, */
@@ -204,12 +204,12 @@ static enum m210_dev_err m210_dev_accept(struct m210_dev const *const dev_ptr)
 
 static enum m210_dev_err m210_dev_reject(struct m210_dev const *const dev_ptr)
 {
-    uint8_t const command[] = {0xb7};
-    return m210_dev_write(dev_ptr, command, sizeof(command));
+    uint8_t const bytes[] = {0xb7};
+    return m210_dev_write(dev_ptr, bytes, sizeof(bytes));
 }
 
 static enum m210_dev_err m210_dev_open_from_hidraw_paths(struct m210_dev *const dev_ptr,
-                                                         char *const *const hidraw_paths)
+                                                         char *const *const hidraw_path_ptrs)
 {
     int err = M210_DEV_ERR_SYS;
     int original_errno;
@@ -220,7 +220,7 @@ static enum m210_dev_err m210_dev_open_from_hidraw_paths(struct m210_dev *const 
 
     for (int i = 0; i < M210_DEV_USB_INTERFACE_COUNT; ++i) {
         int fd;
-        char const *const path = hidraw_paths[i];
+        char const *const path = hidraw_path_ptrs[i];
         struct hidraw_devinfo devinfo;
         memset(&devinfo, 0, sizeof(struct hidraw_devinfo));
 
@@ -284,13 +284,13 @@ static enum m210_dev_err m210_dev_open_from_hidraw_paths(struct m210_dev *const 
 static enum m210_dev_err m210_dev_upload_begin(struct m210_dev const *const dev_ptr,
                                                uint16_t *const packet_count_ptr)
 {
-    static uint8_t const command[] = {0xb5};
+    static uint8_t const bytes[] = {0xb5};
     uint8_t response[9];
     enum m210_dev_err err;
 
     memset(response, 0, sizeof(response));
 
-    err = m210_dev_write(dev_ptr, command, sizeof(command));
+    err = m210_dev_write(dev_ptr, bytes, sizeof(bytes));
     if (err) {
         return err;
     }
@@ -337,8 +337,8 @@ static enum m210_dev_err m210_dev_upload_begin(struct m210_dev const *const dev_
     return err;
 }
 
-static enum m210_dev_err m210_dev_read_note_data_packet(struct m210_dev const *const dev_ptr,
-                                                        struct m210_dev_packet *const packet_ptr)
+static enum m210_dev_err m210_dev_read_packet(struct m210_dev const *const dev_ptr,
+                                              struct m210_dev_packet *const packet_ptr)
 {
     enum m210_dev_err err;
 
@@ -390,10 +390,10 @@ enum m210_dev_err m210_dev_get_info(struct m210_dev const *const dev_ptr,
                                     struct m210_dev_info *const info_ptr)
 {
     enum m210_dev_err err;
-    static uint8_t const command[] = {0x95};
+    static uint8_t const bytes[] = {0x95};
     uint8_t response[M210_DEV_RESPONSE_SIZE];
   
-    err = m210_dev_write(dev_ptr, command, sizeof(command));
+    err = m210_dev_write(dev_ptr, bytes, sizeof(bytes));
     if (err) {
         return err;
     }
@@ -486,7 +486,7 @@ enum m210_dev_err m210_dev_download_notes(struct m210_dev const *const dev_ptr,
         struct m210_dev_packet packet;
         uint16_t const expected_packet_number = i + 1;
 
-        err = m210_dev_read_note_data_packet(dev_ptr, &packet);
+        err = m210_dev_read_packet(dev_ptr, &packet);
         if (err) {
             goto err;
         }
@@ -514,7 +514,7 @@ enum m210_dev_err m210_dev_download_notes(struct m210_dev const *const dev_ptr,
             goto err;
         }
 
-        err = m210_dev_read_note_data_packet(dev_ptr, &packet);
+        err = m210_dev_read_packet(dev_ptr, &packet);
         if (err) {
             if (err == M210_DEV_ERR_TIMEOUT) {
                 /*
@@ -563,18 +563,18 @@ char const *m210_dev_strerror(enum m210_dev_err const err)
 
 extern char *program_invocation_name;
 
-int m210_dev_perror(enum m210_dev_err const err, char const *const s)
+int m210_dev_perror(enum m210_dev_err const err, char const *const msg_str)
 {
     int const original_errno = errno;
     char const *const m210_errstr = m210_dev_strerror(err);
     /* +2 == a colon and a blank */
     size_t const progname_len = strlen(program_invocation_name) + 2;
     /* +2 == a colon and a blank */
-    size_t const s_len = s == NULL ? 0 : strlen(s) + 2;
+    size_t const msg_str_len = msg_str == NULL ? 0 : strlen(msg_str) + 2;
     size_t const m210_errstr_len = strlen(m210_errstr);
 
     /* +1 == a terminating null byte. */
-    size_t const total_len = progname_len + s_len + m210_errstr_len + 1;
+    size_t const total_len = progname_len + msg_str_len + m210_errstr_len + 1;
     char *errstr;
 
     errstr = (char *)calloc(total_len, sizeof(char));
@@ -582,12 +582,12 @@ int m210_dev_perror(enum m210_dev_err const err, char const *const s)
         return -1;
     }
 
-    if (s == NULL) {
+    if (msg_str == NULL) {
         snprintf(errstr, total_len, "%s: %s",
                  program_invocation_name, m210_errstr);
     } else {
         snprintf(errstr, total_len, "%s: %s: %s",
-                 program_invocation_name, s, m210_errstr);
+                 program_invocation_name, msg_str, m210_errstr);
     }
 
     if (err == M210_DEV_ERR_SYS) {

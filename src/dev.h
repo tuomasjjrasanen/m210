@@ -46,7 +46,7 @@ struct m210_dev_info {
 
 char const *m210_dev_strerror(enum m210_dev_err err);
 
-int m210_dev_perror(enum m210_dev_err err, char const *s);
+int m210_dev_perror(enum m210_dev_err err, char const *msg_str);
 
 enum m210_dev_err m210_dev_connect(struct m210_dev *dev_ptr);
 
@@ -70,8 +70,8 @@ enum m210_dev_err m210_dev_get_info(struct m210_dev const *dev_ptr,
     more than the maximum number of bytes in devices memory.
 
 */
-enum m210_dev_err m210_dev_get_notes_size(struct m210_dev const *dev,
-                                          uint32_t *size);
+enum m210_dev_err m210_dev_get_notes_size(struct m210_dev const *dev_ptr,
+                                          uint32_t *size_ptr);
 
 /*
   Read notes from a device and write them to a stream. Each note
@@ -94,7 +94,7 @@ enum m210_dev_err m210_dev_get_notes_size(struct m210_dev const *dev,
 
 */
 enum m210_dev_err m210_dev_download_notes(struct m210_dev const *dev_ptr,
-                                          FILE *file_ptr);
+                                          FILE *stream_ptr);
 
 /* enum m210_mode_indicator { */
 /*     M210_MODE_INDICATOR_TABLET=0x01, */
@@ -193,16 +193,6 @@ enum m210_dev_err m210_dev_download_notes(struct m210_dev const *dev_ptr,
 /*     uint16_t x; */
 /*     uint16_t y; */
 /* } __attribute__((packed)); */
-
-/* int m210_note_data_is_pen_up(struct m210_note_data const *data); */
-
-/* /\* */
-/*   Return the position of a next note in a stream in host byte */
-/*   order. The position is defined as a byte offset from the beginning */
-/*   of a stream. */
-
-/* *\/ */
-/* uint32_t m210_note_header_next_header_pos(struct m210_note_header const *header); */
 
 /* enum m210_err m210_delete_notes(struct m210 const  *m210); */
 
