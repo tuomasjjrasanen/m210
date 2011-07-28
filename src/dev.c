@@ -493,7 +493,7 @@ err:
 /*     return m210_write_and_wait(m210, rpt, sizeof(rpt)); */
 /* } */
 
-enum m210_dev_err
+static enum m210_dev_err
 m210_dev_download(struct m210_dev const *const dev_ptr,
                   uint16_t packet_count,
                   uint16_t *const lost_nums,
