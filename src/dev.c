@@ -35,6 +35,18 @@
 
 #define M210_DEV_PACKET_DATA_LEN 62
 
+inline static uint8_t
+mode_to_byte(enum m210_dev_mode const mode)
+{
+        return mode + 1;
+}
+
+inline static enum m210_dev_mode
+byte_to_mode(uint8_t const byte)
+{
+        return byte - 1;
+}
+
 struct m210_dev_packet {
         uint16_t num;
         uint8_t data[M210_DEV_PACKET_DATA_LEN];
@@ -372,7 +384,7 @@ m210_dev_read_packet(struct m210_dev const *const dev_ptr,
         enum m210_dev_err result;
 
         result = m210_dev_read(dev_ptr, 0, packet_ptr,
-                            sizeof(struct m210_dev_packet));
+                               sizeof(struct m210_dev_packet));
         if (result) {
                 goto err;
         }
@@ -461,7 +473,7 @@ m210_dev_get_info(struct m210_dev const *const dev_ptr,
         info_ptr->firmware_version = be16toh(firmware_version);
         info_ptr->analog_version = be16toh(analog_version);
         info_ptr->pad_version = be16toh(pad_version);
-        info_ptr->mode = response[10];
+        info_ptr->mode = byte_to_mode(response[10]);
 
         result = M210_DEV_ERR_OK;
 err:
@@ -490,8 +502,8 @@ err:
 enum m210_dev_err
 m210_dev_delete_notes(struct m210_dev const *const dev_ptr)
 {
-    uint8_t const bytes[] = {0xb0};
-    return m210_dev_write(dev_ptr, bytes, sizeof(bytes));
+        uint8_t const bytes[] = {0xb0};
+        return m210_dev_write(dev_ptr, bytes, sizeof(bytes));
 }
 
 static enum m210_dev_err
@@ -663,15 +675,15 @@ err:
         return result;
 }
 
-/* enum m210_err m210_set_mode(struct m210 const *const m210, */
-/*                             enum m210_mode_indicator const mode_indicator, */
-/*                             enum m210_mode const mode) */
-/* { */
-/*     uint8_t rpt[] = {0x80, 0xb5, 0x00, 0x00}; */
-/*     rpt[2] = mode_indicator; */
-/*     rpt[3] = mode; */
-/*     return m210_write_and_wait(m210, rpt, sizeof(rpt)); */
-/* } */
+enum m210_dev_err
+m210_dev_set_mode(struct m210_dev const *const dev_ptr,
+                  enum m210_dev_mode const mode)
+{        
+        static uint8_t const mode_indicators[] = {0x02, 0x01};
+        uint8_t const bytes[] = {0x80, 0xb5, mode_indicators[mode],
+                                 mode_to_byte(mode)};
+        return m210_dev_write(dev_ptr, bytes, sizeof(bytes));
+}
 
 /* enum m210_err m210_config_tablet_mode(struct m210 const *const m210, */
 /*                                       enum m210_area_size const area_size, */
