@@ -607,7 +607,7 @@ m210_dev_strerror(enum m210_dev_err const err)
 
 extern char *program_invocation_name;
 
-int
+enum m210_dev_err
 m210_dev_perror(enum m210_dev_err const err, char const *const msg_str)
 {
         int const original_errno = errno;
@@ -625,7 +625,7 @@ m210_dev_perror(enum m210_dev_err const err, char const *const msg_str)
 
         errstr = (char *)calloc(total_len, sizeof(char));
         if (errstr == NULL) {
-                return -1;
+                return M210_DEV_ERR_SYS;
         }
 
         if (msg_str == NULL) {
@@ -644,7 +644,7 @@ m210_dev_perror(enum m210_dev_err const err, char const *const msg_str)
         }
 
         free(errstr);
-        return 0;
+        return M210_DEV_ERR_OK;
 }
 
 /* enum m210_err m210_set_mode(struct m210 const *const m210, */

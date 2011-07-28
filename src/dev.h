@@ -46,7 +46,7 @@ struct m210_dev_info {
 
 char const *m210_dev_strerror(enum m210_dev_err err);
 
-int m210_dev_perror(enum m210_dev_err err, char const *msg_str);
+enum m210_dev_err m210_dev_perror(enum m210_dev_err err, char const *msg_str);
 
 enum m210_dev_err m210_dev_connect(struct m210_dev *dev_ptr);
 
