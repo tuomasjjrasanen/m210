@@ -22,16 +22,16 @@
 #include <stdint.h>
 
 struct m210_note_header {
-    uint8_t next_header_position[3];
-    uint8_t state;
-    uint8_t note_number;
-    uint8_t last_note_number;
-    uint8_t reserved[8];
+        uint8_t next_header_position[3];
+        uint8_t state;
+        uint8_t note_number;
+        uint8_t last_note_number;
+        uint8_t reserved[8];
 } __attribute__((packed));
 
 struct m210_note_data {
-    uint8_t x[2];
-    uint8_t y[2];
+        uint8_t x[2];
+        uint8_t y[2];
 } __attribute__((packed));
 
 #endif /* NOTE_H */

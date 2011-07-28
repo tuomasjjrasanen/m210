@@ -25,23 +25,23 @@
 #define M210_DEV_USB_INTERFACE_COUNT 2
 
 enum m210_dev_err {
-    M210_DEV_ERR_OK,
-    M210_DEV_ERR_SYS,
-    M210_DEV_ERR_BADDEV,
-    M210_DEV_ERR_NODEV,
-    M210_DEV_ERR_BADMSG,
-    M210_DEV_ERR_TIMEOUT
+        M210_DEV_ERR_OK,
+        M210_DEV_ERR_SYS,
+        M210_DEV_ERR_BADDEV,
+        M210_DEV_ERR_NODEV,
+        M210_DEV_ERR_BADMSG,
+        M210_DEV_ERR_TIMEOUT
 };
 
 struct m210_dev {
-    int fds[M210_DEV_USB_INTERFACE_COUNT];
+        int fds[M210_DEV_USB_INTERFACE_COUNT];
 };
 
 struct m210_dev_info {
-    uint16_t firmware_version;
-    uint16_t analog_version;
-    uint16_t pad_version;
-    uint8_t mode;
+        uint16_t firmware_version;
+        uint16_t analog_version;
+        uint16_t pad_version;
+        uint8_t mode;
 };
 
 char const *m210_dev_strerror(enum m210_dev_err err);
@@ -60,14 +60,14 @@ enum m210_dev_err m210_dev_get_info(struct m210_dev const *dev_ptr,
   is 4063232:
 
   * Packets are numbered with 16 bit integers.
-    => Maximum number of packets: 2**16 = 65536
+  => Maximum number of packets: 2**16 = 65536
 
   * Each packet is 64 bytes wide, last 62 bytes represent bytes in
-    memory. The first two bytes represent the packet sequence number.
-    => Maximum number of bytes in memory: 2**16 * 62 = 4063232
+  memory. The first two bytes represent the packet sequence number.
+  => Maximum number of bytes in memory: 2**16 * 62 = 4063232
 
   * A 32bit integer can address 2**32 different bytes which is way
-    more than the maximum number of bytes in devices memory.
+  more than the maximum number of bytes in devices memory.
 
 */
 enum m210_dev_err m210_dev_get_notes_size(struct m210_dev const *dev_ptr,
@@ -81,11 +81,11 @@ enum m210_dev_err m210_dev_get_notes_size(struct m210_dev const *dev_ptr,
 
   Note stream:
 
-             note1           ...            noteN
+  note1           ...            noteN
   +------------------------+     +------------------------+
   |  14  |  4  |     |  4  |     |  14  |  4  |     |  4  |
   +------------------------+     +------------------------+
-   header data1  ...  dataN       header data1  ...  dataN
+  header data1  ...  dataN       header data1  ...  dataN
 
   Structs m210_note_header and m210_note_data are defined to represent
   header and data block respectively. Data block can represent a
