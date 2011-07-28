@@ -44,15 +44,29 @@ struct m210_info {
     uint8_t mode;
 };
 
+struct m210_note_header {
+    uint8_t next_header_position[3];
+    uint8_t state;
+    uint8_t note_number;
+    uint8_t last_note_number;
+    uint8_t reserved[8];
+} __attribute__((packed));
+
+struct m210_note_data {
+    uint8_t x[2];
+    uint8_t y[2];
+} __attribute__((packed));
+
 char const *m210_strerror(enum m210_err err);
 
 int m210_perror(enum m210_err err, char const *s);
 
-enum m210_err m210_open(struct m210 *m210);
+enum m210_err m210_open(struct m210 *m210_ptr);
 
-enum m210_err m210_close(struct m210 *m210);
+enum m210_err m210_close(struct m210 *m210_ptr);
 
-enum m210_err m210_get_info(struct m210 const *m210, struct m210_info *info);
+enum m210_err m210_get_info(struct m210 const *m210_ptr,
+                            struct m210_info *info_ptr);
 
 /*
   Return the total size of notes in bytes. Theoretical maximum size
@@ -70,6 +84,28 @@ enum m210_err m210_get_info(struct m210 const *m210, struct m210_info *info);
 
 */
 enum m210_err m210_get_notes_size(struct m210 const *m210, uint32_t *size);
+
+/*
+  Read notes from a device and write them to a stream. Each note
+  consist of a 14 byte wide header block and an arbitrary number of 4
+  byte wide data blocks. Stream consist of an arbitrary number of
+  notes.
+
+  Note stream:
+
+             note1           ...            noteN
+  +------------------------+     +------------------------+
+  |  14  |  4  |     |  4  |     |  14  |  4  |     |  4  |
+  +------------------------+     +------------------------+
+   header data1  ...  dataN       header data1  ...  dataN
+
+  Structs m210_note_header and m210_note_data are defined to represent
+  header and data block respectively. Data block can represent a
+  position or a pen up -event. m210_note_data_is_pen_up() can be used
+  to determine if a data block represents the latter.
+
+*/
+enum m210_err m210_download_notes(struct m210 const *m210_ptr, FILE *file_ptr);
 
 /* enum m210_mode_indicator { */
 /*     M210_MODE_INDICATOR_TABLET=0x01, */
@@ -169,20 +205,6 @@ enum m210_err m210_get_notes_size(struct m210 const *m210, uint32_t *size);
 /*     uint16_t y; */
 /* } __attribute__((packed)); */
 
-/* struct m210_note_data { */
-/*     uint16_t x; */
-/*     uint16_t y; */
-/* } __attribute__((packed)); */
-
-/* struct m210_note_header { */
-/*     uint8_t next_header_pos[3]; */
-/*     uint8_t state; */
-/*     uint8_t note_number; */
-/*     uint8_t max_note_number; */
-/*     uint8_t reserved[8]; */
-/* } __attribute__((packed)); */
-
-
 /* int m210_note_data_is_pen_up(struct m210_note_data const *data); */
 
 /* /\* */
@@ -194,28 +216,6 @@ enum m210_err m210_get_notes_size(struct m210 const *m210, uint32_t *size);
 /* uint32_t m210_note_header_next_header_pos(struct m210_note_header const *header); */
 
 /* enum m210_err m210_delete_notes(struct m210 const  *m210); */
-
-/* /\* */
-/*   Read notes from a device and write them to a stream. Each note */
-/*   consist of a 14 byte wide header block and an arbitrary number of 4 */
-/*   byte wide data blocks. Stream consist of an arbitrary number of */
-/*   notes. */
-
-/*   Note stream: */
-
-/*              note1           ...            noteN */
-/*   +------------------------+     +------------------------+ */
-/*   |  14  |  4  |     |  4  |     |  14  |  4  |     |  4  | */
-/*   +------------------------+     +------------------------+ */
-/*    header data1  ...  dataN       header data1  ...  dataN */
-
-/*   Structs m210_note_header and m210_note_data are defined to represent */
-/*   header and data block respectively. Data block can represent a */
-/*   position or a pen up -event. m210_note_data_is_pen_up() can be used */
-/*   to determine if a data block represents the latter. */
-
-/* *\/ */
-/* enum m210_err m210_fwrite_note_data(struct m210 const *m210, FILE *stream); */
 
 /* enum m210_err m210_set_mode(struct m210 const *m210, */
 /*                             enum m210_mode_indicator mode_indicator, */
