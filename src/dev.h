@@ -16,57 +16,44 @@
   along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#ifndef M210_H
-#define M210_H
+#ifndef DEV_H
+#define DEV_H
 
 #include <stdio.h>
 #include <stdint.h>
 
-#define M210_USB_INTERFACE_COUNT 2
+#define M210_DEV_USB_INTERFACE_COUNT 2
 
-enum m210_err {
-    M210_ERR_OK,
-    M210_ERR_SYS,
-    M210_ERR_BADDEV,
-    M210_ERR_NODEV,
-    M210_ERR_BADMSG,
-    M210_ERR_TIMEOUT
+enum m210_dev_err {
+    M210_DEV_ERR_OK,
+    M210_DEV_ERR_SYS,
+    M210_DEV_ERR_BADDEV,
+    M210_DEV_ERR_NODEV,
+    M210_DEV_ERR_BADMSG,
+    M210_DEV_ERR_TIMEOUT
 };
 
-struct m210 {
-    int fds[M210_USB_INTERFACE_COUNT];
+struct m210_dev {
+    int fds[M210_DEV_USB_INTERFACE_COUNT];
 };
 
-struct m210_info {
+struct m210_dev_info {
     uint16_t firmware_version;
     uint16_t analog_version;
     uint16_t pad_version;
     uint8_t mode;
 };
 
-struct m210_note_header {
-    uint8_t next_header_position[3];
-    uint8_t state;
-    uint8_t note_number;
-    uint8_t last_note_number;
-    uint8_t reserved[8];
-} __attribute__((packed));
+char const *m210_dev_strerror(enum m210_dev_err err);
 
-struct m210_note_data {
-    uint8_t x[2];
-    uint8_t y[2];
-} __attribute__((packed));
+int m210_dev_perror(enum m210_dev_err err, char const *s);
 
-char const *m210_strerror(enum m210_err err);
+enum m210_dev_err m210_dev_connect(struct m210_dev *dev_ptr);
 
-int m210_perror(enum m210_err err, char const *s);
+enum m210_dev_err m210_dev_disconnect(struct m210_dev *dev_ptr);
 
-enum m210_err m210_open(struct m210 *m210_ptr);
-
-enum m210_err m210_close(struct m210 *m210_ptr);
-
-enum m210_err m210_get_info(struct m210 const *m210_ptr,
-                            struct m210_info *info_ptr);
+enum m210_dev_err m210_dev_get_info(struct m210_dev const *dev_ptr,
+                                    struct m210_dev_info *info_ptr);
 
 /*
   Return the total size of notes in bytes. Theoretical maximum size
@@ -83,7 +70,8 @@ enum m210_err m210_get_info(struct m210 const *m210_ptr,
     more than the maximum number of bytes in devices memory.
 
 */
-enum m210_err m210_get_notes_size(struct m210 const *m210, uint32_t *size);
+enum m210_dev_err m210_dev_get_notes_size(struct m210_dev const *dev,
+                                          uint32_t *size);
 
 /*
   Read notes from a device and write them to a stream. Each note
@@ -105,7 +93,8 @@ enum m210_err m210_get_notes_size(struct m210 const *m210, uint32_t *size);
   to determine if a data block represents the latter.
 
 */
-enum m210_err m210_download_notes(struct m210 const *m210_ptr, FILE *file_ptr);
+enum m210_dev_err m210_dev_download_notes(struct m210_dev const *dev_ptr,
+                                          FILE *file_ptr);
 
 /* enum m210_mode_indicator { */
 /*     M210_MODE_INDICATOR_TABLET=0x01, */
@@ -229,4 +218,4 @@ enum m210_err m210_download_notes(struct m210 const *m210_ptr, FILE *file_ptr);
 
 /* enum m210_err m210_fwrite_mouse_data(struct m210 const *m210, FILE *stream); */
 
-#endif /* M210_H */
+#endif /* DEV_H */
