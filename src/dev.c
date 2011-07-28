@@ -197,7 +197,7 @@ out:
 /* } */
 
 static enum m210_dev_err
-m210_dev_accept(struct m210_dev const *const dev_ptr)
+m210_dev_accept_download(struct m210_dev const *const dev_ptr)
 {
         uint8_t const bytes[] = {0xb6};
         return m210_dev_write(dev_ptr, bytes, sizeof(bytes));
@@ -216,7 +216,7 @@ m210_dev_accept(struct m210_dev const *const dev_ptr)
 /* } */
 
 static enum m210_dev_err
-m210_dev_reject(struct m210_dev const *const dev_ptr)
+m210_dev_reject_download(struct m210_dev const *const dev_ptr)
 {
         uint8_t const bytes[] = {0xb7};
         return m210_dev_write(dev_ptr, bytes, sizeof(bytes));
@@ -349,7 +349,7 @@ m210_dev_begin_download(struct m210_dev const *const dev_ptr,
 
 err:
         /* Try to leave the device as it was before the error. */
-        m210_dev_reject(dev_ptr);
+        m210_dev_reject_download(dev_ptr);
         return err;
 }
 
@@ -465,7 +465,7 @@ m210_dev_get_notes_size(struct m210_dev const *const dev_ptr,
 
         *size_ptr = packet_count * M210_DEV_PACKET_DATA_LEN;
 
-        return m210_dev_reject(dev_ptr);
+        return m210_dev_reject_download(dev_ptr);
 }
 
 /* enum m210_err m210_delete_notes(struct m210 const *const m210) */
@@ -475,35 +475,13 @@ m210_dev_get_notes_size(struct m210_dev const *const dev_ptr,
 /* } */
 
 enum m210_dev_err
-m210_dev_download_notes(struct m210_dev const *const dev_ptr,
-                        FILE *const stream_ptr)
+m210_dev_download(struct m210_dev const *const dev_ptr,
+                  uint16_t packet_count,
+                  uint16_t *const lost_nums,
+                  FILE *const stream_ptr)
 {
         enum m210_dev_err err;
-        uint16_t *lost_nums;
         uint16_t lost_count = 0;
-        uint16_t packet_count;
-
-        err = m210_dev_begin_download(dev_ptr, &packet_count);
-        if (err) {
-                return err;
-        }
-
-        if (packet_count == 0) {
-                return m210_dev_reject(dev_ptr);
-        }
-
-        lost_nums = (uint16_t *)calloc(packet_count, sizeof(uint16_t));
-        if (lost_nums == NULL) {
-                int const original_errno = errno;
-                m210_dev_reject(dev_ptr);
-                errno = original_errno;
-                return M210_DEV_ERR_SYS;
-        }
-
-        err = m210_dev_accept(dev_ptr);
-        if (err) {
-                goto err;
-        }
 
         for (int i = 0; i < packet_count; ++i) {
                 struct m210_dev_packet packet;
@@ -511,7 +489,7 @@ m210_dev_download_notes(struct m210_dev const *const dev_ptr,
 
                 err = m210_dev_read_packet(dev_ptr, &packet);
                 if (err) {
-                        goto err;
+                        return err;
                 }
 
                 if (packet.num != expected_packet_number) {
@@ -522,7 +500,7 @@ m210_dev_download_notes(struct m210_dev const *const dev_ptr,
                         if (fwrite(packet.data, sizeof(packet.data), 1,
                                    stream_ptr) != 1) {
                                 err = M210_DEV_ERR_SYS;
-                                goto err;
+                                return err;
                         }
                 }
         }
@@ -536,7 +514,7 @@ m210_dev_download_notes(struct m210_dev const *const dev_ptr,
                 err = m210_dev_write(dev_ptr, resend_request,
                                      sizeof(resend_request));
                 if (err) {
-                        goto err;
+                        return err;
                 }
 
                 err = m210_dev_read_packet(dev_ptr, &packet);
@@ -551,7 +529,7 @@ m210_dev_download_notes(struct m210_dev const *const dev_ptr,
                                 */
                                 continue;
                         } else {
-                                goto err;
+                                return err;
                         }
                 }
 
@@ -560,16 +538,53 @@ m210_dev_download_notes(struct m210_dev const *const dev_ptr,
                         if (fwrite(packet.data, sizeof(packet.data), 1,
                                    stream_ptr) != 1) {
                                 err = M210_DEV_ERR_SYS;
-                                goto err;
+                                return err;
                         }
                 }
+        }
+        return M210_DEV_ERR_OK;
+}
+
+enum m210_dev_err
+m210_dev_download_notes(struct m210_dev const *const dev_ptr,
+                        FILE *const stream_ptr)
+{
+        enum m210_dev_err err;
+        uint16_t *lost_nums;
+        uint16_t packet_count;
+
+        err = m210_dev_begin_download(dev_ptr, &packet_count);
+        if (err) {
+                return err;
+        }
+
+        if (packet_count == 0) {
+                return m210_dev_reject_download(dev_ptr);
+        }
+
+        lost_nums = (uint16_t *)calloc(packet_count, sizeof(uint16_t));
+        if (lost_nums == NULL) {
+                int const original_errno = errno;
+                m210_dev_reject_download(dev_ptr);
+                errno = original_errno;
+                return M210_DEV_ERR_SYS;
+        }
+
+        err = m210_dev_accept_download(dev_ptr);
+        if (err) {
+                goto err;
+        }
+
+        err = m210_dev_download(dev_ptr, packet_count, lost_nums, stream_ptr);
+        if (err) {
+                goto err;
         }
 
         /*
           All packets have been received, time to thank the device for
           cooperation.
         */
-        err = m210_dev_accept(dev_ptr);
+        err = m210_dev_accept_download(dev_ptr);
 
 err:
         free(lost_nums);
