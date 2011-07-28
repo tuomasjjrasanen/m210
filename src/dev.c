@@ -51,13 +51,14 @@ m210_dev_write(struct m210_dev const *const dev_ptr,
                uint8_t const *const bytes,
                size_t const bytes_size)
 {
-        enum m210_dev_err err;
+        enum m210_dev_err result;
         uint8_t *request;
         size_t const request_size = bytes_size + 3;
 
         request = (uint8_t *) malloc(request_size);
         if (request == NULL) {
-                return M210_DEV_ERR_SYS;
+                result = M210_DEV_ERR_SYS;
+                goto err;
         }
 
         request[0] = 0x00;     /* Without this, response is not sent. Why?? */
@@ -69,14 +70,14 @@ m210_dev_write(struct m210_dev const *const dev_ptr,
 
         /* Send request to the interface 0. */
         if (write(dev_ptr->fds[0], request, request_size) == -1) {
-                err = M210_DEV_ERR_SYS;
+                result = M210_DEV_ERR_SYS;
                 goto err;
         }
 
-        err = M210_DEV_ERR_OK;
+        result = M210_DEV_ERR_OK;
 err:
         free(request);
-        return err;
+        return result;
 }
 
 static enum m210_dev_err
@@ -85,6 +86,7 @@ m210_dev_read(struct m210_dev const *const dev_ptr,
               void *const response,
               size_t const response_size)
 {
+        enum m210_dev_err result;
         fd_set readfds;
         int const fd = dev_ptr->fds[interface];
         static struct timeval select_interval;
@@ -97,18 +99,23 @@ m210_dev_read(struct m210_dev const *const dev_ptr,
 
         switch (select(fd + 1, &readfds, NULL, NULL, &select_interval)) {
         case 0:
-                return M210_DEV_ERR_TIMEOUT;
+                result = M210_DEV_ERR_TIMEOUT;
+                goto err;
         case -1:
-                return M210_DEV_ERR_SYS;
+                result = M210_DEV_ERR_SYS;
+                goto err;
         default:
                 break;
         }
 
         if (read(fd, response, response_size) == -1) {
-                return M210_DEV_ERR_SYS;
+                result = M210_DEV_ERR_SYS;
+                goto err;
         }
 
-        return M210_DEV_ERR_OK;
+        result = M210_DEV_ERR_OK;
+err:
+        return result;
 }
 
 static enum m210_dev_err
@@ -116,27 +123,27 @@ m210_dev_find_hidraw_devnode(int const iface,
                              char *const path_ptr,
                              size_t const path_size)
 {
-        int err = M210_DEV_ERR_SYS;
+        enum m210_dev_err result;
         struct udev_list_entry *list_entry = NULL;
         struct udev_enumerate *enumerate = NULL;
         struct udev *udev = NULL;
 
         udev = udev_new();
         if (udev == NULL) {
-                goto out;
+                goto err;
         }
 
         enumerate = udev_enumerate_new(udev);
         if (enumerate == NULL) {
-                goto out;
+                goto err;
         }
 
         if (udev_enumerate_add_match_subsystem(enumerate, "hidraw")) {
-                goto out;
+                goto err;
         }
 
         if (udev_enumerate_scan_devices(enumerate)) {
-                goto out;
+                goto err;
         }
 
         list_entry = udev_enumerate_get_list_entry(enumerate);
@@ -170,16 +177,16 @@ m210_dev_find_hidraw_devnode(int const iface,
                 if (vendor == DEVINFO_M210.vendor
                     && product == DEVINFO_M210.product
                     && iface == ifn) {
-                        err = M210_DEV_ERR_OK;
+                        result = M210_DEV_ERR_OK;
                         strncpy(path_ptr, devnode, path_size);
                         udev_device_unref(device);
-                        goto out;
+                        goto err;
                 }
                 list_entry = udev_list_entry_get_next(list_entry);
                 udev_device_unref(device);
         }
-        err = M210_DEV_ERR_NODEV;
-out:
+        result = M210_DEV_ERR_NODEV;
+err:
         if (enumerate) {
                 udev_enumerate_unref(enumerate);
         }
@@ -188,7 +195,7 @@ out:
                 udev_unref(udev);
         }
 
-        return err;
+        return result;
 }
 
 /* static enum m210_err m210_wait_ready(struct m210 const *const m210) */
@@ -226,7 +233,7 @@ static enum m210_dev_err
 m210_dev_connect_hidraw(struct m210_dev *const dev_ptr,
                         char *const *const hidraw_path_ptrs)
 {
-        int err = M210_DEV_ERR_SYS;
+        enum m210_dev_err result;
         int original_errno;
 
         for (int i = 0; i < M210_DEV_USB_INTERFACE_COUNT; ++i) {
@@ -240,29 +247,32 @@ m210_dev_connect_hidraw(struct m210_dev *const dev_ptr,
                 memset(&devinfo, 0, sizeof(struct hidraw_devinfo));
 
                 if ((fd = open(path, O_RDWR)) == -1) {
+                        result = M210_DEV_ERR_SYS;
                         goto err;
                 }
 
                 if (ioctl(fd, HIDIOCGRAWINFO, &devinfo)) {
+                        result = M210_DEV_ERR_SYS;
                         goto err;
                 }
 
                 if (memcmp(&devinfo, &DEVINFO_M210,
                            sizeof(struct hidraw_devinfo)) != 0) {
-                        err = M210_DEV_ERR_BADDEV;
+                        result = M210_DEV_ERR_BADDEV;
                         goto err;
                 }
 
                 dev_ptr->fds[i] = fd;
         }
 
-        return M210_DEV_ERR_OK;
-
+        result = M210_DEV_ERR_OK;
+        goto out;
 err:
         original_errno = errno;
         m210_dev_disconnect(dev_ptr);
         errno = original_errno;
-        return err;
+out:
+        return result;
 }
 
 /*
@@ -302,25 +312,26 @@ m210_dev_begin_download(struct m210_dev const *const dev_ptr,
 {
         static uint8_t const bytes[] = {0xb5};
         uint8_t response[9];
-        enum m210_dev_err err;
+        enum m210_dev_err result;
 
         memset(response, 0, sizeof(response));
 
-        err = m210_dev_write(dev_ptr, bytes, sizeof(bytes));
-        if (err) {
-                return err;
+        result = m210_dev_write(dev_ptr, bytes, sizeof(bytes));
+        if (result) {
+                goto err;
         }
 
         while (1) {
-                err = m210_dev_read(dev_ptr, 0, response, sizeof(response));
-                switch (err) {
+                result = m210_dev_read(dev_ptr, 0, response, sizeof(response));
+                switch (result) {
                 case M210_DEV_ERR_TIMEOUT:
                         /*
                           It seems, that a M210 device with zero notes
                           does not send any response.
                         */
                         *packet_count_ptr = 0;
-                        return M210_DEV_ERR_OK;
+                        result = M210_DEV_ERR_OK;
+                        goto out;
                 case M210_DEV_ERR_OK:
                         break;
                 default:
@@ -345,85 +356,89 @@ m210_dev_begin_download(struct m210_dev const *const dev_ptr,
         memcpy(&packet_count, response + 5, 2);
         *packet_count_ptr = be16toh(packet_count);
 
-        return M210_DEV_ERR_OK;
-
+        result = M210_DEV_ERR_OK;
+        goto out;
 err:
         /* Try to leave the device as it was before the error. */
         m210_dev_reject_download(dev_ptr);
-        return err;
+out:
+        return result;
 }
 
 static enum m210_dev_err
 m210_dev_read_packet(struct m210_dev const *const dev_ptr,
                      struct m210_dev_packet *const packet_ptr)
 {
-        enum m210_dev_err err;
+        enum m210_dev_err result;
 
-        err = m210_dev_read(dev_ptr, 0, packet_ptr,
+        result = m210_dev_read(dev_ptr, 0, packet_ptr,
                             sizeof(struct m210_dev_packet));
-        if (err) {
-                return err;
+        if (result) {
+                goto err;
         }
 
         packet_ptr->num = be16toh(packet_ptr->num);
-
-        return M210_DEV_ERR_OK;
+        result = M210_DEV_ERR_OK;
+err:
+        return result;
 }
 
 enum m210_dev_err
 m210_dev_connect(struct m210_dev *const dev_ptr)
 {
+        enum m210_dev_err result;
         char iface0_path[PATH_MAX];
         char iface1_path[PATH_MAX];
         char *paths[M210_DEV_USB_INTERFACE_COUNT] = {iface0_path, iface1_path};
         for (int i = 0; i < M210_DEV_USB_INTERFACE_COUNT; ++i) {
-                enum m210_dev_err err = M210_DEV_ERR_SYS;
-        
                 memset(paths[i], 0, PATH_MAX);
         
-                err = m210_dev_find_hidraw_devnode(i, paths[i], PATH_MAX);
-                switch (err) {
-                case M210_DEV_ERR_OK:
-                        break;
-                default:
-                        return err;
+                result = m210_dev_find_hidraw_devnode(i, paths[i], PATH_MAX);
+                if (result) {
+                        goto err;
                 }
         }
-        return m210_dev_connect_hidraw(dev_ptr, paths);
+        result = m210_dev_connect_hidraw(dev_ptr, paths);
+err:
+        return result;
 }
 
 enum m210_dev_err
 m210_dev_disconnect(struct m210_dev *const dev_ptr)
 {
+        enum m210_dev_err result;
         for (int i = 0; i < M210_DEV_USB_INTERFACE_COUNT; ++i) {
                 if (dev_ptr->fds[i] != -1) {
                         if (close(dev_ptr->fds[i]) == -1) {
-                                return M210_DEV_ERR_SYS;
+                                result = M210_DEV_ERR_SYS;
+                                goto err;
                         }
                         dev_ptr->fds[i] = -1;
                 }
         }
-        return M210_DEV_ERR_OK;
+        result = M210_DEV_ERR_OK;
+err:
+        return result;
 }
 
 enum m210_dev_err
 m210_dev_get_info(struct m210_dev const *const dev_ptr,
                   struct m210_dev_info *const info_ptr)
 {
-        enum m210_dev_err err;
+        enum m210_dev_err result;
         static uint8_t const bytes[] = {0x95};
         uint8_t response[M210_DEV_RESPONSE_SIZE];
   
-        err = m210_dev_write(dev_ptr, bytes, sizeof(bytes));
-        if (err) {
-                return err;
+        result = m210_dev_write(dev_ptr, bytes, sizeof(bytes));
+        if (result) {
+                goto err;
         }
     
         while (1) {
                 memset(response, 0, sizeof(response));
-                err = m210_dev_read(dev_ptr, 0, response, sizeof(response));
-                if (err) {
-                        return err;
+                result = m210_dev_read(dev_ptr, 0, response, sizeof(response));
+                if (result) {
+                        goto err;
                 }
         
                 /* Check that the response is correct. */
@@ -448,24 +463,28 @@ m210_dev_get_info(struct m210_dev const *const dev_ptr,
         info_ptr->pad_version = be16toh(pad_version);
         info_ptr->mode = response[10];
 
-        return M210_DEV_ERR_OK;
+        result = M210_DEV_ERR_OK;
+err:
+        return result;
 }
 
 enum m210_dev_err
 m210_dev_get_notes_size(struct m210_dev const *const dev_ptr,
                         uint32_t *const size_ptr)
 {
-        enum m210_dev_err err;
+        enum m210_dev_err result;
         uint16_t packet_count;
 
-        err = m210_dev_begin_download(dev_ptr, &packet_count);
-        if (err) {
-                return err;
+        result = m210_dev_begin_download(dev_ptr, &packet_count);
+        if (result) {
+                goto err;
         }
 
         *size_ptr = packet_count * M210_DEV_PACKET_DATA_LEN;
 
-        return m210_dev_reject_download(dev_ptr);
+        result = m210_dev_reject_download(dev_ptr);
+err:
+        return result;
 }
 
 /* enum m210_err m210_delete_notes(struct m210 const *const m210) */
@@ -480,16 +499,16 @@ m210_dev_download(struct m210_dev const *const dev_ptr,
                   uint16_t *const lost_nums,
                   FILE *const stream_ptr)
 {
-        enum m210_dev_err err;
+        enum m210_dev_err result;
         uint16_t lost_count = 0;
 
         for (int i = 0; i < packet_count; ++i) {
                 struct m210_dev_packet packet;
                 uint16_t const expected_packet_number = i + 1;
 
-                err = m210_dev_read_packet(dev_ptr, &packet);
-                if (err) {
-                        return err;
+                result = m210_dev_read_packet(dev_ptr, &packet);
+                if (result) {
+                        goto err;
                 }
 
                 if (packet.num != expected_packet_number) {
@@ -499,8 +518,8 @@ m210_dev_download(struct m210_dev const *const dev_ptr,
                 if (!lost_count) {
                         if (fwrite(packet.data, sizeof(packet.data), 1,
                                    stream_ptr) != 1) {
-                                err = M210_DEV_ERR_SYS;
-                                return err;
+                                result = M210_DEV_ERR_SYS;
+                                goto err;
                         }
                 }
         }
@@ -511,55 +530,47 @@ m210_dev_download(struct m210_dev const *const dev_ptr,
                 uint8_t resend_request[] = {0xb7, 0x00};
                 resend_request[1] = htobe16(lost_nums[0]);
 
-                err = m210_dev_write(dev_ptr, resend_request,
-                                     sizeof(resend_request));
-                if (err) {
-                        return err;
+                result = m210_dev_write(dev_ptr, resend_request,
+                                        sizeof(resend_request));
+                if (result) {
+                        goto err;
                 }
 
-                err = m210_dev_read_packet(dev_ptr, &packet);
-                if (err) {
-                        if (err == M210_DEV_ERR_TIMEOUT) {
-                                /*
-                                  Request resend as many times as
-                                  needed to get the expected
-                                  packet. The M210 device has made a
-                                  promise and we blindly believe that
-                                  it's going to keep it.
-                                */
-                                continue;
-                        } else {
-                                return err;
-                        }
+                result = m210_dev_read_packet(dev_ptr, &packet);
+                if (result) {
+                        goto err;
                 }
 
                 if (packet.num == lost_nums[0]) {
                         lost_nums[0] = lost_nums[--lost_count];
                         if (fwrite(packet.data, sizeof(packet.data), 1,
                                    stream_ptr) != 1) {
-                                err = M210_DEV_ERR_SYS;
-                                return err;
+                                result = M210_DEV_ERR_SYS;
+                                goto err;
                         }
                 }
         }
-        return M210_DEV_ERR_OK;
+        result = M210_DEV_ERR_OK;
+err:
+        return result;
 }
 
 enum m210_dev_err
 m210_dev_download_notes(struct m210_dev const *const dev_ptr,
                         FILE *const stream_ptr)
 {
-        enum m210_dev_err err;
-        uint16_t *lost_nums;
+        enum m210_dev_err result;
+        uint16_t *lost_nums = NULL;
         uint16_t packet_count;
 
-        err = m210_dev_begin_download(dev_ptr, &packet_count);
-        if (err) {
-                return err;
+        result = m210_dev_begin_download(dev_ptr, &packet_count);
+        if (result) {
+                goto err;
         }
 
         if (packet_count == 0) {
-                return m210_dev_reject_download(dev_ptr);
+                result = m210_dev_reject_download(dev_ptr);
+                goto err;
         }
 
         lost_nums = (uint16_t *)calloc(packet_count, sizeof(uint16_t));
@@ -567,16 +578,17 @@ m210_dev_download_notes(struct m210_dev const *const dev_ptr,
                 int const original_errno = errno;
                 m210_dev_reject_download(dev_ptr);
                 errno = original_errno;
-                return M210_DEV_ERR_SYS;
-        }
-
-        err = m210_dev_accept_download(dev_ptr);
-        if (err) {
+                result = M210_DEV_ERR_SYS;
                 goto err;
         }
 
-        err = m210_dev_download(dev_ptr, packet_count, lost_nums, stream_ptr);
-        if (err) {
+        result = m210_dev_accept_download(dev_ptr);
+        if (result) {
+                goto err;
+        }
+
+        result = m210_dev_download(dev_ptr, packet_count, lost_nums, stream_ptr);
+        if (result) {
                 goto err;
         }
 
@@ -584,11 +596,10 @@ m210_dev_download_notes(struct m210_dev const *const dev_ptr,
           All packets have been received, time to thank the device for
           cooperation.
         */
-        err = m210_dev_accept_download(dev_ptr);
-
+        result = m210_dev_accept_download(dev_ptr);
 err:
         free(lost_nums);
-        return err;
+        return result;
 }
 
 char const *
@@ -610,6 +621,7 @@ extern char *program_invocation_name;
 enum m210_dev_err
 m210_dev_perror(enum m210_dev_err const err, char const *const msg_str)
 {
+        enum m210_dev_err result;
         int const original_errno = errno;
         char const *const m210_errstr = m210_dev_strerror(err);
         /* +2 == a colon and a blank */
@@ -625,7 +637,8 @@ m210_dev_perror(enum m210_dev_err const err, char const *const msg_str)
 
         errstr = (char *)calloc(total_len, sizeof(char));
         if (errstr == NULL) {
-                return M210_DEV_ERR_SYS;
+                result = M210_DEV_ERR_SYS;
+                goto err;
         }
 
         if (msg_str == NULL) {
@@ -643,8 +656,10 @@ m210_dev_perror(enum m210_dev_err const err, char const *const msg_str)
                 fprintf(stderr, "%s\n", errstr);
         }
 
+        result = M210_DEV_ERR_OK;
+err:
         free(errstr);
-        return M210_DEV_ERR_OK;
+        return result;
 }
 
 /* enum m210_err m210_set_mode(struct m210 const *const m210, */
