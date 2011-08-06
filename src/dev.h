@@ -26,6 +26,8 @@
 
 #define M210_DEV_USB_INTERFACE_COUNT 2
 
+#define M210_DEV_MAX_NOTES_SIZE 4063232
+
 enum m210_dev_mode {
         M210_DEV_MODE_MOUSE,
         M210_DEV_MODE_TABLET
@@ -49,46 +51,16 @@ enum m210_err m210_dev_disconnect(struct m210_dev *dev_ptr);
 enum m210_err m210_dev_get_info(struct m210_dev const *dev_ptr,
                                 struct m210_dev_info *info_ptr);
 
-/*
-  Return the total size of notes in bytes. Theoretical maximum size
-  is 4063232:
-
-  * Packets are numbered with 16 bit integers.
-  => Maximum number of packets: 2**16 = 65536
-
-  * Each packet is 64 bytes wide, last 62 bytes represent bytes in
-  memory. The first two bytes represent the packet sequence number.
-  => Maximum number of bytes in memory: 2**16 * 62 = 4063232
-
-  * A 32bit integer can address 2**32 different bytes which is way
-  more than the maximum number of bytes in devices memory.
-
-*/
 enum m210_err m210_dev_get_notes_size(struct m210_dev const *dev_ptr,
                                       uint32_t *size_ptr);
 
-/*
-  Read notes from a device and write them to a stream. Each note
-  consist of a 14 byte wide header block and an arbitrary number of 4
-  byte wide data blocks. Stream consist of an arbitrary number of
-  notes.
-
-  Note stream:
-
-  note1           ...            noteN
-  +------------------------+     +------------------------+
-  |  14  |  4  |     |  4  |     |  14  |  4  |     |  4  |
-  +------------------------+     +------------------------+
-  header data1  ...  dataN       header data1  ...  dataN
-
-  Structs m210_note_header and m210_note_data are defined to represent
-  header and data block respectively. Data block can represent a
-  position or a pen up -event. m210_note_data_is_pen_up() can be used
-  to determine if a data block represents the latter.
-
-*/
 enum m210_err m210_dev_download_notes(struct m210_dev const *dev_ptr,
                                       FILE *stream_ptr);
+
+enum m210_err m210_dev_delete_notes(struct m210_dev const *const dev_ptr);
+
+enum m210_err m210_dev_set_mode(struct m210_dev const *const dev_ptr,
+                                enum m210_dev_mode const mode);
 
 /* enum m210_mode_indicator { */
 /*     M210_MODE_INDICATOR_TABLET=0x01, */
@@ -164,11 +136,6 @@ enum m210_err m210_dev_download_notes(struct m210_dev const *dev_ptr,
 /*     uint16_t x; */
 /*     uint16_t y; */
 /* } __attribute__((packed)); */
-
-enum m210_err m210_dev_delete_notes(struct m210_dev const *const dev_ptr);
-
-enum m210_err m210_dev_set_mode(struct m210_dev const *const dev_ptr,
-                                enum m210_dev_mode const mode);
 
 /* enum m210_err m210_config_tablet_mode(struct m210 const *m210, */
 /*                                       enum m210_area_size area_size, */

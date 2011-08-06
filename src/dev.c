@@ -480,6 +480,21 @@ err:
         return result;
 }
 
+/*
+  Return the total size of notes in bytes. Theoretical maximum size
+  is 4063232:
+
+  * Packets are numbered with 16 bit integers.
+  => Maximum number of packets: 2**16 = 65536
+
+  * Each packet is 64 bytes wide, last 62 bytes represent bytes in
+  memory. The first two bytes represent the packet sequence number.
+  => Maximum number of bytes in memory: 2**16 * 62 = 4063232
+
+  * A 32bit integer can address 2**32 different bytes which is way
+  more than the maximum number of bytes in devices memory.
+
+*/
 enum m210_err
 m210_dev_get_notes_size(struct m210_dev const *const dev_ptr,
                         uint32_t *const size_ptr)
