@@ -61,11 +61,11 @@ m210_note_destroy(struct m210_note **note_ptr_ptr)
         *note_ptr_ptr = NULL;
 }
 
-static enum m210_note_err
+static enum m210_err
 m210_note_create_paths(struct m210_note *note_ptr, FILE *stream_ptr,
                        uint32_t note_end_pos)
 {
-        enum m210_note_err err = M210_NOTE_ERR_OK;
+        enum m210_err err = M210_ERR_OK;
         struct m210_note_coord *coords = NULL;
 
         struct m210_note_path *paths = NULL;
@@ -79,7 +79,7 @@ m210_note_create_paths(struct m210_note *note_ptr, FILE *stream_ptr,
 
         cur_pos = ftell(stream_ptr);
         if (cur_pos == -1) {
-                err = M210_NOTE_ERR_SYS;
+                err = M210_ERR_SYS;
                 goto exit;
         }
         
@@ -88,7 +88,7 @@ m210_note_create_paths(struct m210_note *note_ptr, FILE *stream_ptr,
                       / sizeof(struct m210_rawnote_body));
         bodies = malloc(body_count * sizeof(struct m210_rawnote_body));
         if (!bodies) {
-                err = M210_NOTE_ERR_SYS;
+                err = M210_ERR_SYS;
                 goto exit;
         }
         coords = (struct m210_note_coord *) bodies;
@@ -98,12 +98,12 @@ m210_note_create_paths(struct m210_note *note_ptr, FILE *stream_ptr,
                 if (fread(bodies + i, sizeof(struct m210_rawnote_body), 1,
                           stream_ptr) != 1) {
                         if (ferror(stream_ptr)) {
-                                err = M210_NOTE_ERR_BAD_BODY;
+                                err = M210_ERR_BAD_NOTE_BODY;
                                 goto exit;
                         }
                         /* EOF should never happen at this point,
                          * otherwise the stream is flawed somehow. */
-                        err = M210_NOTE_ERR_EOF;
+                        err = M210_ERR_NOTE_EOF;
                         goto exit;
                 }
 
@@ -116,7 +116,7 @@ m210_note_create_paths(struct m210_note *note_ptr, FILE *stream_ptr,
                                             ((path_count + 1)
                                              * sizeof(struct m210_note_path)));
                         if (!new_paths) {
-                                err = M210_NOTE_ERR_SYS;
+                                err = M210_ERR_SYS;
                                 goto exit;
                         }
                         paths = new_paths;
@@ -142,25 +142,25 @@ exit:
         }
         note_ptr->paths = paths;
         note_ptr->path_count = path_count;
-        return M210_NOTE_ERR_OK;                
+        return M210_ERR_OK;                
 }
 
-enum m210_note_err
+enum m210_err
 m210_note_create_next(struct m210_note **note_ptr_ptr, FILE *stream_ptr)
 {
-        enum m210_note_err err = M210_NOTE_ERR_OK;
+        enum m210_err err = M210_ERR_OK;
         struct m210_note *note_ptr = NULL;
         struct m210_rawnote_head head;
 
         if (fread(&head,
                   sizeof(struct m210_rawnote_head), 1, stream_ptr) != 1) {
                 if (ferror(stream_ptr)) {
-                        err = M210_NOTE_ERR_BAD_HEAD;
+                        err = M210_ERR_BAD_NOTE_HEAD;
                         goto exit;
                 }
                 /* EOF should never happen at this point, otherwise
                  * the stream is flawed somehow. */
-                err = M210_NOTE_ERR_EOF;
+                err = M210_ERR_NOTE_EOF;
                 goto exit;
         }
 
@@ -178,13 +178,13 @@ m210_note_create_next(struct m210_note **note_ptr_ptr, FILE *stream_ptr)
             && head.state != M210_RAWNOTE_STATE_UNFINISHED
             && head.state != M210_RAWNOTE_STATE_FINISHED_BY_SOFTWARE
             && head.state != M210_RAWNOTE_STATE_FINISHED_BY_USER) {
-                err = M210_NOTE_ERR_BAD_HEAD;
+                err = M210_ERR_BAD_NOTE_HEAD;
                 goto exit;
         }
 
         note_ptr = calloc(1, sizeof(struct m210_note));
         if (!note_ptr) {
-                err = M210_NOTE_ERR_SYS;
+                err = M210_ERR_SYS;
                 goto exit;
         }
         note_ptr->number = head.number;
@@ -198,5 +198,5 @@ exit:
                 return err;
         }
         *note_ptr_ptr = note_ptr;
-        return M210_NOTE_ERR_OK;
+        return M210_ERR_OK;
 }

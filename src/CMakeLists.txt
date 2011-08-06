@@ -1,5 +1,5 @@
-SET(m210_SOURCES dev.c note.c)
-SET(m210_HEADERS dev.h note.h rawnote.h)
+SET(m210_SOURCES dev.c note.c err.c)
+SET(m210_HEADERS dev.h note.h rawnote.h err.h)
 SET(m210_SOVERSION 1)
 
 ADD_LIBRARY(m210 SHARED ${m210_SOURCES})

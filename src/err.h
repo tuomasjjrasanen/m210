@@ -16,33 +16,23 @@
   along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#ifndef NOTE_H
-#define NOTE_H
+#ifndef ERR_H
+#define ERR_H
 
-#include <stdio.h>
-#include <stdint.h>
-
-#include "err.h"
-
-struct m210_note_coord {
-        uint16_t x;
-        uint16_t y;
-} __attribute__((packed));
-
-struct m210_note_path {
-        struct m210_note_coord *coords;
-        size_t coord_count;
+enum m210_err {
+        M210_ERR_OK,
+        M210_ERR_SYS,
+        M210_ERR_BAD_DEV,
+        M210_ERR_NO_DEV,
+        M210_ERR_BAD_DEV_MSG,
+        M210_ERR_DEV_TIMEOUT,
+        M210_ERR_BAD_NOTE_HEAD,
+        M210_ERR_BAD_NOTE_BODY,
+        M210_ERR_NOTE_EOF
 };
 
-struct m210_note {
-        uint8_t number;
-        struct m210_note_path *paths;
-        size_t path_count;
-};
+char const *m210_err_strerror(enum m210_err err);
 
-enum m210_err m210_note_create_next(struct m210_note **note_ptr_ptr,
-                                    FILE *stream_ptr);
+enum m210_err m210_err_perror(enum m210_err err, char const *msg_str);
 
-void m210_note_destroy(struct m210_note **note_ptr_ptr);
-
-#endif /* NOTE_H */
+#endif /* ERR_H */

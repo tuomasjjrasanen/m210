@@ -22,16 +22,9 @@
 #include <stdio.h>
 #include <stdint.h>
 
-#define M210_DEV_USB_INTERFACE_COUNT 2
+#include "err.h"
 
-enum m210_dev_err {
-        M210_DEV_ERR_OK,
-        M210_DEV_ERR_SYS,
-        M210_DEV_ERR_BADDEV,
-        M210_DEV_ERR_NODEV,
-        M210_DEV_ERR_BADMSG,
-        M210_DEV_ERR_TIMEOUT
-};
+#define M210_DEV_USB_INTERFACE_COUNT 2
 
 enum m210_dev_mode {
         M210_DEV_MODE_MOUSE,
@@ -49,16 +42,12 @@ struct m210_dev_info {
         enum m210_dev_mode mode;
 };
 
-char const *m210_dev_strerror(enum m210_dev_err err);
+enum m210_err m210_dev_connect(struct m210_dev *dev_ptr);
 
-enum m210_dev_err m210_dev_perror(enum m210_dev_err err, char const *msg_str);
+enum m210_err m210_dev_disconnect(struct m210_dev *dev_ptr);
 
-enum m210_dev_err m210_dev_connect(struct m210_dev *dev_ptr);
-
-enum m210_dev_err m210_dev_disconnect(struct m210_dev *dev_ptr);
-
-enum m210_dev_err m210_dev_get_info(struct m210_dev const *dev_ptr,
-                                    struct m210_dev_info *info_ptr);
+enum m210_err m210_dev_get_info(struct m210_dev const *dev_ptr,
+                                struct m210_dev_info *info_ptr);
 
 /*
   Return the total size of notes in bytes. Theoretical maximum size
@@ -75,8 +64,8 @@ enum m210_dev_err m210_dev_get_info(struct m210_dev const *dev_ptr,
   more than the maximum number of bytes in devices memory.
 
 */
-enum m210_dev_err m210_dev_get_notes_size(struct m210_dev const *dev_ptr,
-                                          uint32_t *size_ptr);
+enum m210_err m210_dev_get_notes_size(struct m210_dev const *dev_ptr,
+                                      uint32_t *size_ptr);
 
 /*
   Read notes from a device and write them to a stream. Each note
@@ -98,8 +87,8 @@ enum m210_dev_err m210_dev_get_notes_size(struct m210_dev const *dev_ptr,
   to determine if a data block represents the latter.
 
 */
-enum m210_dev_err m210_dev_download_notes(struct m210_dev const *dev_ptr,
-                                          FILE *stream_ptr);
+enum m210_err m210_dev_download_notes(struct m210_dev const *dev_ptr,
+                                      FILE *stream_ptr);
 
 /* enum m210_mode_indicator { */
 /*     M210_MODE_INDICATOR_TABLET=0x01, */
@@ -176,10 +165,10 @@ enum m210_dev_err m210_dev_download_notes(struct m210_dev const *dev_ptr,
 /*     uint16_t y; */
 /* } __attribute__((packed)); */
 
-enum m210_dev_err m210_dev_delete_notes(struct m210_dev const *const dev_ptr);
+enum m210_err m210_dev_delete_notes(struct m210_dev const *const dev_ptr);
 
-enum m210_dev_err m210_dev_set_mode(struct m210_dev const *const dev_ptr,
-                                    enum m210_dev_mode const mode);
+enum m210_err m210_dev_set_mode(struct m210_dev const *const dev_ptr,
+                                enum m210_dev_mode const mode);
 
 /* enum m210_err m210_config_tablet_mode(struct m210 const *m210, */
 /*                                       enum m210_area_size area_size, */
