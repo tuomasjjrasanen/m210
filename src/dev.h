@@ -106,24 +106,6 @@ enum m210_dev_err m210_dev_download_notes(struct m210_dev const *dev_ptr,
 /*     M210_MODE_INDICATOR_MOUSE=0x02 */
 /* }; */
 
-/* enum m210_note_state { */
-/*     M210_NOTE_STATE_EMPTY = 0x9f,               /\* Note does not */
-/*                                                  * contain any */
-/*                                                  * data. *\/ */
-
-/*     M210_NOTE_STATE_UNFINISHED = 0x5f,          /\* Note contains data */
-/*                                                  * but is not closed */
-/*                                                  * yet. *\/ */
-
-/*     M210_NOTE_STATE_FINISHED_BY_USER = 0x3f,    /\* Note contains data */
-/*                                                  * and is closed by a */
-/*                                                  * user. *\/ */
-
-/*     M210_NOTE_STATE_FINISHED_BY_SOFTWARE = 0x1f /\* Note contains data */
-/*                                                  * and is closed */
-/*                                                  * programmatically. *\/ */
-/* }; */
-
 /* enum m210_mouse_battery { */
 /*     M210_MOUSE_BATTERY_UNKNOWN = 0x40, */
 /*     M210_MOUSE_BATTERY_LOW = 0x41, */

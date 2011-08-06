@@ -19,19 +19,36 @@
 #ifndef NOTE_H
 #define NOTE_H
 
+#include <stdio.h>
 #include <stdint.h>
 
-struct m210_note_header {
-        uint8_t next_header_position[3];
-        uint8_t state;
-        uint8_t note_number;
-        uint8_t last_note_number;
-        uint8_t reserved[8];
+enum m210_note_err {
+        M210_NOTE_ERR_OK,
+        M210_NOTE_ERR_SYS,
+        M210_NOTE_ERR_BAD_HEAD,
+        M210_NOTE_ERR_BAD_BODY,
+        M210_NOTE_ERR_EOF
+};
+
+struct m210_note_coord {
+        uint16_t x;
+        uint16_t y;
 } __attribute__((packed));
 
-struct m210_note_data {
-        uint8_t x[2];
-        uint8_t y[2];
-} __attribute__((packed));
+struct m210_note_path {
+        struct m210_note_coord *coords;
+        size_t coord_count;
+};
+
+struct m210_note {
+        uint8_t number;
+        struct m210_note_path *paths;
+        size_t path_count;
+};
+
+enum m210_note_err m210_note_create_next(struct m210_note **note_ptr_ptr,
+                                         FILE *stream_ptr);
+
+void m210_note_destroy(struct m210_note **note_ptr_ptr);
 
 #endif /* NOTE_H */
