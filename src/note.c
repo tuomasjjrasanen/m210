@@ -43,14 +43,106 @@ m210_note_destroy(struct m210_note **note_ptr_ptr)
 {
         struct m210_note *const note_ptr = *note_ptr_ptr;
         if (note_ptr) {
-                if (note_ptr->paths) {
-                        free(note_ptr->paths[0].coords);
-                        free(note_ptr->paths);
-                        note_ptr->paths = NULL;
+                struct m210_note_path *const paths = note_ptr->paths;
+                if (paths) {
+                        /* If a note has paths, then the first
+                         * path always stores all coordinates. */
+                        free(paths->coords);
+                        for (size_t i = 0; i < note_ptr->path_count; ++i) {
+                                (paths + i)->coords = NULL;
+                                (paths + i)->coord_count = 0;
+                        }
                 }
-                free(note_ptr);
-                *note_ptr_ptr = NULL;
+                free(note_ptr->paths);
+                note_ptr->paths = NULL;
+                note_ptr->path_count = 0;
         }
+        free(note_ptr);
+        *note_ptr_ptr = NULL;
+}
+
+static enum m210_note_err
+m210_note_create_paths(struct m210_note *note_ptr, FILE *stream_ptr,
+                       uint32_t note_end_pos)
+{
+        enum m210_note_err err = M210_NOTE_ERR_OK;
+        struct m210_note_coord *coords = NULL;
+
+        struct m210_note_path *paths = NULL;
+        size_t path_count = 0;
+        size_t path_len = 0;
+
+        struct m210_rawnote_body *bodies = NULL;
+        size_t body_count = 0;
+
+        long cur_pos;
+
+        cur_pos = ftell(stream_ptr);
+        if (cur_pos == -1) {
+                err = M210_NOTE_ERR_SYS;
+                goto exit;
+        }
+        
+        /* The data section of the note consists of N bodies. */
+        body_count = ((note_end_pos - cur_pos)
+                      / sizeof(struct m210_rawnote_body));
+        bodies = malloc(body_count * sizeof(struct m210_rawnote_body));
+        if (!bodies) {
+                err = M210_NOTE_ERR_SYS;
+                goto exit;
+        }
+        coords = (struct m210_note_coord *) bodies;
+
+        for (size_t i = 0; i < body_count; ++i) {
+
+                if (fread(bodies + i, sizeof(struct m210_rawnote_body), 1,
+                          stream_ptr) != 1) {
+                        if (ferror(stream_ptr)) {
+                                err = M210_NOTE_ERR_BAD_BODY;
+                                goto exit;
+                        }
+                        /* EOF should never happen at this point,
+                         * otherwise the stream is flawed somehow. */
+                        err = M210_NOTE_ERR_EOF;
+                        goto exit;
+                }
+
+                /* Path ends when the pen is raised. */
+                if (m210_rawnote_body_is_penup(bodies + i)) {
+                        struct m210_note_path *new_paths;
+
+                        /* Let's extend the array of paths by one. */
+                        new_paths = realloc(paths,
+                                            ((path_count + 1)
+                                             * sizeof(struct m210_note_path)));
+                        if (!new_paths) {
+                                err = M210_NOTE_ERR_SYS;
+                                goto exit;
+                        }
+                        paths = new_paths;
+                        (paths + path_count)->coord_count = path_len;
+                        (paths + path_count)->coords = coords + i - path_len;
+                        path_len = 0;
+                        path_count += 1;
+
+                        continue;
+                } else { /* Body represents a coordinate change. */
+                        (coords + i)->x = le16toh((coords + i)->x);
+                        (coords + i)->y = le16toh((coords + i)->y);
+                        path_len += 1;
+                }
+
+        }
+exit:
+        if (err) {
+                free(paths);
+                paths = NULL;
+                path_count = 0;
+                return err;
+        }
+        note_ptr->paths = paths;
+        note_ptr->path_count = path_count;
+        return M210_NOTE_ERR_OK;                
 }
 
 enum m210_note_err
@@ -59,24 +151,17 @@ m210_note_create_next(struct m210_note **note_ptr_ptr, FILE *stream_ptr)
         enum m210_note_err err = M210_NOTE_ERR_OK;
         struct m210_note *note_ptr = NULL;
         struct m210_rawnote_head head;
-        uint32_t note_end_pos;
-        size_t path_len = 0;
-        long cur_pos;
-
-        struct m210_note_coord *coords = NULL;
-        struct m210_rawnote_body *bodies = NULL;
-        size_t body_count = 0;
 
         if (fread(&head,
                   sizeof(struct m210_rawnote_head), 1, stream_ptr) != 1) {
                 if (ferror(stream_ptr)) {
                         err = M210_NOTE_ERR_BAD_HEAD;
-                        goto err;
+                        goto exit;
                 }
                 /* EOF should never happen at this point, otherwise
                  * the stream is flawed somehow. */
                 err = M210_NOTE_ERR_EOF;
-                goto err;                
+                goto exit;
         }
 
         if (!memcmp(&head, &M210_RAWNOTE_HEAD_LAST,
@@ -86,7 +171,7 @@ m210_note_create_next(struct m210_note **note_ptr_ptr, FILE *stream_ptr)
                  * might be few zero-bytes of data just for padding
                  * purposes: notes are always downloaded in 62 byte
                  * long packets.) */
-                goto out;
+                goto exit;
         }
 
         if (head.state != M210_RAWNOTE_STATE_EMPTY
@@ -94,81 +179,24 @@ m210_note_create_next(struct m210_note **note_ptr_ptr, FILE *stream_ptr)
             && head.state != M210_RAWNOTE_STATE_FINISHED_BY_SOFTWARE
             && head.state != M210_RAWNOTE_STATE_FINISHED_BY_USER) {
                 err = M210_NOTE_ERR_BAD_HEAD;
-                goto err;
+                goto exit;
         }
 
         note_ptr = calloc(1, sizeof(struct m210_note));
         if (!note_ptr) {
                 err = M210_NOTE_ERR_SYS;
-                goto err;
+                goto exit;
         }
         note_ptr->number = head.number;
 
-        cur_pos = ftell(stream_ptr);
-        if (cur_pos == -1) {
-                err = M210_NOTE_ERR_SYS;
-                goto err;
+        err = m210_note_create_paths(note_ptr, stream_ptr,
+                                     le24toh32(head.next_pos));
+exit:
+        if (err) {
+                free(note_ptr);
+                note_ptr = NULL;
+                return err;
         }
-        
-        /* Note ends at the beginning of next node head. */
-        note_end_pos = le24toh32(head.next_pos);
-
-        /* The data section of the note consists of N bodies. */
-        body_count = ((note_end_pos - cur_pos) / sizeof(struct m210_rawnote_body));
-        bodies = malloc(body_count * sizeof(struct m210_rawnote_body));
-        if (!bodies) {
-                err = M210_NOTE_ERR_SYS;
-                goto err;
-        }
-        coords = (struct m210_note_coord *) bodies;
-
-        /* So the rest of our journey is all about collecting bodies
-         * from the stream. */
-        for (size_t i = 0; i < body_count; ++i) {
-                struct m210_rawnote_body *const body_ptr = bodies + i;
-
-                if (fread(body_ptr, sizeof(struct m210_rawnote_body), 1,
-                          stream_ptr) != 1) {
-                        if (ferror(stream_ptr)) {
-                                err = M210_NOTE_ERR_BAD_BODY;
-                                goto err;
-                        }
-                        /* EOF should never happen at this point,
-                         * otherwise the stream is flawed somehow. */
-                        err = M210_NOTE_ERR_EOF;
-                        goto err;
-                }
-
-                /* Path ends when the pen is raised. */
-                if (m210_rawnote_body_is_penup(body_ptr)) {
-                        struct m210_note_path *cur_path;
-                        struct m210_note_path *new_paths;
-
-                        /* Let's extend the array of paths by one. */
-                        new_paths = realloc(note_ptr->paths,
-                                            ((note_ptr->path_count + 1)
-                                             * sizeof(struct m210_note_path)));
-                        if (!new_paths) {
-                                err = M210_NOTE_ERR_SYS;
-                                goto err;
-                        }
-                        cur_path = new_paths + note_ptr->path_count;
-                        cur_path->coord_count = path_len;
-                        cur_path->coords = coords + i - path_len;
-                        path_len = 0;
-                        note_ptr->paths = new_paths;
-                        note_ptr->path_count += 1;
-
-                        continue;
-                } 
-                path_len += 1;
-
-        }
-        goto out;
-err:
-        free(bodies);
-        m210_note_destroy(&note_ptr);
-out:
         *note_ptr_ptr = note_ptr;
-        return err;
+        return M210_NOTE_ERR_OK;
 }
