@@ -89,6 +89,14 @@ m210_note_create_next(struct m210_note **note_ptr_ptr, FILE *stream_ptr)
                 goto out;
         }
 
+        if (head.state != M210_RAWNOTE_STATE_EMPTY
+            && head.state != M210_RAWNOTE_STATE_UNFINISHED
+            && head.state != M210_RAWNOTE_STATE_FINISHED_BY_SOFTWARE
+            && head.state != M210_RAWNOTE_STATE_FINISHED_BY_USER) {
+                err = M210_NOTE_ERR_BAD_HEAD;
+                goto err;
+        }
+
         note_ptr = calloc(1, sizeof(struct m210_note));
         if (!note_ptr) {
                 err = M210_NOTE_ERR_SYS;
