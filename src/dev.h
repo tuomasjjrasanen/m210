@@ -26,7 +26,7 @@
 
 #define M210_DEV_USB_INTERFACE_COUNT 2
 
-#define M210_DEV_MAX_NOTES_SIZE 4063232
+#define M210_DEV_MAX_MEMORY 4063232
 
 enum m210_dev_mode {
         M210_DEV_MODE_MOUSE,
@@ -42,6 +42,7 @@ struct m210_dev_info {
         uint16_t analog_version;
         uint16_t pad_version;
         enum m210_dev_mode mode;
+        uint32_t used_memory;
 };
 
 enum m210_err m210_dev_connect(struct m210_dev *dev_ptr);
@@ -50,9 +51,6 @@ enum m210_err m210_dev_disconnect(struct m210_dev *dev_ptr);
 
 enum m210_err m210_dev_get_info(struct m210_dev const *dev_ptr,
                                 struct m210_dev_info *info_ptr);
-
-enum m210_err m210_dev_get_notes_size(struct m210_dev const *dev_ptr,
-                                      uint32_t *size_ptr);
 
 enum m210_err m210_dev_download_notes(struct m210_dev const *dev_ptr,
                                       FILE *stream_ptr);

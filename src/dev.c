@@ -433,6 +433,40 @@ err:
         return result;
 }
 
+/*
+  Return the total size of notes in bytes. Theoretical maximum size
+  is 4063232:
+
+  * Packets are numbered with 16 bit integers.
+  => Maximum number of packets: 2**16 = 65536
+
+  * Each packet is 64 bytes wide, last 62 bytes represent bytes in
+  memory. The first two bytes represent the packet sequence number.
+  => Maximum number of bytes in memory: 2**16 * 62 = 4063232
+
+  * A 32bit integer can address 2**32 different bytes which is way
+  more than the maximum number of bytes in devices memory.
+
+*/
+static enum m210_err
+m210_dev_get_notes_size(struct m210_dev const *const dev_ptr,
+                        uint32_t *const size_ptr)
+{
+        enum m210_err result;
+        uint16_t packet_count;
+
+        result = m210_dev_begin_download(dev_ptr, &packet_count);
+        if (result) {
+                goto err;
+        }
+
+        *size_ptr = packet_count * M210_DEV_PACKET_DATA_LEN;
+
+        result = m210_dev_reject_download(dev_ptr);
+err:
+        return result;
+}
+
 enum m210_err
 m210_dev_get_info(struct m210_dev const *const dev_ptr,
                   struct m210_dev_info *const info_ptr)
@@ -440,6 +474,7 @@ m210_dev_get_info(struct m210_dev const *const dev_ptr,
         enum m210_err result;
         static uint8_t const bytes[] = {0x95};
         uint8_t response[M210_DEV_RESPONSE_SIZE];
+        uint32_t used_memory = 0;
   
         result = m210_dev_write(dev_ptr, bytes, sizeof(bytes));
         if (result) {
@@ -462,6 +497,11 @@ m210_dev_get_info(struct m210_dev const *const dev_ptr,
                 }
         }
 
+        result = m210_dev_get_notes_size(dev_ptr, &used_memory);
+        if (result) {
+                goto err;
+        }
+
         uint16_t firmware_version;
         uint16_t analog_version;
         uint16_t pad_version;
@@ -474,42 +514,9 @@ m210_dev_get_info(struct m210_dev const *const dev_ptr,
         info_ptr->analog_version = be16toh(analog_version);
         info_ptr->pad_version = be16toh(pad_version);
         info_ptr->mode = byte_to_mode(response[10]);
-
+        info_ptr->used_memory = used_memory;
+        
         result = M210_ERR_OK;
-err:
-        return result;
-}
-
-/*
-  Return the total size of notes in bytes. Theoretical maximum size
-  is 4063232:
-
-  * Packets are numbered with 16 bit integers.
-  => Maximum number of packets: 2**16 = 65536
-
-  * Each packet is 64 bytes wide, last 62 bytes represent bytes in
-  memory. The first two bytes represent the packet sequence number.
-  => Maximum number of bytes in memory: 2**16 * 62 = 4063232
-
-  * A 32bit integer can address 2**32 different bytes which is way
-  more than the maximum number of bytes in devices memory.
-
-*/
-enum m210_err
-m210_dev_get_notes_size(struct m210_dev const *const dev_ptr,
-                        uint32_t *const size_ptr)
-{
-        enum m210_err result;
-        uint16_t packet_count;
-
-        result = m210_dev_begin_download(dev_ptr, &packet_count);
-        if (result) {
-                goto err;
-        }
-
-        *size_ptr = packet_count * M210_DEV_PACKET_DATA_LEN;
-
-        result = m210_dev_reject_download(dev_ptr);
 err:
         return result;
 }
