@@ -35,6 +35,12 @@
 
 #define M210_DEV_PACKET_DATA_LEN 62
 
+#define M210_DEV_USB_INTERFACE_COUNT 2
+
+struct m210_dev {
+        int fds[M210_DEV_USB_INTERFACE_COUNT];
+};
+
 inline static uint8_t
 mode_to_byte(enum m210_dev_mode const mode)
 {
@@ -245,46 +251,39 @@ static enum m210_err
 m210_dev_connect_hidraw(struct m210_dev *const dev_ptr,
                         char *const *const hidraw_path_ptrs)
 {
-        enum m210_err result;
-        int original_errno;
+        enum m210_err err = M210_ERR_OK;
+        int fds[M210_DEV_USB_INTERFACE_COUNT];
 
-        for (int i = 0; i < M210_DEV_USB_INTERFACE_COUNT; ++i) {
-                dev_ptr->fds[i] = -1;
-        }
-
-        for (int i = 0; i < M210_DEV_USB_INTERFACE_COUNT; ++i) {
+        for (size_t i = 0; i < M210_DEV_USB_INTERFACE_COUNT; ++i) {
                 int fd;
-                char const *const path = hidraw_path_ptrs[i];
                 struct hidraw_devinfo devinfo;
-                memset(&devinfo, 0, sizeof(struct hidraw_devinfo));
 
-                if ((fd = open(path, O_RDWR)) == -1) {
-                        result = M210_ERR_SYS;
-                        goto err;
+                fd = open(hidraw_path_ptrs[i], O_RDWR);
+                if (fd == -1) {
+                        err = M210_ERR_SYS;
+                        goto exit;
                 }
 
                 if (ioctl(fd, HIDIOCGRAWINFO, &devinfo)) {
-                        result = M210_ERR_SYS;
-                        goto err;
+                        err = M210_ERR_SYS;
+                        goto exit;
                 }
 
                 if (memcmp(&devinfo, &DEVINFO_M210,
                            sizeof(struct hidraw_devinfo)) != 0) {
-                        result = M210_ERR_BAD_DEV;
-                        goto err;
+                        err = M210_ERR_BAD_DEV;
+                        goto exit;
                 }
 
-                dev_ptr->fds[i] = fd;
+                fds[i] = fd;
         }
 
-        result = M210_ERR_OK;
-        goto out;
-err:
-        original_errno = errno;
-        m210_dev_disconnect(dev_ptr);
-        errno = original_errno;
-out:
-        return result;
+exit:
+        if (err) {
+                return err;
+        }
+        memcpy(dev_ptr->fds, fds, sizeof(fds));
+        return M210_ERR_OK;
 }
 
 /*
@@ -396,41 +395,57 @@ err:
 }
 
 enum m210_err
-m210_dev_connect(struct m210_dev *const dev_ptr)
+m210_dev_connect(struct m210_dev **const dev_ptr_ptr)
 {
-        enum m210_err result;
+        struct m210_dev *dev_ptr = NULL;
+        enum m210_err err = M210_ERR_OK;
         char iface0_path[PATH_MAX];
         char iface1_path[PATH_MAX];
         char *paths[M210_DEV_USB_INTERFACE_COUNT] = {iface0_path, iface1_path};
-        for (int i = 0; i < M210_DEV_USB_INTERFACE_COUNT; ++i) {
+
+        dev_ptr = malloc(sizeof(struct m210_dev));
+        if (!dev_ptr) {
+                err = M210_ERR_SYS;
+                goto exit;
+        }
+
+        for (size_t i = 0; i < M210_DEV_USB_INTERFACE_COUNT; ++i) {
                 memset(paths[i], 0, PATH_MAX);
         
-                result = m210_dev_find_hidraw_devnode(i, paths[i], PATH_MAX);
-                if (result) {
-                        goto err;
+                err = m210_dev_find_hidraw_devnode(i, paths[i], PATH_MAX);
+                if (err) {
+                        goto exit;
                 }
         }
-        result = m210_dev_connect_hidraw(dev_ptr, paths);
-err:
-        return result;
+        err = m210_dev_connect_hidraw(dev_ptr, paths);
+exit:
+        if (err) {
+                free(dev_ptr);
+                dev_ptr = NULL;
+        }
+        *dev_ptr_ptr = dev_ptr;
+        return err;
 }
 
 enum m210_err
-m210_dev_disconnect(struct m210_dev *const dev_ptr)
+m210_dev_disconnect(struct m210_dev **const dev_ptr_ptr)
 {
-        enum m210_err result;
+        struct m210_dev *const dev_ptr = *dev_ptr_ptr;
+        enum m210_err err = M210_ERR_OK;
+
+        if (!dev_ptr) {
+                goto exit;
+        }
+
         for (int i = 0; i < M210_DEV_USB_INTERFACE_COUNT; ++i) {
-                if (dev_ptr->fds[i] != -1) {
-                        if (close(dev_ptr->fds[i]) == -1) {
-                                result = M210_ERR_SYS;
-                                goto err;
-                        }
-                        dev_ptr->fds[i] = -1;
+                if (close(dev_ptr->fds[i]) == -1) {
+                        err = M210_ERR_SYS;
                 }
         }
-        result = M210_ERR_OK;
-err:
-        return result;
+        free(dev_ptr);
+        *dev_ptr_ptr = NULL;
+exit:
+        return err;
 }
 
 /*
@@ -468,7 +483,7 @@ err:
 }
 
 enum m210_err
-m210_dev_get_info(struct m210_dev const *const dev_ptr,
+m210_dev_get_info(struct m210_dev *const dev_ptr,
                   struct m210_dev_info *const info_ptr)
 {
         enum m210_err result;
@@ -522,7 +537,7 @@ err:
 }
 
 enum m210_err
-m210_dev_delete_notes(struct m210_dev const *const dev_ptr)
+m210_dev_delete_notes(struct m210_dev *const dev_ptr)
 {
         uint8_t const bytes[] = {0xb0};
         return m210_dev_write(dev_ptr, bytes, sizeof(bytes));
@@ -591,7 +606,7 @@ err:
 }
 
 enum m210_err
-m210_dev_download_notes(struct m210_dev const *const dev_ptr,
+m210_dev_download_notes(struct m210_dev *const dev_ptr,
                         FILE *const stream_ptr)
 {
         enum m210_err result;
@@ -638,7 +653,7 @@ err:
 }
 
 enum m210_err
-m210_dev_set_mode(struct m210_dev const *const dev_ptr,
+m210_dev_set_mode(struct m210_dev *const dev_ptr,
                   enum m210_dev_mode const mode)
 {        
         static uint8_t const mode_indicators[] = {0x02, 0x01};
