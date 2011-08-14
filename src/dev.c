@@ -73,7 +73,7 @@ m210_dev_write(struct m210_dev const *const dev_ptr,
         uint8_t *request;
         size_t const request_size = bytes_size + 3;
 
-        request = (uint8_t *) malloc(request_size);
+        request = malloc(request_size);
         if (request == NULL) {
                 result = M210_ERR_SYS;
                 goto err;
@@ -618,7 +618,7 @@ m210_dev_download_notes(struct m210_dev *const dev_ptr,
                 goto err;
         }
 
-        lost_nums = (uint16_t *)calloc(packet_count, sizeof(uint16_t));
+        lost_nums = calloc(packet_count, sizeof(uint16_t));
         if (lost_nums == NULL) {
                 int const original_errno = errno;
                 m210_dev_reject_download(dev_ptr);
