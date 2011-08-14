@@ -37,21 +37,12 @@
 
 #define M210_DEV_USB_INTERFACE_COUNT 2
 
+#define M210_DEV_MODE_INDICATOR_TABLET 0x01
+#define M210_DEV_MODE_INDICATOR_MOUSE  0x02
+
 struct m210_dev {
         int fds[M210_DEV_USB_INTERFACE_COUNT];
 };
-
-inline static uint8_t
-mode_to_byte(enum m210_dev_mode const mode)
-{
-        return mode + 1;
-}
-
-inline static enum m210_dev_mode
-byte_to_mode(uint8_t const byte)
-{
-        return byte - 1;
-}
 
 struct m210_dev_packet {
         uint16_t num;
@@ -523,7 +514,7 @@ m210_dev_get_info(struct m210_dev *const dev_ptr,
         info_ptr->firmware_version = be16toh(firmware_version);
         info_ptr->analog_version = be16toh(analog_version);
         info_ptr->pad_version = be16toh(pad_version);
-        info_ptr->mode = byte_to_mode(response[10]);
+        info_ptr->mode = response[10];
         info_ptr->used_memory = used_memory;
         
         result = M210_ERR_OK;
@@ -648,12 +639,12 @@ err:
 }
 
 enum m210_err
-m210_dev_set_mode(struct m210_dev *const dev_ptr,
-                  enum m210_dev_mode const mode)
+m210_dev_set_mode(struct m210_dev *const dev_ptr, uint8_t const mode)
 {        
-        static uint8_t const mode_indicators[] = {0x02, 0x01};
-        uint8_t const bytes[] = {0x80, 0xb5, mode_indicators[mode],
-                                 mode_to_byte(mode)};
+        uint8_t bytes[] = {0x80, 0xb5, M210_DEV_MODE_INDICATOR_MOUSE, mode};
+        if (mode == M210_DEV_MODE_TABLET) {
+                bytes[2] = M210_DEV_MODE_INDICATOR_TABLET;
+        }
         return m210_dev_write(dev_ptr, bytes, sizeof(bytes));
 }
 

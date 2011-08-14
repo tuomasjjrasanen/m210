@@ -26,18 +26,16 @@
 
 #define M210_DEV_MAX_MEMORY 4063232
 
-struct m210_dev;
+#define M210_DEV_MODE_MOUSE  0x01
+#define M210_DEV_MODE_TABLET 0x02
 
-enum m210_dev_mode {
-        M210_DEV_MODE_MOUSE,
-        M210_DEV_MODE_TABLET
-};
+struct m210_dev;
 
 struct m210_dev_info {
         uint16_t firmware_version;
         uint16_t analog_version;
         uint16_t pad_version;
-        enum m210_dev_mode mode;
+        uint8_t mode;
         uint32_t used_memory;
 };
 
@@ -53,8 +51,7 @@ enum m210_err m210_dev_download_notes(struct m210_dev *dev_ptr,
 
 enum m210_err m210_dev_delete_notes(struct m210_dev *dev_ptr);
 
-enum m210_err m210_dev_set_mode(struct m210_dev *dev_ptr,
-                                enum m210_dev_mode mode);
+enum m210_err m210_dev_set_mode(struct m210_dev *dev_ptr, uint8_t mode);
 
 /* enum m210_mode_indicator { */
 /*     M210_MODE_INDICATOR_TABLET=0x01, */
