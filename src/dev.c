@@ -380,18 +380,12 @@ static enum m210_err
 m210_dev_read_packet(struct m210_dev const *const dev_ptr,
                      struct m210_dev_packet *const packet_ptr)
 {
-        enum m210_err result;
-
-        result = m210_dev_read(dev_ptr, 0, packet_ptr,
-                               sizeof(struct m210_dev_packet));
-        if (result) {
-                goto err;
+        enum m210_err err = m210_dev_read(dev_ptr, 0, packet_ptr,
+                                          sizeof(struct m210_dev_packet));
+        if (!err) {
+                packet_ptr->num = be16toh(packet_ptr->num);
         }
-
-        packet_ptr->num = be16toh(packet_ptr->num);
-        result = M210_ERR_OK;
-err:
-        return result;
+        return err;
 }
 
 enum m210_err
