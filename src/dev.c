@@ -33,7 +33,7 @@
 #define M210_DEV_READ_INTERVAL 1000000 /* Microseconds. */
 #define M210_DEV_RESPONSE_SIZE 64
 
-#define M210_DEV_PACKET_DATA_LEN 62
+#define M210_DEV_PACKET_SIZE 62
 
 #define M210_DEV_USB_INTERFACE_COUNT 2
 
@@ -55,7 +55,7 @@ byte_to_mode(uint8_t const byte)
 
 struct m210_dev_packet {
         uint16_t num;
-        uint8_t data[M210_DEV_PACKET_DATA_LEN];
+        uint8_t data[M210_DEV_PACKET_SIZE];
 } __attribute__((packed));
 
 static struct hidraw_devinfo const DEVINFO_M210 = {
@@ -461,19 +461,20 @@ static enum m210_err
 m210_dev_get_notes_size(struct m210_dev const *const dev_ptr,
                         uint32_t *const size_ptr)
 {
-        enum m210_err result;
         uint16_t packet_count;
+        enum m210_err err;
 
-        result = m210_dev_begin_download(dev_ptr, &packet_count);
-        if (result) {
-                goto err;
+        err = m210_dev_begin_download(dev_ptr, &packet_count);
+        if (err) {
+                goto exit;
         }
 
-        *size_ptr = packet_count * M210_DEV_PACKET_DATA_LEN;
-
-        result = m210_dev_reject_download(dev_ptr);
-err:
-        return result;
+        err = m210_dev_reject_download(dev_ptr);
+exit:
+        if (!err) {
+                *size_ptr = packet_count * M210_DEV_PACKET_SIZE;
+        }
+        return err;
 }
 
 enum m210_err
