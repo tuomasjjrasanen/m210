@@ -592,12 +592,17 @@ err:
 }
 
 enum m210_err
-m210_dev_download_notes(struct m210_dev *const dev_ptr,
-                        FILE *const stream_ptr)
+m210_dev_download_notes(struct m210_dev *const dev_ptr, int const dest_fd)
 {
         enum m210_err result;
         uint16_t *lost_nums = NULL;
         uint16_t packet_count;
+        FILE *stream_ptr;
+
+        stream_ptr = fdopen(dest_fd, "wb");
+        if (!stream_ptr) {
+                goto err;
+        }
 
         result = m210_dev_begin_download(dev_ptr, &packet_count);
         if (result) {
