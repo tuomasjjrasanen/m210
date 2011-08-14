@@ -26,7 +26,7 @@
 
 #define M210_DEV_MAX_MEMORY 4063232
 
-typedef struct m210_dev *m210_dev_t;
+struct m210_dev;
 
 enum m210_dev_mode {
         M210_DEV_MODE_MOUSE,
@@ -41,17 +41,20 @@ struct m210_dev_info {
         uint32_t used_memory;
 };
 
-enum m210_err m210_dev_connect(m210_dev_t *dev_ptr);
+enum m210_err m210_dev_connect(struct m210_dev **dev_ptr_ptr);
 
-enum m210_err m210_dev_disconnect(m210_dev_t *dev_ptr);
+enum m210_err m210_dev_disconnect(struct m210_dev **dev_ptr_ptr);
 
-enum m210_err m210_dev_get_info(m210_dev_t dev, struct m210_dev_info *info_ptr);
+enum m210_err m210_dev_get_info(struct m210_dev *dev_ptr,
+                                struct m210_dev_info *info_ptr);
 
-enum m210_err m210_dev_download_notes(m210_dev_t dev, FILE *stream_ptr);
+enum m210_err m210_dev_download_notes(struct m210_dev *dev_ptr,
+                                      FILE *stream_ptr);
 
-enum m210_err m210_dev_delete_notes(m210_dev_t dev);
+enum m210_err m210_dev_delete_notes(struct m210_dev *dev_ptr);
 
-enum m210_err m210_dev_set_mode(m210_dev_t dev, enum m210_dev_mode mode);
+enum m210_err m210_dev_set_mode(struct m210_dev *dev_ptr,
+                                enum m210_dev_mode mode);
 
 /* enum m210_mode_indicator { */
 /*     M210_MODE_INDICATOR_TABLET=0x01, */
