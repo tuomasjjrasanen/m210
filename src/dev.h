@@ -24,10 +24,10 @@
 
 #include "err.h"
 
-#define M210_DEV_MAX_MEMORY 4063232
-
 #define M210_DEV_MODE_MOUSE  0x01
 #define M210_DEV_MODE_TABLET 0x02
+
+#define M210_DEV_MAX_MEMORY 4063232 /* Bytes. */
 
 struct m210_dev;
 
@@ -51,11 +51,6 @@ enum m210_err m210_dev_download_notes(struct m210_dev *dev_ptr, int dest_fd);
 enum m210_err m210_dev_delete_notes(struct m210_dev *dev_ptr);
 
 enum m210_err m210_dev_set_mode(struct m210_dev *dev_ptr, uint8_t mode);
-
-/* enum m210_mode_indicator { */
-/*     M210_MODE_INDICATOR_TABLET=0x01, */
-/*     M210_MODE_INDICATOR_MOUSE=0x02 */
-/* }; */
 
 /* enum m210_mouse_battery { */
 /*     M210_MOUSE_BATTERY_UNKNOWN = 0x40, */
