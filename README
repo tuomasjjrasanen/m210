@@ -1,31 +1,26 @@
-=========
- Libm210
-=========
-
-Description
-===========
+Libm210
+=======
 
 Libm210 provides C API for communicating with Pegasus Tablet Mobile
 NoteTaker (M210) devices.
 
 General information
-===================
+-------------------
 
-Author:   Tuomas Jorma Juhani Räsänen <tuomas.rasanen@tjjr.fi>
-Version:  0.1
-License:  GPLv3+ (see COPYING for details)
-Homepage: <http://codegrove.org/projects/libm210/>
-Tarballs: <https://launchpad.net/libm210/+download>
-Source:   <http://github.com/tuos/libm210/>
-Bugs:     <https://bugs.launchpad.net/libm210>
+- Version:    0.1
+- License:    GPLv3+ (see COPYING for details)
+- Author:     [Tuomas Jorma Juhani Räsänen](http://tjjr.fi)
+- Homepage:   <http://tjjr.fi/sw/libm210/>
+- Code:       <http://code.launchpad.net/libm210/>
+- Bugs:       <http://bugs.launchpad.net/libm210/>
 
 Build requirements
-==================
+------------------
 
 - cmake 2.8
 - libudev-dev
 
 Runtime requirements
-====================
+--------------------
 
 - libudev0
