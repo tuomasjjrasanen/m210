@@ -1,8 +1,8 @@
 #!/bin/sh
 
-sudo stop m210d
+stop m210d
 VERSION=`python setup.py --version`
-cat dist/m210-$VERSION/installedfiles | xargs sudo rm -rf
+cat dist/m210-$VERSION/installedfiles | xargs rm -rf
 rm MANIFEST
 set -e
 
@@ -14,5 +14,5 @@ python setup.py sdist
 cd dist
 tar zxvf m210-$VERSION.tar.gz
 cd m210-$VERSION
-python setup.py build && sudo python setup.py install --record=installedfiles
-sudo start m210d
+python setup.py build && python setup.py install --record=installedfiles
+start m210d
