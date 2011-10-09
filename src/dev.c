@@ -129,7 +129,7 @@ m210_dev_find_hidraw_devnode(int const iface,
                              char *const path_ptr,
                              size_t const path_size)
 {
-        enum m210_err result;
+        enum m210_err result = M210_ERR_SYS;
         struct udev_list_entry *list_entry = NULL;
         struct udev_enumerate *enumerate = NULL;
         struct udev *udev = NULL;
