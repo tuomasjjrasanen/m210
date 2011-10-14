@@ -204,29 +204,12 @@ exit:
         return err;
 }
 
-/* static enum m210_err m210_wait_ready(struct m210 const *const m210) */
-/* { */
-/*     return m210_get_info(m210, NULL); */
-/* } */
-
 static enum m210_err
 m210_dev_accept_download(struct m210_dev const *const dev_ptr)
 {
         uint8_t const bytes[] = {0xb6};
         return m210_dev_write(dev_ptr, bytes, sizeof(bytes));
 }
-
-/* static enum m210_err m210_write_and_wait(struct m210 const *const m210, */
-/*                                          uint8_t const *const rpt, */
-/*                                          size_t const rpt_size) */
-/* { */
-/*     enum m210_err const err = m210_write(m210, rpt, rpt_size); */
-/*     if (err) { */
-/*         return err; */
-/*     } */
-
-/*     return m210_wait_ready(m210); */
-/* } */
 
 static enum m210_err
 m210_dev_reject_download(struct m210_dev const *const dev_ptr)
