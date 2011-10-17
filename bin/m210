@@ -1,0 +1,66 @@
+#!/usr/bin/env python
+# -*- encoding: utf-8 -*-
+
+import argparse
+import os.path
+import sys
+
+import m210
+
+def dump(args):
+    connection = m210.Connection()
+    # print args.output_file
+    connection.download_notes(args.output_file)
+
+def info(args):
+    connection = m210.Connection()
+    for key, value in sorted(connection.device_info().items()):
+        print "%s: %s" % (key.capitalize(), value)
+
+def convert(args):
+    pass
+
+def parse_args():
+    parser = argparse.ArgumentParser(description="Control Pegasus Tablet "
+                                     "Mobile NoteTaker (M210).",
+                                     version="0.4")
+    subparsers = parser.add_subparsers(title="commands")
+
+    info_parser = subparsers.add_parser("info",
+                                        help="show device information")
+    info_parser.set_defaults(func=info)
+
+    dump_parser = subparsers.add_parser("dump",
+                                        help="dump stored notes as a "
+                                        "binary stream")
+    dump_parser.add_argument('--output-file', metavar="FILE",
+                             default=sys.stdout, type=argparse.FileType("w"),
+                             help="file where notes will be written to, "
+                             "defaults to standard output")
+    dump_parser.set_defaults(func=dump)
+    
+    convert_parser = subparsers.add_parser("convert",
+                                           help="convert binary streamed notes "
+                                           "to other format")
+    convert_parser.add_argument("--input-file", metavar="FILE",
+                                default=sys.stdin, type=open,
+                                help="file where notes will be read from, "
+                                "defaults to standard input")
+    convert_parser.add_argument("--format", choices=["svg"], default="svg",
+                                help="format of the output files")
+    convert_parser.add_argument("--overwrite", action="store_true",
+                                help="overwrite existing files")
+    convert_parser.add_argument("--output-dir", metavar="DIR",
+                                default=os.path.abspath("."),
+                                help="directory where files will be written to,"
+                                " defaults to `%s'" % os.path.abspath("."))
+    convert_parser.set_defaults(func=convert)
+
+    return parser.parse_args()
+
+def main():
+    args = parse_args()
+    args.func(args)
+
+if __name__ == "__main__":
+    main()
