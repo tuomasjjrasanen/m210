@@ -39,24 +39,24 @@ class _struct_m210_dev_info(ctypes.Structure):
 
 _libm210 = ctypes.CDLL("libm210.so.0", use_errno=True)
 
-(M210_ERR_OK,
- M210_ERR_SYS,
- M210_ERR_BAD_DEV,
- M210_ERR_NO_DEV,
- M210_ERR_BAD_DEV_MSG,
- M210_ERR_DEV_TIMEOUT,
- M210_ERR_BAD_NOTE_HEAD,
- M210_ERR_BAD_NOTE_BODY,
- M210_ERR_NOTE_EOF) = range(9)
+(_M210_ERR_OK,
+ _M210_ERR_SYS,
+ _M210_ERR_BAD_DEV,
+ _M210_ERR_NO_DEV,
+ _M210_ERR_BAD_DEV_MSG,
+ _M210_ERR_DEV_TIMEOUT,
+ _M210_ERR_BAD_NOTE_HEAD,
+ _M210_ERR_BAD_NOTE_BODY,
+ _M210_ERR_NOTE_EOF) = range(9)
 
 class Error(Exception):
     pass
 
 def _error_handler(result, fn, args):
-    if result == M210_ERR_SYS:
+    if result == _M210_ERR_SYS:
         code = ctypes.get_errno()
         raise OSError(code, os.strerror(code))
-    elif result > M210_ERR_SYS:
+    elif result > _M210_ERR_SYS:
         raise Error(_libm210.m210_err_strerror(result))
     return result
 
