@@ -1,9 +1,0 @@
-[Desktop Entry]
-Type=Application
-Exec=m210c-qt
-Name=M210 Qt4 Client
-GenericName=M210 Client
-Comment=Control plugged Pegasus Technologies Inc. M210-devices
-Icon=m210c-qt
-Terminal=false
-Categories=Office;Viewer;Qt;

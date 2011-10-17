@@ -1,4 +1,0 @@
-include etc/init/m210d.conf
-include etc/udev/rules.d/50-m210d.rules
-include etc/dbus-1/system.d/org.codegrove.m210.daemon.conf
-include COPYING

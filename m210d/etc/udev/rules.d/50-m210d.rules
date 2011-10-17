@@ -1,2 +1,0 @@
-ACTION=="add", ATTR{idVendor}=="0e20", ATTR{idProduct}=="0101", RUN+="/usr/bin/dbus-send --system --dest=org.codegrove.m210.daemon /org/codegrove/m210/daemon org.codegrove.m210.daemon.device_added string:%S%p"
-SUBSYSTEM=="usb", ACTION=="remove", RUN+="/usr/bin/dbus-send --system --dest=org.codegrove.m210.daemon /org/codegrove/m210/daemon org.codegrove.m210.daemon.device_removed string:%S%p"
