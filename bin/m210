@@ -7,17 +7,22 @@ import sys
 
 import m210
 
-def dump(args):
-    connection = m210.Connection()
-    # print args.output_file
-    connection.download_notes(args.output_file)
+INPUT_FILE_DEFAULT = sys.stdin
+OUTPUT_DIR_DEFAULT = os.path.abspath(".")
+OUTPUT_FILE_DEFAULT = sys.stdout
+OUTPUT_FORMAT_DEFAULT = "svg"
 
-def info(args):
+def dump(output_file=OUTPUT_FILE_DEFAULT):
+    connection = m210.Connection()
+    connection.download_notes(output_file)
+
+def info():
     connection = m210.Connection()
     for key, value in sorted(connection.device_info().items()):
         print "%s: %s" % (key.capitalize(), value)
 
-def convert(args):
+def convert(output_format=OUTPUT_FORMAT_DEFAULT, output_dir=OUTPUT_DIR_DEFAULT,
+            overwrite=False, input_file=sys.stdin):
     pass
 
 def parse_args():
@@ -34,7 +39,7 @@ def parse_args():
                                         help="dump stored notes as a "
                                         "binary stream")
     dump_parser.add_argument('--output-file', metavar="FILE",
-                             default=sys.stdout, type=argparse.FileType("w"),
+                             default=OUTPUT_FILE_DEFAULT, type=argparse.FileType("w"),
                              help="file where notes will be written to, "
                              "defaults to standard output")
     dump_parser.set_defaults(func=dump)
@@ -43,24 +48,29 @@ def parse_args():
                                            help="convert binary streamed notes "
                                            "to other format")
     convert_parser.add_argument("--input-file", metavar="FILE",
-                                default=sys.stdin, type=open,
+                                default=INPUT_FILE_DEFAULT, type=open,
                                 help="file where notes will be read from, "
                                 "defaults to standard input")
-    convert_parser.add_argument("--format", choices=["svg"], default="svg",
+    convert_parser.add_argument("--output-format",
+                                choices=[OUTPUT_FORMAT_DEFAULT],
+                                default=OUTPUT_FORMAT_DEFAULT,
                                 help="format of the output files")
     convert_parser.add_argument("--overwrite", action="store_true",
                                 help="overwrite existing files")
     convert_parser.add_argument("--output-dir", metavar="DIR",
-                                default=os.path.abspath("."),
+                                default=OUTPUT_DIR_DEFAULT,
                                 help="directory where files will be written to,"
-                                " defaults to `%s'" % os.path.abspath("."))
+                                " defaults to `%s'" % OUTPUT_DIR_DEFAULT)
     convert_parser.set_defaults(func=convert)
 
     return parser.parse_args()
 
 def main():
     args = parse_args()
-    args.func(args)
+    func_args = vars(args)
+    func = func_args.pop("func")
+    func(**func_args)
+
 
 if __name__ == "__main__":
     main()
