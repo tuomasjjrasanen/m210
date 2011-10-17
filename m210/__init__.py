@@ -15,10 +15,6 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-"""
-Python bindings for libm210.
-"""
-
 from __future__ import absolute_import
 
 import ctypes
@@ -26,9 +22,20 @@ import os
 import os.path
 import sys
 
-DESCRIPTION = "Control Pegasus Tablet Mobile NoteTaker (M210)."
+DESCRIPTION = "Control Pegasus Tablet Mobile NoteTaker (M210)"
+AUTHOR = "Tuomas Jorma Juhani Räsänen <tuomasjjrasanen@tjjr.fi>"
 VERSION = "0.4"
 SO_VERSION = "0"
+SO_NAME = "libm210.so." + SO_VERSION
+__doc__ = """%s
+
+This Python package provides pythonic bindings for %s. It provides API
+for displaying device information, dumping stored notes as a binary
+stream to a file and converting notes to various image formats.
+
+Author: %s
+Version: %s
+""" % (DESCRIPTION, SO_NAME, AUTHOR, VERSION)
 
 class _struct_m210_dev_info(ctypes.Structure):
     _fields_ = [("firmware_version", ctypes.c_int16),
@@ -38,7 +45,7 @@ class _struct_m210_dev_info(ctypes.Structure):
                 ("used_memory", ctypes.c_uint32),
                 ]
 
-_libm210 = ctypes.CDLL("libm210.so." + SO_VERSION , use_errno=True)
+_libm210 = ctypes.CDLL(SO_NAME , use_errno=True)
 
 (_M210_ERR_OK,
  _M210_ERR_SYS,
