@@ -55,9 +55,6 @@ setup(name='m210',
         "Programming Language :: Python :: 2.7",
         "Topic :: Desktop Environment",
         ],
-      package_dir={
-        'm210': 'src',
-        },
       packages=[
         'm210',
         ],
