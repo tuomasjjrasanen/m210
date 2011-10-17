@@ -16,7 +16,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 """
-Python bindings for libm210
+Python bindings for libm210.
 """
 
 from __future__ import absolute_import
@@ -25,6 +25,9 @@ import ctypes
 import os
 import os.path
 import sys
+
+DESCRIPTION = "Control Pegasus Tablet Mobile NoteTaker (M210)."
+VERSION = "0.4"
 
 class _struct_m210_dev_info(ctypes.Structure):
     _fields_ = [("firmware_version", ctypes.c_int16),

@@ -6,9 +6,8 @@ import argparse
 import m210
 
 def parse_args():
-    parser = argparse.ArgumentParser(description="Control Pegasus Tablet "
-                                     "Mobile NoteTaker (M210).",
-                                     version="0.4")
+    parser = argparse.ArgumentParser(description=m210.DESCRIPTION,
+                                     version=m210.VERSION)
     subparsers = parser.add_subparsers(title="commands")
 
     info_parser = subparsers.add_parser("info",
