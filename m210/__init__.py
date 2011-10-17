@@ -28,6 +28,7 @@ import sys
 
 DESCRIPTION = "Control Pegasus Tablet Mobile NoteTaker (M210)."
 VERSION = "0.4"
+SO_VERSION = "0"
 
 class _struct_m210_dev_info(ctypes.Structure):
     _fields_ = [("firmware_version", ctypes.c_int16),
@@ -37,7 +38,7 @@ class _struct_m210_dev_info(ctypes.Structure):
                 ("used_memory", ctypes.c_uint32),
                 ]
 
-_libm210 = ctypes.CDLL("libm210.so.0", use_errno=True)
+_libm210 = ctypes.CDLL("libm210.so." + SO_VERSION , use_errno=True)
 
 (_M210_ERR_OK,
  _M210_ERR_SYS,
