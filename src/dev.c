@@ -30,12 +30,14 @@
 
 #include "dev.h"
 
-#define M210_DEV_READ_INTERVAL 1000000 /* Microseconds. */
+#define M210_DEV_READ_INTERVAL 100000 /* Microseconds. */
 #define M210_DEV_RESPONSE_SIZE 64
 
 #define M210_DEV_PACKET_SIZE 62
 
 #define M210_DEV_USB_INTERFACE_COUNT 2
+
+#define M210_DEV_MAX_PACKET_COUNT_QUERIES 10
 
 struct m210_dev {
         int fds[M210_DEV_USB_INTERFACE_COUNT];
@@ -291,26 +293,21 @@ m210_dev_begin_download(struct m210_dev const *const dev_ptr,
 {
         static uint8_t const bytes[] = {0xb5};
         uint8_t response[] = {0, 0, 0, 0, 0, 0, 0, 0, 0};
+        enum m210_err err = M210_ERR_OK;
+        int packet_count_queries = 0;
 
-        enum m210_err err = m210_dev_write(dev_ptr, bytes, sizeof(bytes));
-        if (err) {
-                goto exit;
-        }
-
-        while (1) {
-                err = m210_dev_read(dev_ptr, 0, response, sizeof(response));
-                switch (err) {
-                case M210_ERR_DEV_TIMEOUT:
-                        /*
-                          It seems, that a M210 device with zero notes
-                          does not send any response.
-                        */
-                        *packet_count_ptr = 0;
-                        err = M210_ERR_OK;
+        while (packet_count_queries < M210_DEV_MAX_PACKET_COUNT_QUERIES) {
+                err = m210_dev_write(dev_ptr, bytes, sizeof(bytes));
+                if (err) {
                         goto exit;
-                case M210_ERR_OK:
-                        break;
-                default:
+                }
+                ++packet_count_queries;
+
+                err = m210_dev_read(dev_ptr, 0, response, sizeof(response));
+                if (err) {
+                        if (err == M210_ERR_DEV_TIMEOUT) {
+                                continue;
+                        }
                         goto exit;
                 }
 
