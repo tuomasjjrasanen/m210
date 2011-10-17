@@ -1,66 +1,32 @@
-======
- M210
-======
+M210
+====
 
-Author: Tuomas Räsänen (tuos) <tuos@codegrove.org>
-Homepage: http://codegrove.org/projects/m210
-License: GPLv3+ (see COPYING for details)
-Version: 0.4
+M210 provides tools for using Pegasus Tablet Mobile NoteTaker (M210)
+<http://www.pegatech.com/?CategoryID=218> in Linux systems.
 
-Description
-===========
+Features
+--------
 
-M210 is a software project which aims to provide easy-to-use tools for
-controlling and using `Pegasus Tablet Mobile Notetaker M210`_ in modern
-Linux desktop environments.
+- download notes in binary or SVG format
+- delete notes
+- show device information
 
-.. _Pegasus Tablet Mobile Notetaker M210: http://www.pegatech.com/?CategoryID=207&ArticleID=268
+General information
+-------------------
+
+- Version:    0.4
+- License:    GPLv3+ (see COPYING for details)
+- Author:     Tuomas Jorma Juhani Räsänen <tuomasjjrasanen@tjjr.fi>
+- Homepage:   <http://tjjr.fi/software/m210/>
+- Code:       <http://code.launchpad.net/m210/>
+- Bugs:       <http://bugs.launchpad.net/m210/>
 
 Build requirements
-==================
+------------------
 
-- Python 2.6.x.
-- Development files for Python.
+- Python
 
 Runtime requirements
-====================
+--------------------
 
-- Python bindings for DBus.
-- PyQt4.
-- Upstart.
-
-Downloading
-===========
-
-- Ubuntu package: https://launchpad.net/~tuos/+archive/codegrove
-- Tarball: http://launchpad.net/m210/trunk/0.4/+download/m210-0.4.tar.gz
-- Development: http://code.launchpad.net/m210 ::
-
-    bzr clone lp:m210
-
-Installing
-==========
-
-Ubuntu
-------
-
-Add `Codegrove PPA`_ to your system and install using standard
-tools. For example with apt-get::
-
-  sudo apt-get install m210
-
-.. _Codegrove PPA: https://launchpad.net/~tuos/+archive/codegrove
-
-Other systems
--------------
-
-Satisfy the requirements listed above and then build and install
-normally::
-
-  ./configure
-  make && make install
-
-Bug reporting
-=============
-
-Please report bugs at http://bugs.launchpad.net/m210 .
+- libm210.so.0 <http://tjjr.fi/software/libm210/>
