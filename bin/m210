@@ -2,28 +2,8 @@
 # -*- encoding: utf-8 -*-
 
 import argparse
-import os.path
-import sys
 
 import m210
-
-INPUT_FILE_DEFAULT = sys.stdin
-OUTPUT_DIR_DEFAULT = os.path.abspath(".")
-OUTPUT_FILE_DEFAULT = sys.stdout
-OUTPUT_FORMAT_DEFAULT = "svg"
-
-def dump(output_file=OUTPUT_FILE_DEFAULT):
-    connection = m210.Connection()
-    connection.download_notes(output_file)
-
-def info():
-    connection = m210.Connection()
-    for key, value in sorted(connection.device_info().items()):
-        print "%s: %s" % (key.capitalize(), value)
-
-def convert(output_format=OUTPUT_FORMAT_DEFAULT, output_dir=OUTPUT_DIR_DEFAULT,
-            overwrite=False, input_file=sys.stdin):
-    pass
 
 def parse_args():
     parser = argparse.ArgumentParser(description="Control Pegasus Tablet "
@@ -33,35 +13,36 @@ def parse_args():
 
     info_parser = subparsers.add_parser("info",
                                         help="show device information")
-    info_parser.set_defaults(func=info)
+    info_parser.set_defaults(func=m210.info)
 
     dump_parser = subparsers.add_parser("dump",
                                         help="dump stored notes as a "
                                         "binary stream")
     dump_parser.add_argument('--output-file', metavar="FILE",
-                             default=OUTPUT_FILE_DEFAULT, type=argparse.FileType("w"),
+                             default=m210.OUTPUT_FILE_DEFAULT,
+                             type=argparse.FileType("w"),
                              help="file where notes will be written to, "
                              "defaults to standard output")
-    dump_parser.set_defaults(func=dump)
+    dump_parser.set_defaults(func=m210.dump)
     
     convert_parser = subparsers.add_parser("convert",
                                            help="convert binary streamed notes "
                                            "to other format")
     convert_parser.add_argument("--input-file", metavar="FILE",
-                                default=INPUT_FILE_DEFAULT, type=open,
+                                default=m210.INPUT_FILE_DEFAULT, type=open,
                                 help="file where notes will be read from, "
                                 "defaults to standard input")
     convert_parser.add_argument("--output-format",
-                                choices=[OUTPUT_FORMAT_DEFAULT],
-                                default=OUTPUT_FORMAT_DEFAULT,
+                                choices=[m210.OUTPUT_FORMAT_DEFAULT],
+                                default=m210.OUTPUT_FORMAT_DEFAULT,
                                 help="format of the output files")
     convert_parser.add_argument("--overwrite", action="store_true",
                                 help="overwrite existing files")
     convert_parser.add_argument("--output-dir", metavar="DIR",
-                                default=OUTPUT_DIR_DEFAULT,
+                                default=m210.OUTPUT_DIR_DEFAULT,
                                 help="directory where files will be written to,"
-                                " defaults to `%s'" % OUTPUT_DIR_DEFAULT)
-    convert_parser.set_defaults(func=convert)
+                                " defaults to `%s'" % m210.OUTPUT_DIR_DEFAULT)
+    convert_parser.set_defaults(func=m210.convert)
 
     return parser.parse_args()
 

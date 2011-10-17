@@ -23,6 +23,8 @@ from __future__ import absolute_import
 
 import ctypes
 import os
+import os.path
+import sys
 
 class _struct_m210_dev_info(ctypes.Structure):
     _fields_ = [("firmware_version", ctypes.c_int16),
@@ -91,3 +93,21 @@ class Connection(object):
 
     def __del__(self):
         _libm210.m210_dev_disconnect(ctypes.pointer(self.__dev_p))
+
+INPUT_FILE_DEFAULT = sys.stdin
+OUTPUT_DIR_DEFAULT = os.path.abspath(".")
+OUTPUT_FILE_DEFAULT = sys.stdout
+OUTPUT_FORMAT_DEFAULT = "svg"
+
+def dump(output_file=OUTPUT_FILE_DEFAULT):
+    connection = Connection()
+    connection.download_notes(output_file)
+
+def info():
+    connection = Connection()
+    for key, value in sorted(connection.device_info().items()):
+        print "%s: %s" % (key.capitalize(), value)
+
+def convert(output_format=OUTPUT_FORMAT_DEFAULT, output_dir=OUTPUT_DIR_DEFAULT,
+            overwrite=False, input_file=sys.stdin):
+    pass
