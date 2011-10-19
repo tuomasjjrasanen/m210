@@ -57,6 +57,10 @@ def parse_args():
                                 " defaults to `%s'" % m210.OUTPUT_DIR_DEFAULT)
     convert_parser.set_defaults(func=m210.convert)
 
+    delete_parser = subparsers.add_parser("delete",
+                                          help="delete all notes from the device")
+    delete_parser.set_defaults(func=m210.delete)
+
     return parser.parse_args()
 
 def main():

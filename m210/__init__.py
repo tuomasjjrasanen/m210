@@ -239,3 +239,7 @@ def convert(output_format=OUTPUT_FORMAT_DEFAULT, output_dir=OUTPUT_DIR_DEFAULT,
             os.write(fd, output_formatter(pen_paths))
         finally:
             os.close(fd)
+
+def delete():
+    connection = Connection()
+    connection.delete_notes()
