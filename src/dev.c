@@ -425,7 +425,7 @@ m210_dev_get_notes_size(struct m210_dev const *const dev_ptr,
 
         err = m210_dev_begin_download(dev_ptr, &packet_count);
         if (err) {
-                if (err != M210_ERR_DEV_TIMEOUT) {
+                if (err == M210_ERR_DEV_TIMEOUT) {
                         /* M210 timeouts in case it does not have any
                          * notes. In that case, everything is fine and
                          * packet count is zero. */
