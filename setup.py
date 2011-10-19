@@ -20,7 +20,7 @@ import m210
 
 setup(name='m210',
       provides=[
-        'python-m210',
+        'm210',
         ],
       version=m210.VERSION,
       author=m210.AUTHOR_NAME,
