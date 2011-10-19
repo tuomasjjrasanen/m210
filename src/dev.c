@@ -37,7 +37,7 @@
 
 #define M210_DEV_USB_INTERFACE_COUNT 2
 
-#define M210_DEV_MAX_PACKET_COUNT_QUERIES 10
+#define M210_DEV_MAX_TIMEOUT_RETRIES 10
 
 struct m210_dev {
         int fds[M210_DEV_USB_INTERFACE_COUNT];
@@ -294,14 +294,14 @@ m210_dev_begin_download(struct m210_dev const *const dev_ptr,
         static uint8_t const bytes[] = {0xb5};
         uint8_t response[] = {0, 0, 0, 0, 0, 0, 0, 0, 0};
         enum m210_err err = M210_ERR_OK;
-        int packet_count_queries = 0;
+        int timeout_retries = 0;
 
-        while (packet_count_queries < M210_DEV_MAX_PACKET_COUNT_QUERIES) {
+        while (timeout_retries < M210_DEV_MAX_TIMEOUT_RETRIES) {
                 err = m210_dev_write(dev_ptr, bytes, sizeof(bytes));
                 if (err) {
                         goto exit;
                 }
-                ++packet_count_queries;
+                ++timeout_retries;
 
                 err = m210_dev_read(dev_ptr, 0, response, sizeof(response));
                 if (err) {
