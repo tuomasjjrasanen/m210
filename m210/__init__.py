@@ -15,6 +15,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 from __future__ import absolute_import
+from __future__ import print_function
 
 import ctypes
 import os
@@ -120,7 +121,7 @@ def dump(output_file=OUTPUT_FILE_DEFAULT):
 def info():
     connection = Connection()
     for key, value in sorted(connection.device_info().items()):
-        print "%s: %s" % (key.capitalize(), value)
+        print("%s: %s" % (key.capitalize(), value))
 
 def convert(output_format=OUTPUT_FORMAT_DEFAULT, output_dir=OUTPUT_DIR_DEFAULT,
             overwrite=False, input_file=sys.stdin):
