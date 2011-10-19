@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
-# m210
-# Copyright © 2011 Tuomas Jorma Juhani Räsänen <tuomasjjrasanen@tjjr.fi>
+# Copyright © 2011 Tuomas Jorma Juhani Räsänen
 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -17,20 +16,22 @@
 
 from distutils.core import setup
 
+import m210
+
 setup(name='m210',
       provides=[
-        'm210',
+        'python-m210',
         ],
-      version='0.4',
-      author=u'Tuomas Jorma Juhani Räsänen',
-      author_email='tuomasjjrasanen@tjjr.fi',
-      maintainer=u'Tuomas Jorma Juhani Räsänen',
-      maintainer_email='tuomasjjrasanen@tjjr.fi',
-      url="http://tjjr.fi/software/m210/",
-      download_url="http://pypi.python.org/packages/source/m/m210/m210-0.4.tar.gz",
-      description="Tools for Pegasus Mobile Notetaker M210",
-      long_description="""M210 provides tools for using Pegasus Tablet Mobile Notetaker M210
-<http://www.pegatech.com/?CategoryID=218> in Linux systems.""",
+      version=m210.VERSION,
+      author=m210.AUTHOR_NAME,
+      author_email=m210.AUTHOR_EMAIL,
+      maintainer=m210.AUTHOR_NAME,
+      maintainer_email=m210.AUTHOR_EMAIL,
+      url=m210.HOMEPAGE,
+      download_url="http://launchpad.net/m210/trunk/%s/+download/m210-%s.tar.gz" % (m210.VERSION, m210.VERSION),
+      description=m210.DESCRIPTION,
+      long_description="""M210 provides tools for controlling Pegasus Tablet Mobile Notetaker M210
+in Linux systems.""",
       keywords=[
         "pegasus",
         "notetaker",
@@ -39,6 +40,7 @@ setup(name='m210',
         "digital pen",
         "pen",
         "irisnotes",
+        "driver",
         ],
       platforms=[
         "Operating System :: POSIX :: Linux",

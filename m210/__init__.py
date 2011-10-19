@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
-# m210 - Python bindings for libm210
-# Copyright © 2011 Tuomas Jorma Juhani Räsänen <tuomasjjrasanen@tjjr.fi>
+# Copyright © 2011 Tuomas Jorma Juhani Räsänen
 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -22,11 +21,14 @@ import os
 import os.path
 import sys
 
-DESCRIPTION = "Control Pegasus Tablet Mobile NoteTaker (M210)"
-AUTHOR = "Tuomas Jorma Juhani Räsänen <tuomasjjrasanen@tjjr.fi>"
+DESCRIPTION = "Pegasus Tablet Mobile NoteTaker (M210) Controller"
+AUTHOR_NAME = u"Tuomas Jorma Juhani Räsänen"
+AUTHOR_EMAIL = "tuomasjjrasanen@tjjr.fi"
+AUTHOR = "%s <%s>" % (AUTHOR_NAME, AUTHOR_EMAIL)
 VERSION = "0.4"
 SO_VERSION = "0"
 SO_NAME = "libm210.so." + SO_VERSION
+HOMEPAGE = "http://tjjr.fi/software/m210/"
 __doc__ = """%s
 
 This Python package provides pythonic bindings for %s. It provides API
@@ -35,7 +37,8 @@ stream to a file and converting notes to various image formats.
 
 Author: %s
 Version: %s
-""" % (DESCRIPTION, SO_NAME, AUTHOR, VERSION)
+Homepage: %s
+""" % (DESCRIPTION, SO_NAME, AUTHOR, VERSION, HOMEPAGE)
 
 class _struct_m210_dev_info(ctypes.Structure):
     _fields_ = [("firmware_version", ctypes.c_int16),
