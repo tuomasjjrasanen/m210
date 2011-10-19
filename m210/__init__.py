@@ -18,8 +18,10 @@ from __future__ import absolute_import
 from __future__ import print_function
 
 import ctypes
+import errno
 import os
 import os.path
+import struct
 import sys
 
 DESCRIPTION = "Pegasus Tablet Mobile NoteTaker (M210) Controller"
@@ -109,6 +111,59 @@ class Connection(object):
     def __del__(self):
         _libm210.m210_dev_disconnect(ctypes.pointer(self.__dev_p))
 
+class InputFormatError(Error):
+    pass
+
+class OutputFormatError(Error):
+    pass
+
+def _iter_pen_paths(notes_file):
+
+    class counting_read(object):
+
+        def __init__(self, f):
+            self.f = f
+            self.fpos = 0
+
+        def __call__(self, byte_count, *args, **kwargs):
+            bytes = self.f.read(byte_count)
+            self.fpos += len(bytes)
+            return bytes
+
+    notes_file_read = counting_read(notes_file)
+
+    while True:
+
+        # BEGIN HEADER.
+        next_header_bytes = notes_file_read(3)
+        if not next_header_bytes or next_header_bytes[0] == '\x00':
+            break
+        
+        next_header_pos = struct.unpack("<I", next_header_bytes + "\x00")[0]
+
+        state, note_num, note_max_num = struct.unpack("BBB", notes_file_read(3))
+        if note_num > note_max_num:
+            raise InputFormatError("Note number is bigger than the total number of notes.")
+        notes_file_read(8) # Reserved for some unknown usage, perhaps timestamp?
+        # END HEADER.
+
+        # BEGIN DATA.
+        pen_paths = []
+        pen_path = []
+        while notes_file_read.fpos < next_header_pos:
+            data = notes_file_read(4)
+            if data == "\x00\x00\x00\x80":
+                pen_paths.append(pen_path)
+                pen_path = []
+            else:
+                point = struct.unpack("<hh", data)
+                pen_path.append(point)
+        if pen_path:
+            pen_paths.append(pen_path)
+        # END DATA.
+
+        yield pen_paths
+
 INPUT_FILE_DEFAULT = sys.stdin
 OUTPUT_DIR_DEFAULT = os.path.abspath(".")
 OUTPUT_FILE_DEFAULT = sys.stdout
@@ -123,6 +178,64 @@ def info():
     for key, value in sorted(connection.device_info().items()):
         print("%s: %s" % (key.capitalize(), value))
 
+def _format_svg(pen_paths):
+    svg_polylines = []
+    for pen_path in pen_paths:
+        points = " ".join(["%d,%d" % (x, y) for x, y in pen_path])
+        svg_polylines.append('<polyline points="%s" stroke-width="30" stroke="black" fill="none"/>' % points)
+    return """<?xml version="1.0"?>
+    <!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
+    <svg width="210mm" height="297mm" viewBox="-7000 500 14000 20000" xmlns="http://www.w3.org/2000/svg" version="1.1">
+        %s
+    </svg>
+    """ % "\n    ".join(svg_polylines)
+
+_OUTPUT_FORMATTERS = {
+    "svg": _format_svg,
+    }
+
+def _open_output_file(output_dir, n, output_format, overwrite):
+    open_flags = os.O_CREAT | os.O_WRONLY
+    if not overwrite:
+        open_flags |= os.O_EXCL
+
+    number_of_copies = 0
+
+    while True:
+        if number_of_copies:
+            extra = ".%d" % number_of_copies
+        else:
+            extra = ""
+
+        output_filepath = os.path.join(output_dir, "m210_note_%d%s.%s" % (n, extra, output_format))
+        old_umask = os.umask(0133)
+        try:
+            return os.open(output_filepath, open_flags)
+        except OSError, e:
+            if e.errno == errno.EEXIST:
+                number_of_copies += 1
+                continue
+            raise e
+        finally:
+            os.umask(old_umask)
+
 def convert(output_format=OUTPUT_FORMAT_DEFAULT, output_dir=OUTPUT_DIR_DEFAULT,
             overwrite=False, input_file=sys.stdin):
-    pass
+    try:
+        os.mkdir(output_dir)
+    except OSError, e:
+        if e.errno != errno.EEXIST:
+            raise e
+
+    try:
+        output_formatter = _OUTPUT_FORMATTERS[output_format]
+    except KeyError:
+        raise OutputFormatError("Unknown output format: %r" % output_format)
+
+    for n, pen_paths in enumerate(_iter_pen_paths(input_file), 1):
+
+        fd = _open_output_file(output_dir, n, output_format, overwrite)
+        try:
+            os.write(fd, output_formatter(pen_paths))
+        finally:
+            os.close(fd)
