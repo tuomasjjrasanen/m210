@@ -37,7 +37,7 @@
 
 #define M210_DEV_USB_INTERFACE_COUNT 2
 
-#define M210_DEV_MAX_TIMEOUT_RETRIES 10
+#define M210_DEV_MAX_TIMEOUT_RETRIES 5
 
 struct m210_dev {
         int fds[M210_DEV_USB_INTERFACE_COUNT];
@@ -306,6 +306,15 @@ m210_dev_begin_download(struct m210_dev const *const dev_ptr,
                 err = m210_dev_read(dev_ptr, 0, response, sizeof(response));
                 if (err) {
                         if (err == M210_ERR_DEV_TIMEOUT) {
+                                /* In addition to typical reasons for
+                                 * timeout, M210 device timeouts if
+                                 * queried the packet count but if it
+                                 * does not have any notes. By
+                                 * querying the packet count multiple
+                                 * times, we ensure that the
+                                 * timeouting is really due to lack of
+                                 * notes.
+                                 */
                                 continue;
                         }
                         goto exit;
@@ -329,8 +338,16 @@ m210_dev_begin_download(struct m210_dev const *const dev_ptr,
 
 exit:
         if (err) {
-                /* Try to leave the device as it was before the error. */
-                m210_dev_reject_download(dev_ptr);
+                if (err == M210_ERR_DEV_TIMEOUT) {
+                        /* M210 has timeouted because it does not have
+                         * any notes: its ok, the packet count is set
+                         * to zero. */
+                        err = M210_ERR_OK;
+                } else {
+                        /* Try to leave the device as it was before
+                         * the error. */
+                        m210_dev_reject_download(dev_ptr);
+                }
         }
         return err;
 }
@@ -425,14 +442,7 @@ m210_dev_get_notes_size(struct m210_dev const *const dev_ptr,
 
         err = m210_dev_begin_download(dev_ptr, &packet_count);
         if (err) {
-                if (err == M210_ERR_DEV_TIMEOUT) {
-                        /* M210 timeouts in case it does not have any
-                         * notes. In that case, everything is fine and
-                         * packet count is zero. */
-                        err = M210_ERR_OK;
-                } else {
-                        goto exit;
-                }
+                goto exit;
         }
 
         err = m210_dev_reject_download(dev_ptr);
