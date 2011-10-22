@@ -1,0 +1,1 @@
+SUBSYSTEM=="hidraw", ATTRS{idVendor}=="0e20", ATTRS{idProduct}=="0101", GROUP="plugdev"
