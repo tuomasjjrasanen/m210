@@ -1,0 +1,16 @@
+To build this package you need to have:
+
+- libudev0 ( shared libudev library, probably already provided by your system )
+- libudev-dev ( development files, i.e. headers for libudev )
+
+  In Debian and it's derivatives:
+
+    apt-get install libudev-dev
+
+Then, just:
+
+  python setup.py build
+
+There is also a predefined udev rules file in etc/udev/rules.d. You
+can just copy that to /etc/udev/rules.d to allow udevd set a bit more
+loose rw-rights for your m210 devices when they are plugged in.
