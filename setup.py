@@ -20,7 +20,7 @@ setup(name='m210',
       provides=[
         'm210',
         ],
-      version="0.4",
+      version="0.5",
       author="Tuomas Jorma Juhani Räsänen",
       author_email="tuomasjjrasanen@tjjr.fi",
       maintainer="Tuomas Jorma Juhani Räsänen",
