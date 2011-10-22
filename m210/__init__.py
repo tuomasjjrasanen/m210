@@ -29,19 +29,18 @@ AUTHOR_NAME = u"Tuomas Jorma Juhani Räsänen"
 AUTHOR_EMAIL = "tuomasjjrasanen@tjjr.fi"
 AUTHOR = "%s <%s>" % (AUTHOR_NAME, AUTHOR_EMAIL)
 VERSION = "0.4"
-SO_VERSION = "0"
-SO_NAME = "libm210.so." + SO_VERSION
 HOMEPAGE = "http://tjjr.fi/software/m210/"
 __doc__ = """%s
 
-This Python package provides pythonic bindings for %s. It provides API
-for displaying device information, dumping stored notes as a binary
-stream to a file and converting notes to various image formats.
+This Python package provides pythonic bindings for libm210. It
+provides API for displaying device information, dumping stored notes
+as a binary stream to a file and converting notes to various image
+formats.
 
 Author: %s
 Version: %s
 Homepage: %s
-""" % (DESCRIPTION, SO_NAME, AUTHOR, VERSION, HOMEPAGE)
+""" % (DESCRIPTION, AUTHOR, VERSION, HOMEPAGE)
 
 class _struct_m210_dev_info(ctypes.Structure):
     _fields_ = [("firmware_version", ctypes.c_int16),
@@ -51,7 +50,8 @@ class _struct_m210_dev_info(ctypes.Structure):
                 ("used_memory", ctypes.c_uint32),
                 ]
 
-_libm210 = ctypes.CDLL(SO_NAME , use_errno=True)
+_libm210_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "_libm210.so"))
+_libm210 = ctypes.CDLL(_libm210_path, use_errno=True)
 
 (_M210_ERR_OK,
  _M210_ERR_SYS,
