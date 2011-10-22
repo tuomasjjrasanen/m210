@@ -28,7 +28,7 @@ DESCRIPTION = "Pegasus Tablet Mobile NoteTaker (M210) Controller"
 AUTHOR_NAME = u"Tuomas Jorma Juhani Räsänen"
 AUTHOR_EMAIL = "tuomasjjrasanen@tjjr.fi"
 AUTHOR = "%s <%s>" % (AUTHOR_NAME, AUTHOR_EMAIL)
-VERSION = "0.4"
+VERSION = "0.5"
 HOMEPAGE = "http://tjjr.fi/software/m210/"
 __doc__ = """%s
 

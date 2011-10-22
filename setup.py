@@ -22,15 +22,14 @@ setup(name='m210',
       provides=[
         'm210',
         ],
-      version=m210.VERSION,
-      author=m210.AUTHOR_NAME,
-      author_email=m210.AUTHOR_EMAIL,
-      maintainer=m210.AUTHOR_NAME,
-      maintainer_email=m210.AUTHOR_EMAIL,
-      url=m210.HOMEPAGE,
-      download_url="http://launchpad.net/m210/trunk/%s/+download/m210-%s.tar.gz" % (m210.VERSION, m210.VERSION),
-      description=m210.DESCRIPTION,
-      long_description="""M210 provides tools for controlling Pegasus Tablet Mobile Notetaker M210
+      version="0.5",
+      author="Tuomas Jorma Juhani Räsänen",
+      author_email="tuomasjjrasanen@tjjr.fi",
+      maintainer="Tuomas Jorma Juhani Räsänen",
+      maintainer_email="tuomasjjrasanen@tjjr.fi",
+      url="http://tjjr.fi/software/m210/",
+      description="Pegasus Mobile NoteTaker (M210) Controller",
+      long_description="""Tools for controlling Pegasus Tablet Mobile Notetaker M210
 in Linux systems.""",
       keywords=[
         "pegasus",
