@@ -1,2 +1,4 @@
 include COPYING
 include NEWS
+include etc/udev/rules.d/50-m210.rules
+
