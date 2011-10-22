@@ -14,7 +14,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-from distutils.core import setup
+from distutils.core import setup, Extension
 
 import m210
 
@@ -28,7 +28,6 @@ setup(name='m210',
       maintainer=m210.AUTHOR_NAME,
       maintainer_email=m210.AUTHOR_EMAIL,
       url=m210.HOMEPAGE,
-      download_url="http://launchpad.net/m210/trunk/%s/+download/m210-%s.tar.gz" % (m210.VERSION, m210.VERSION),
       description=m210.DESCRIPTION,
       long_description="""M210 provides tools for controlling Pegasus Tablet Mobile Notetaker M210
 in Linux systems.""",
@@ -63,4 +62,10 @@ in Linux systems.""",
       scripts=[
         'bin/m210',
         ],
+      ext_modules=[Extension(name='_libm210',
+                             sources=['libm210/src/dev.c',
+                                      'libm210/src/err.c',
+                                      'libm210/src/note.c'],
+                             libraries=["udev"],
+                             extra_compile_args=["-std=gnu99"])],      
       )

@@ -7,8 +7,8 @@ M210 provides tools for using Pegasus Tablet Mobile NoteTaker (M210)
 Features
 --------
 
-- download notes in binary or SVG format
-- delete notes
+- export notes in binary or SVG format
+- erase notes
 - show device information
 
 General information
@@ -21,12 +21,8 @@ General information
 - Code:       <http://code.launchpad.net/m210/>
 - Bugs:       <http://bugs.launchpad.net/m210/>
 
-Build requirements
-------------------
+Requirements
+------------
 
-- Python
-
-Runtime requirements
---------------------
-
-- libm210.so.0 <http://tjjr.fi/software/libm210/>
+- libudev0
+- libudev-dev

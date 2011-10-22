@@ -1,2 +1,6 @@
 include COPYING
 include NEWS
+include libm210/src/dev.h
+include libm210/src/rawnote.h
+include libm210/src/note.h
+include libm210/src/err.h
