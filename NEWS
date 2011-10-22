@@ -1,5 +1,7 @@
-        - Reduced functionality: only downloads, deletes, note
-          conversion and info
+        - Reduced functionality:
+          - export notes in binary or SVG formats
+          - erase notes
+          - display device info
 
 0.4
         - m210c-qt has cleaner user interface
