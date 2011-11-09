@@ -617,6 +617,9 @@ m210_dev_download_notes(struct m210_dev *const dev_ptr, int const dest_fd)
         */
         err = m210_dev_accept_download(dev_ptr);
 exit:
+        if (stream_ptr) {
+                fflush(stream_ptr);
+        }
         free(lost_nums);
         return err;
 }
