@@ -10,8 +10,8 @@ General information
 - Version:    0.1
 - License:    GPLv3+ (see COPYING for details)
 - Author:     Tuomas Jorma Juhani Räsänen <tuomasjjrasanen@tjjr.fi>
-- Homepage:   <http://tjjr.fi/software/libm210/>
-- Code:       <http://code.launchpad.net/libm210/>
+- Homepage:   <http://tjjr.fi/sw/libm210/>
+- Code:       <http://github.com/tuomasjjrasanen/libm210/>
 - Bugs:       <http://bugs.launchpad.net/libm210/>
 
 Build requirements
