@@ -17,8 +17,8 @@ General information
 - Version:    0.5
 - License:    GPLv3+ (see COPYING for details)
 - Author:     Tuomas Jorma Juhani Räsänen <tuomasjjrasanen@tjjr.fi>
-- Homepage:   <http://tjjr.fi/software/m210/>
-- Code:       <http://code.launchpad.net/m210/>
+- Homepage:   <http://tjjr.fi/sw/m210/>
+- Code:       <http://github.com/tuomasjjrasanen/m210/>
 - Bugs:       <http://bugs.launchpad.net/m210/>
 
 Build requirements
