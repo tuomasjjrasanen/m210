@@ -13,7 +13,6 @@ if test "$ac_cv_header_libudev_h" == no
 then
   AC_MSG_ERROR([This package needs libudev.h to get compiled.])
 fi
-AC_CONFIG_HEADERS([config.h])
 AC_CONFIG_FILES([
         Makefile
         src/Makefile
