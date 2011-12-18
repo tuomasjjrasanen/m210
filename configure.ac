@@ -1,6 +1,6 @@
 AC_INIT([libm210],
 	[0.0],
-        [tuomasjjrasanen@tjjr.fi],
+        [https://bugs.launchpad.net/libm210/],
         [libm210],
         [http://tjjr.fi/sw/libm210/])
 AC_CONFIG_AUX_DIR([build-aux])
