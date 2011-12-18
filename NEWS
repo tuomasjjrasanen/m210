@@ -1,0 +1,16 @@
+=================================================
+ Libm210 NEWS -- history of user-visible changes
+=================================================
+
+Release M.m
+===========
+
+- Initial release.
+
+- Support for basic functionality:
+
+  - Query device information (version, mode, etc.).
+
+  - Fetch notes from a device.
+
+  - Delete notes from a device.
