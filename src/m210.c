@@ -1,5 +1,5 @@
 /* m210 - Pegasus Tablet Mobile NoteTaker (M210) Controller
- * Copyright © 2011 Tuomas Jorma Juhani Räsänen
+ * Copyright (C) 2011 Tuomas Jorma Juhani Räsänen
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -36,7 +36,7 @@ void print_error_and_exit(char const *const msg)
 void print_version_and_exit(void)
 {
 	printf("%s %s\n"
-	       "Copyright © 2011 Tuomas Jorma Juhani Räsänen\n"
+	       "Copyright (C) 2011 Tuomas Jorma Juhani Räsänen\n"
 	       "License GPLv3+: GNU GPL version 3 or later <http://gnu.org/licenses/gpl.html>.\n"
 	       "This is free software: you are free to change and redistribute it.\n"
 	       "There is NO WARRANTY, to the extent permitted by law.\n"
