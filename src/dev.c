@@ -512,7 +512,7 @@ static enum m210_err
 m210_dev_download(struct m210_dev const *const dev_ptr,
                   uint16_t packet_count,
                   uint16_t *const lost_nums,
-                  FILE *const stream_ptr)
+                  FILE *const file)
 {
         enum m210_err err = M210_ERR_OK;
         uint16_t lost_count = 0;
@@ -532,7 +532,7 @@ m210_dev_download(struct m210_dev const *const dev_ptr,
 
                 if (!lost_count) {
                         if (fwrite(packet.data, sizeof(packet.data), 1,
-                                   stream_ptr) != 1) {
+                                   file) != 1) {
                                 err = M210_ERR_SYS;
                                 goto exit;
                         }
@@ -559,7 +559,7 @@ m210_dev_download(struct m210_dev const *const dev_ptr,
                 if (packet.num == lost_nums[0]) {
                         lost_nums[0] = lost_nums[--lost_count];
                         if (fwrite(packet.data, sizeof(packet.data), 1,
-                                   stream_ptr) != 1) {
+                                   file) != 1) {
                                 err = M210_ERR_SYS;
                                 goto exit;
                         }
@@ -570,17 +570,11 @@ exit:
 }
 
 enum m210_err
-m210_dev_download_notes(struct m210_dev *const dev_ptr, int const dest_fd)
+m210_dev_download_notes(struct m210_dev *const dev_ptr, FILE *file)
 {
         enum m210_err err = M210_ERR_OK;
         uint16_t *lost_nums = NULL;
         uint16_t packet_count = 0;
-        FILE *stream_ptr = NULL;
-
-        stream_ptr = fdopen(dest_fd, "wb");
-        if (!stream_ptr) {
-                goto exit;
-        }
 
         err = m210_dev_begin_download(dev_ptr, &packet_count);
         if (err) {
@@ -606,7 +600,7 @@ m210_dev_download_notes(struct m210_dev *const dev_ptr, int const dest_fd)
                 goto exit;
         }
 
-        err = m210_dev_download(dev_ptr, packet_count, lost_nums, stream_ptr);
+        err = m210_dev_download(dev_ptr, packet_count, lost_nums, file);
         if (err) {
                 goto exit;
         }
@@ -617,8 +611,8 @@ m210_dev_download_notes(struct m210_dev *const dev_ptr, int const dest_fd)
         */
         err = m210_dev_accept_download(dev_ptr);
 exit:
-        if (stream_ptr) {
-                fflush(stream_ptr);
+        if (file) {
+                fflush(file);
         }
         free(lost_nums);
         return err;

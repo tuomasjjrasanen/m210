@@ -45,7 +45,7 @@ enum m210_err m210_dev_disconnect(struct m210_dev **dev_ptr_ptr);
 enum m210_err m210_dev_get_info(struct m210_dev *dev_ptr,
                                 struct m210_dev_info *info_ptr);
 
-enum m210_err m210_dev_download_notes(struct m210_dev *dev_ptr, int dest_fd);
+enum m210_err m210_dev_download_notes(struct m210_dev *dev_ptr, FILE *file);
 
 enum m210_err m210_dev_delete_notes(struct m210_dev *dev_ptr);
 
