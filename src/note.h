@@ -23,25 +23,18 @@
 
 #include "err.h"
 
-struct m210_note_coord {
-	uint16_t x;
-	uint16_t y;
-} __attribute__((packed));
-
-struct m210_note_path {
-	struct m210_note_coord *coords;
-	size_t coord_count;
+struct m210_note_body {
+	int16_t x;
+	int16_t y;
+	uint16_t pressure;
 };
 
-struct m210_note {
+struct m210_note_head {
 	uint8_t number;
-	struct m210_note_path *paths;
-	size_t path_count;
+	ssize_t bodyc;
 };
 
-enum m210_err m210_note_create_next(struct m210_note **note_ptr_ptr,
-				    FILE *stream_ptr);
-
-void m210_note_destroy(struct m210_note **note_ptr_ptr);
+enum m210_err m210_note_read_head(struct m210_note_head *headp, FILE *file);
+enum m210_err m210_note_read_body(struct m210_note_body *bodyp, FILE *file);
 
 #endif /* NOTE_H */

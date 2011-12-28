@@ -25,13 +25,12 @@ enum m210_err {
 	M210_ERR_NO_DEV,
 	M210_ERR_BAD_DEV_MSG,
 	M210_ERR_DEV_TIMEOUT,
-	M210_ERR_BAD_NOTE_HEAD,
-	M210_ERR_BAD_NOTE_BODY,
-	M210_ERR_NOTE_EOF
+	M210_ERR_BAD_RAWNOTE_HEAD,
+	M210_ERR_BAD_RAWNOTE_BODY,
+	M210_ERR_UNEXPECTED_EOF
 };
 
 char const *m210_err_strerror(enum m210_err err);
-
-enum m210_err m210_err_perror(enum m210_err err, char const *msg_str);
+enum m210_err m210_err_perror(enum m210_err err, char const *msg);
 
 #endif /* ERR_H */

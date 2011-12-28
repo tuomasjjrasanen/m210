@@ -22,9 +22,9 @@
 #include "note.h"
 #include "rawnote.h"
 
-static inline int is_penup(struct m210_rawnote_body const *const body_ptr)
+static inline int is_penup(struct m210_rawnote_body const *const bodyp)
 {
-	return memcmp(body_ptr, &M210_RAWNOTE_BODY_PENUP,
+	return memcmp(bodyp, &M210_RAWNOTE_BODY_PENUP,
 		      sizeof(struct m210_rawnote_body)) == 0;
 }
 
@@ -35,164 +35,94 @@ static inline uint32_t le24toh32(uint8_t const *three_bytes)
 	return le32toh(result);
 }
 
-void m210_note_destroy(struct m210_note **note_ptr_ptr)
+enum m210_err m210_note_read_head(struct m210_note_head *headp, FILE *file)
 {
-	struct m210_note *const note_ptr = *note_ptr_ptr;
-	if (note_ptr) {
-		struct m210_note_path *const paths = note_ptr->paths;
-		if (paths) {
-			/* If a note has paths, then the first
-			 * path always stores all coordinates. */
-			free(paths->coords);
-			for (size_t i = 0; i < note_ptr->path_count; ++i) {
-				(paths + i)->coords = NULL;
-				(paths + i)->coord_count = 0;
-			}
-		}
-		free(note_ptr->paths);
-		note_ptr->paths = NULL;
-		note_ptr->path_count = 0;
-	}
-	free(note_ptr);
-	*note_ptr_ptr = NULL;
-}
-
-static enum m210_err m210_note_create_paths(struct m210_note *note_ptr,
-					    FILE *stream_ptr,
-					    uint32_t note_end_pos)
-{
-	enum m210_err err = M210_ERR_OK;
-	struct m210_note_coord *coords = NULL;
-
-	struct m210_note_path *paths = NULL;
-	size_t path_count = 0;
-	size_t path_len = 0;
-
-	struct m210_rawnote_body *bodies = NULL;
-	size_t body_count = 0;
-
+	enum m210_err err;
+	struct m210_rawnote_head rawhead;
 	long cur_pos;
 
-	cur_pos = ftell(stream_ptr);
-	if (cur_pos == -1) {
-		err = M210_ERR_SYS;
-		goto out;
-	}
-
-	/* The data section of the note consists of N bodies. */
-	body_count = ((note_end_pos - cur_pos)
-		      / sizeof(struct m210_rawnote_body));
-	bodies = malloc(body_count * sizeof(struct m210_rawnote_body));
-	if (!bodies) {
-		err = M210_ERR_SYS;
-		goto out;
-	}
-	coords = (struct m210_note_coord *) bodies;
-
-	for (size_t i = 0; i < body_count; ++i) {
-
-		if (fread(bodies + i, sizeof(struct m210_rawnote_body), 1,
-			  stream_ptr) != 1) {
-			if (ferror(stream_ptr)) {
-				err = M210_ERR_BAD_NOTE_BODY;
-				goto out;
-			}
-			/* EOF should never happen at this point,
-			 * otherwise the stream is flawed somehow. */
-			err = M210_ERR_NOTE_EOF;
-			goto out;
-		}
-
-		/* Path ends when the pen is raised. */
-		if (is_penup(bodies + i)) {
-			struct m210_note_path *new_paths;
-
-			/* Let's extend the array of paths by one. */
-			new_paths = realloc(paths,
-					    ((path_count + 1)
-					     * sizeof(struct m210_note_path)));
-			if (!new_paths) {
-				err = M210_ERR_SYS;
-				goto out;
-			}
-			paths = new_paths;
-			(paths + path_count)->coord_count = path_len;
-			(paths + path_count)->coords = coords + i - path_len;
-			path_len = 0;
-			path_count += 1;
-
-			continue;
-		} else { /* Body represents a coordinate change. */
-			(coords + i)->x = le16toh((coords + i)->x);
-			(coords + i)->y = le16toh((coords + i)->y);
-			path_len += 1;
-		}
-
-	}
-out:
-	if (err) {
-		free(paths);
-		paths = NULL;
-		path_count = 0;
-		return err;
-	}
-	note_ptr->paths = paths;
-	note_ptr->path_count = path_count;
-	return M210_ERR_OK;
-}
-
-enum m210_err m210_note_create_next(struct m210_note **note_ptr_ptr,
-				    FILE *stream_ptr)
-{
-	enum m210_err err = M210_ERR_OK;
-	struct m210_note *note_ptr = NULL;
-	struct m210_rawnote_head head;
-
-	if (fread(&head,
-		  sizeof(struct m210_rawnote_head), 1, stream_ptr) != 1) {
-		if (ferror(stream_ptr)) {
-			err = M210_ERR_BAD_NOTE_HEAD;
+	if (fread(&rawhead, sizeof(struct m210_rawnote_head), 1, file) != 1) {
+		if (ferror(file)) {
+			err = M210_ERR_BAD_RAWNOTE_HEAD;
 			goto out;
 		}
 		/* EOF should never happen at this point, otherwise
 		 * the stream is flawed somehow. */
-		err = M210_ERR_NOTE_EOF;
+		err = M210_ERR_UNEXPECTED_EOF;
 		goto out;
 	}
 
-	if (!memcmp(&head, &M210_RAWNOTE_HEAD_LAST,
+	if (!memcmp(&rawhead, &M210_RAWNOTE_HEAD_LAST,
 		    sizeof(struct m210_rawnote_head))) {
 		/* Last note is always empty, and therefore there is
 		 * no need to walk through the data section. (There
 		 * might be few zero-bytes of data just for padding
 		 * purposes: notes are always downloaded in 62 byte
 		 * long packets.) */
+		headp->number = 0;
+		headp->bodyc = 0;
+		err = M210_ERR_OK;
 		goto out;
 	}
 
-	if (head.state != M210_RAWNOTE_STATE_EMPTY
-	    && head.state != M210_RAWNOTE_STATE_UNFINISHED
-	    && head.state != M210_RAWNOTE_STATE_FINISHED_BY_SOFTWARE
-	    && head.state != M210_RAWNOTE_STATE_FINISHED_BY_USER) {
-		err = M210_ERR_BAD_NOTE_HEAD;
+	if (rawhead.state != M210_RAWNOTE_STATE_EMPTY &&
+	    rawhead.state != M210_RAWNOTE_STATE_UNFINISHED &&
+	    rawhead.state != M210_RAWNOTE_STATE_FINISHED_BY_SOFTWARE &&
+	    rawhead.state != M210_RAWNOTE_STATE_FINISHED_BY_USER) {
+		err = M210_ERR_BAD_RAWNOTE_HEAD;
 		goto out;
 	}
 
-	note_ptr = calloc(1, sizeof(struct m210_note));
-	if (!note_ptr) {
+	cur_pos = ftell(file);
+	if (cur_pos == -1) {
 		err = M210_ERR_SYS;
 		goto out;
 	}
-	note_ptr->number = head.number;
 
-	err = m210_note_create_paths(note_ptr, stream_ptr,
-				     le24toh32(head.next_pos));
+	/* The data section of a note consists of exactly N bodies. */
+	headp->bodyc = ((le24toh32(rawhead.next_pos) - cur_pos)
+			/ sizeof(struct m210_rawnote_body));
+	headp->number = rawhead.number;
+
+	err = M210_ERR_OK;
 out:
-	if (err) {
-		free(note_ptr);
-		note_ptr = NULL;
-		return err;
+	return err;
+}
+
+enum m210_err m210_note_read_body(struct m210_note_body *bodyp, FILE *file)
+{
+	enum m210_err err;
+	struct m210_rawnote_body rawbody;
+
+	if (fread(&rawbody, sizeof(struct m210_rawnote_body), 1, file) != 1) {
+		/* We tried to read one item but failed. fread() does
+		 * not distinguish between eof and error, let's find
+		 * out which one happened. */
+		if (ferror(file)) {
+			err = M210_ERR_BAD_RAWNOTE_BODY;
+			goto out;
+		}
+		/* EOF should never happen at this point, otherwise
+		 * the stream is flawed somehow. */
+		err = M210_ERR_UNEXPECTED_EOF;
+		goto out;
 	}
-	*note_ptr_ptr = note_ptr;
-	return M210_ERR_OK;
+
+	/* Map byte arrays to coordinate values. */
+	memcpy(&(bodyp->x), rawbody.x, 2);
+	memcpy(&(bodyp->y), rawbody.y, 2);
+
+	/* Mind the byte order. */
+	bodyp->x = le16toh(bodyp->x);
+	bodyp->y = le16toh(bodyp->y);
+
+	if (is_penup(&rawbody)) {
+		bodyp->pressure = 0;
+	} else {
+		bodyp->pressure = 1;
+	}
+
+	err = M210_ERR_OK;
+out:
+	return err;
 }

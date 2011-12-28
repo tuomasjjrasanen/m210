@@ -31,8 +31,8 @@ char const *m210_err_strerror(enum m210_err const err)
 		"device not found",
 		"unexpected response",
 		"response waiting timeouted",
-		"note has malformed head",
-		"note has malformed body",
+		"raw note has malformed head",
+		"raw note has malformed body",
 		"unexpected end-of-file"
 	};
 	return err_strs[err];
@@ -40,8 +40,7 @@ char const *m210_err_strerror(enum m210_err const err)
 
 extern char *program_invocation_name;
 
-enum m210_err m210_err_perror(enum m210_err const err,
-			      char const *const msg_str)
+enum m210_err m210_err_perror(enum m210_err const err, char const *const msg)
 {
 	enum m210_err result;
 	int const original_errno = errno;
@@ -49,11 +48,11 @@ enum m210_err m210_err_perror(enum m210_err const err,
 	/* +2 == a colon and a blank */
 	size_t const progname_len = strlen(program_invocation_name) + 2;
 	/* +2 == a colon and a blank */
-	size_t const msg_str_len = msg_str == NULL ? 0 : strlen(msg_str) + 2;
+	size_t const msg_len = msg == NULL ? 0 : strlen(msg) + 2;
 	size_t const m210_errstr_len = strlen(m210_errstr);
 
 	/* +1 == a terminating null byte. */
-	size_t const total_len = (progname_len + msg_str_len
+	size_t const total_len = (progname_len + msg_len
 				  + m210_errstr_len + 1);
 	char *errstr;
 
@@ -63,12 +62,12 @@ enum m210_err m210_err_perror(enum m210_err const err,
 		goto out;
 	}
 
-	if (msg_str == NULL) {
+	if (msg == NULL) {
 		snprintf(errstr, total_len, "%s: %s",
 			 program_invocation_name, m210_errstr);
 	} else {
 		snprintf(errstr, total_len, "%s: %s: %s",
-			 program_invocation_name, msg_str, m210_errstr);
+			 program_invocation_name, msg, m210_errstr);
 	}
 
 	if (err == M210_ERR_SYS) {
