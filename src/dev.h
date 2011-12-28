@@ -28,7 +28,7 @@
 
 #define M210_DEV_MAX_MEMORY 4063232 /* Bytes. */
 
-struct m210_dev;
+typedef struct m210_dev *m210_dev;
 
 struct m210_dev_info {
 	uint16_t firmware_version;
@@ -38,15 +38,10 @@ struct m210_dev_info {
 	uint32_t used_memory;
 };
 
-enum m210_err m210_dev_connect(struct m210_dev **dev_ptr_ptr);
-
-enum m210_err m210_dev_disconnect(struct m210_dev **dev_ptr_ptr);
-
-enum m210_err m210_dev_get_info(struct m210_dev *dev_ptr,
-				struct m210_dev_info *info_ptr);
-
-enum m210_err m210_dev_download_notes(struct m210_dev *dev_ptr, FILE *file);
-
-enum m210_err m210_dev_delete_notes(struct m210_dev *dev_ptr);
+enum m210_err m210_dev_connect(m210_dev *devp);
+enum m210_err m210_dev_disconnect(m210_dev *devp);
+enum m210_err m210_dev_get_info(m210_dev dev, struct m210_dev_info *infop);
+enum m210_err m210_dev_download_notes(m210_dev dev, FILE *file);
+enum m210_err m210_dev_delete_notes(m210_dev dev);
 
 #endif /* DEV_H */
