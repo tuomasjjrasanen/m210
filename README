@@ -11,7 +11,7 @@ Homepage: <http://tjjr.fi/sw/m210/>
 Features
 ========
 
-- Fetch notes in raw format (memory dump).
+- Download notes in raw format (memory dump).
 - Convert raw notes to SVG images.
 - Erase notes from the device.
 - Show device information.
@@ -39,9 +39,9 @@ ownership of plugged M210 devices to plugdev.
 How to use
 ==========
 
-Export notes from the device as SVG files:
+Download notes from the device and convert them to SVG files:
 
-  m210 dump | m210 convert
+  m210 download | m210 convert
 
 Delete notes from the device:
 
