@@ -8,32 +8,38 @@
  *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#define _GNU_SOURCE
+
 #include <err.h>
+#include <fcntl.h>
 #include <getopt.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <unistd.h>
+
+#include <libm210/dev.h>
+#include <libm210/note.h>
 
 extern char *program_invocation_name;
 
-void print_error_and_exit(char const *const msg)
+static const int svg_stroke_width = 20;
+static const char *const svg_stroke_color = "black";
+
+static void print_help_hint(void)
 {
-	if (msg) {
-		fprintf(stderr, "%s: %s\n", program_invocation_name, msg);
-	}
-        fprintf(stderr, "Try `%s --help' for more information.\n",
-                program_invocation_name);
-        exit(EXIT_FAILURE);
+	fprintf(stderr, "Try `%s --help' for more information.\n",
+		program_invocation_name);
 }
 
-void print_version_and_exit(void)
+static void print_version(void)
 {
 	printf("%s %s\n"
 	       "Copyright (C) 2011 Tuomas Jorma Juhani Räsänen\n"
@@ -43,38 +49,37 @@ void print_version_and_exit(void)
 	       "\n"
 	       "Written by Tuomas Jorma Juhani Räsänen.\n",
 	       PACKAGE_NAME, VERSION);
-	exit(EXIT_SUCCESS);
 }
 
-void print_help_and_exit(void)
+static void print_help(void)
 {
 	printf("Usage: %s --help\n"
 	       "       %s --version\n"
 	       "       %s info\n"
-	       "       %s dump [--output-file=<file>]\n"
+	       "       %s download [--output-file=<file>]\n"
 	       "       %s convert [--input-file=<file>] [--output-dir=<dir>] [--overwrite]\n"
 	       "       %s delete\n"
 	       "\n"
 	       "Pull notes from Pegasus Tablet Mobile NoteTaker (M210) and\n"
 	       "convert them to SVG files.\n"
 	       "\n"
-	       "General options:\n"
-	       " --help                   display this help and exit\n"
-	       " --version                output version information and exit\n"
+	       "Options:\n"
+	       " --help			  display this help and exit\n"
+	       " --version		  output version information and exit\n"
 	       "\n"
 	       "Commands:\n"
-	       "  info                    show device information\n"
+	       "  info			  show device information\n"
 	       "\n"
-	       "  dump                    dump notes as a binary stream\n"
+	       "  download		  download notes as a binary stream\n"
 	       "    --output-file=<file>  defaults to standard output\n"
 	       "\n"
-	       "  convert                 convert notes to SVG files\n"
-	       "    --input-file=<file>   defaults to standard input\n"
-	       "    --output-dir=<dir>    directory where files will be\n"
-	       "                          written to, defaults to\n"
-	       "    --overwrite           overwrite existing files\n"
+	       "  convert		  convert notes to SVG files\n"
+	       "    --input-file=<file>	  defaults to standard input\n"
+	       "    --output-dir=<dir>	  directory where files will be\n"
+	       "			  written to, defaults to\n"
+	       "    --overwrite		  overwrite existing files\n"
 	       "\n"
-	       "  delete                  delete all notes from the device\n"
+	       "  delete		  delete all notes from the device\n"
 	       "\n"
 	       "Report bugs to <%s>\n"
 	       "Homepage: <%s>\n"
@@ -83,55 +88,419 @@ void print_help_and_exit(void)
 	       program_invocation_name, program_invocation_name,
 	       program_invocation_name, program_invocation_name,
 	       PACKAGE_BUGREPORT, PACKAGE_URL);
-	exit(EXIT_SUCCESS);
 }
 
-/* struct dump_options { */
-/* 	FILE *output_file; */
-/* }; */
-
-/* enum format { */
-/* 	SVG */
-/* }; */
-
-/* struct convert_options { */
-/* 	FILE *input_file; */
-/* 	enum format output_format; */
-/* 	int overwrite; */
-/* }; */
-
-/* void parse_convert_options(); */
-
-/* void parse_dump_options(); */
-
-/* void parse_command(int argc, char **argv); */
-
-void parse_general_options(int argc, char **argv)
+static FILE* open_svg_file(int note_number, char *output_mode)
 {
-        const struct option options[] = {
-                {"help",          no_argument,       NULL, 'h'},
-                {"version",       no_argument,       NULL, 'v'},
-                {0, 0, 0, 0}
-        };
+	FILE *file = NULL;
+	char *filename = NULL;
 
-        while (1) {
-                int option = getopt_long(argc, argv, "", options, NULL);
+	if (asprintf(&filename, "m210_note_%d.svg", note_number) == -1) {
+		/* On error, asprintf() leaves the contents of
+		 * filename undefined. It needs to be NULLed to safely
+		 * call free(). */
+		filename = NULL;
+		goto out;
+	}
+
+	file = fopen(filename, output_mode);
+out:
+	free(filename);
+	return file;
+}
+
+static int note_to_svg(FILE *input_file, char *output_mode) {
+	int result = -1;
+	FILE *output_file = NULL;
+	struct m210_note_head head;
+	enum m210_err err;
+	int bodyi;
+	int has_path = 0;
+
+	err = m210_note_read_head(&head, input_file);
+	if (err) {
+		m210_err_perror(err, "error: failed to read note head");
+		goto out;
+	}
+
+	if (head.number == 0) {
+		result = 0;
+		goto out;
+	}
+
+	output_file = open_svg_file(head.number, output_mode);
+	if (output_file == NULL) {
+		perror("error: failed to create output file");
+		goto out;
+	}
+
+	fprintf(output_file, "%s\n", "<?xml version=\"1.0\"?>");
+	fprintf(output_file, "%s\n", "<!DOCTYPE svg PUBLIC \"-//W3C//DTD SVG 1.1//EN\" \"http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd\">");
+	fprintf(output_file, "%s\n", "<svg width=\"210mm\" height=\"297mm\" viewBox=\"-7000 0 14000 20000\" xmlns=\"http://www.w3.org/2000/svg\" version=\"1.1\">");
+
+	for (bodyi = 0; bodyi < head.bodyc; ++bodyi) {
+		struct m210_note_body body;
+		err = m210_note_read_body(&body, input_file);
+		if (err) {
+			m210_err_perror(err, "error: failed to read note body");
+			goto out;
+		}
+		if (body.pressure) {
+			if (!has_path) {
+				fprintf(output_file,
+					"<polyline stroke-width=\"%d\" "
+					"stroke=\"%s\" fill=\"none\" points=\"",
+					svg_stroke_width, svg_stroke_color);
+				has_path = 1;
+			}
+			fprintf(output_file, "%d,%d ", body.x, body.y);
+		} else {
+			fprintf(output_file, "%s\n", "\" />");
+			has_path = 0;
+		}
+	}
+
+	if (fprintf(output_file, "%s", "</svg>\n") < 0) {
+		perror("error: failed to write to output file");
+		goto out;
+	}
+
+	result = 0;
+out:
+	if (output_file && output_file != stdout && fclose(output_file)) {
+		perror("error: failed to close output file");
+		result = -1;
+	}
+	return result;
+}
+
+static int convert_cmd(int argc, char **argv)
+{
+	int result = -1;
+	FILE *input_file = NULL;
+	char *output_mode = "wx";
+	const struct option opts[] = {
+		{"input-file", required_argument, NULL, 'i'},
+		{"output-dir", required_argument, NULL, 'd'},
+		{"overwrite", no_argument, NULL, 'f'},
+		{0, 0, 0, 0}
+	};
+
+	input_file = stdin;
+
+	while (1) {
+		int option = getopt_long(argc, argv, "+", opts, NULL);
+
+		if (option == -1) {
+			break;
+		}
+
+		switch (option) {
+		case 'i':
+			input_file = fopen(optarg, "rb");
+			if (input_file == NULL) {
+				perror("error: failed to open input file");
+				goto out;
+			}
+			break;
+		case 'd':
+			if (chdir(optarg)) {
+				perror("error: failed to change the current "
+				       "working directory");
+				goto out;
+			}
+			break;
+		case 'f':
+			output_mode = "w";
+			break;
+		default:
+			print_help_hint();
+			goto out;
+		}
+	}
+
+	if (optind != argc) {
+		fprintf(stderr, "error: unexpected convert arguments\n");
+		print_help_hint();
+		goto out;
+	}
+
+	while (1) {
+		result = note_to_svg(input_file, output_mode);
+		if (result == -1) {
+			goto out;
+		} else if (result == 0) {
+			break;
+		}
+	}
+
+out:
+	if (input_file && input_file != stdin && fclose(input_file)) {
+		perror("failed to close input file");
+		result = -1;
+	}
+	return result;
+}
+
+static int delete_cmd(int argc, char **argv)
+{
+	int result = -1;
+	m210_dev dev;
+	enum m210_err err;
+	const struct option opts[] = {
+		{0, 0, 0, 0}
+	};
+
+	while (1) {
+		int option = getopt_long(argc, argv, "+", opts, NULL);
+
+		if (option == -1) {
+			break;
+		}
+
+		switch (option) {
+		default:
+			print_help_hint();
+			goto out;
+		}
+	}
+
+	if (optind != argc) {
+		fprintf(stderr, "error: unexpected delete arguments\n");
+		print_help_hint();
+		goto out;
+	}
+
+	err = m210_dev_connect(&dev);
+	if (err) {
+		m210_err_perror(err, "failed to open device");
+		goto out;
+	}
+
+	err = m210_dev_delete_notes(dev);
+	if (err) {
+		m210_err_perror(err, "failed to delete notes");
+		goto out;
+	}
+	result = -1;
+out:
+	if (dev) {
+		err = m210_dev_disconnect(&dev);
+		if (err) {
+			m210_err_perror(err, "error: failed to disconnect");
+			result = -1;
+		}
+	}
+	return result;
+}
+
+static int download_cmd(int argc, char **argv)
+{
+	int result = -1;
+	m210_dev dev;
+	FILE *output_file = NULL;
+	enum m210_err err;
+	const struct option opts[] = {
+		{"output-file", required_argument, NULL, 'o'},
+		{0, 0, 0, 0}
+	};
+
+	output_file = stdout;
+
+	while (1) {
+		int option = getopt_long(argc, argv, "+", opts, NULL);
+
+		if (option == -1) {
+			break;
+		}
+
+		switch (option) {
+		case 'o':
+			output_file = fopen(optarg, "wb");
+			if (output_file == NULL) {
+				perror("error: failed to open output file");
+				goto out;
+			}
+			break;
+		default:
+			print_help_hint();
+			goto out;
+		}
+	}
+
+	if (optind != argc) {
+		fprintf(stderr, "error: unexpected download arguments\n");
+		print_help_hint();
+		goto out;
+	}
+
+	err = m210_dev_connect(&dev);
+	if (err) {
+		m210_err_perror(err, "failed to open device");
+		goto out;
+	}
+
+	err = m210_dev_download_notes(dev, output_file);
+	if (err) {
+		m210_err_perror(err, "failed to download notes");
+		goto out;
+	}
+
+	result = 0;
+out:
+	if (dev) {
+		err = m210_dev_disconnect(&dev);
+		if (err) {
+			m210_err_perror(err, "error: failed to disconnect");
+			result = -1;
+		}
+	}
+
+	if (output_file && output_file != stdout && fclose(output_file)) {
+		perror("failed to close output file");
+		result = -1;
+	}
+	return result;
+}
+
+static int info_cmd(int argc, char **argv)
+{
+	int result = -1;
+	m210_dev dev;
+	enum m210_err err;
+	struct m210_dev_info info;
+	const char *device_mode;
+	const struct option opts[] = {
+		{0, 0, 0, 0}
+	};
+
+	while (1) {
+		int option = getopt_long(argc, argv, "+", opts, NULL);
+
+		if (option == -1) {
+			break;
+		}
+
+		switch (option) {
+		default:
+			print_help_hint();
+			goto out;
+		}
+	}
+
+	if (optind != argc) {
+		fprintf(stderr, "error: unexpected info arguments\n");
+		print_help_hint();
+		goto out;
+	}
+
+	err = m210_dev_connect(&dev);
+	if (err) {
+		m210_err_perror(err, "failed to open device");
+		goto out;
+	}
+
+	err = m210_dev_get_info(dev, &info);
+	if (err) {
+		m210_err_perror(err, "failed to get information");
+		goto out;
+	}
+
+	switch (info.mode) {
+	case M210_DEV_MODE_MOUSE:
+		device_mode = "MOUSE";
+		break;
+	case M210_DEV_MODE_TABLET:
+		device_mode = "TABLET";
+		break;
+	default:
+		device_mode = "UNKNOWN";
+		break;
+	}
+
+	printf("Mode:		 %s\n", device_mode);
+	printf("Used memory:	 %d bytes\n", info.used_memory);
+	printf("Pad version:	 %d\n", info.pad_version);
+	printf("Analog version:	 %d\n", info.analog_version);
+	printf("Firmare version: %d\n", info.firmware_version);
+
+	result = 0;
+out:
+	if (dev) {
+		err = m210_dev_disconnect(&dev);
+		if (err) {
+			m210_err_perror(err, "error: failed to disconnect");
+			result = -1;
+		}
+	}
+	return result;
+}
+
+int main(int argc, char **argv)
+{
+	int cmd_argc;
+	char **cmd_argv;
+	int exitval = EXIT_FAILURE;
+	const char *cmd;
+	int (*cmdfn)(int, char**);
+	const struct option opts[] = {
+		{"help",    no_argument, NULL, 'h'},
+		{"version", no_argument, NULL, 'v'},
+		{0, 0, 0, 0}
+	};
+
+	while (1) {
+		int option = getopt_long(argc, argv, "+", opts, NULL);
 		if (option == -1) {
 			break;
 		}
 		switch (option) {
 		case 'h':
-			print_help_and_exit();
- 		case 'v':
-			print_version_and_exit();
+			print_help();
+			exitval = EXIT_SUCCESS;
+			goto out;
+		case 'v':
+			print_version();
+			exitval = EXIT_SUCCESS;
+			goto out;
 		default:
-			print_error_and_exit(NULL);
+			print_help_hint();
+			goto out;
 		}
-        }
-}
+	}
 
-int main(int argc, char **argv)
-{
-	parse_general_options(argc, argv);
-	return EXIT_SUCCESS;
+	if (optind == argc) {
+		fprintf(stderr, "error: command is missing\n");
+		print_help_hint();
+		goto out;
+	}
+
+	cmd = argv[optind];
+
+	cmd_argc = argc - optind;
+	cmd_argv = argv + optind;
+	optind = 0;
+
+	if (strcmp(cmd, "info") == 0) {
+		cmdfn = &info_cmd;
+	} else if (strcmp(cmd, "download") == 0) {
+		cmdfn = &download_cmd;
+	} else if (strcmp(cmd, "convert") == 0) {
+		cmdfn = &convert_cmd;
+	} else if (strcmp(cmd, "delete") == 0) {
+		cmdfn = &delete_cmd;
+	} else {
+		fprintf(stderr, "error: unknown command '%s'\n", cmd);
+		print_help_hint();
+		goto out;
+	}
+
+	if (cmdfn(cmd_argc, cmd_argv) == -1) {
+		fprintf(stderr, "error: %s failed\n", cmd);
+		goto out;
+	}
+
+	exitval = EXIT_SUCCESS;
+out:
+	return exitval;
 }
