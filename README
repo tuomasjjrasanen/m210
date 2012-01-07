@@ -18,7 +18,8 @@ its derivatives, the header file is packaged in libudev-dev.
 After satisfying dependencies described above, the basic installation
 is easy. Just run the following command:
 
-  ./configure && make && make install
+  ./configure && make
+  sudo make install
 
 It installs the library to /usr/local/lib and header files to
 /usr/local/include. See INSTALL for details.
