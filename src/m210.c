@@ -56,7 +56,7 @@ static void print_help(void)
 	printf("Usage: %s --help\n"
 	       "       %s --version\n"
 	       "       %s info\n"
-	       "       %s download [--output-file=<file>]\n"
+	       "       %s dump [--output-file=<file>]\n"
 	       "       %s convert [--input-file=<file>] [--output-dir=<dir>] [--overwrite]\n"
 	       "       %s delete\n"
 	       "\n"
@@ -70,7 +70,7 @@ static void print_help(void)
 	       "Commands:\n"
 	       "  info			  show device information\n"
 	       "\n"
-	       "  download		  download notes as a binary stream\n"
+	       "  dump    		  dump notes as a binary stream\n"
 	       "    --output-file=<file>  defaults to standard output\n"
 	       "\n"
 	       "  convert		  convert notes to SVG files\n"
@@ -294,7 +294,7 @@ out:
 	return result;
 }
 
-static int download_cmd(int argc, char **argv)
+static int dump_cmd(int argc, char **argv)
 {
 	int result = -1;
 	m210_dev dev;
@@ -329,7 +329,7 @@ static int download_cmd(int argc, char **argv)
 	}
 
 	if (optind != argc) {
-		fprintf(stderr, "error: unexpected download arguments\n");
+		fprintf(stderr, "error: unexpected dump arguments\n");
 		print_help_hint();
 		goto out;
 	}
@@ -483,8 +483,8 @@ int main(int argc, char **argv)
 
 	if (strcmp(cmd, "info") == 0) {
 		cmdfn = &info_cmd;
-	} else if (strcmp(cmd, "download") == 0) {
-		cmdfn = &download_cmd;
+	} else if (strcmp(cmd, "dump") == 0) {
+		cmdfn = &dump_cmd;
 	} else if (strcmp(cmd, "convert") == 0) {
 		cmdfn = &convert_cmd;
 	} else if (strcmp(cmd, "delete") == 0) {
