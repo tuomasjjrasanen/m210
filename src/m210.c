@@ -1,4 +1,4 @@
-/* m210 - Pegasus Tablet Mobile NoteTaker (M210) Controller
+/* m210 - control Pegasus Tablet Mobile NoteTaker
  * Copyright (C) 2011 Tuomas Jorma Juhani Räsänen
  *
  * This program is free software: you can redistribute it and/or modify
