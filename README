@@ -41,7 +41,7 @@ How to use
 
 Download notes from the device and convert them to SVG files:
 
-  m210 download | m210 convert
+  m210 dump | m210 convert
 
 Delete notes from the device:
 
