@@ -19,9 +19,9 @@ Features
 How to install
 ==============
 
-M210 uses libudev and therefore requires libudev development
-files, more specifically libudev.h, to get compiled. On Debian and
-its derivatives, the header file is packaged in libudev-dev.
+M210 uses libm210 and therefore requires libm210 development files to
+get compiled. Libm210 and its development files can obtained from
+<http://tjjr.fi/sw/libm210>.
 
 After satisfying dependencies described above, the basic installation
 is easy. Just run the following command:
