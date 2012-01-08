@@ -77,12 +77,17 @@ static void print_help(void)
 	       "    --overwrite		  overwrite existing files\n"
 	       "\n"
 	       "Examples:\n"
-	       "Download notes from the device and convert them to SVG files:\n"
-	       " m210 dump | m210 convert\n"
-	       "Delete notes from the device:\n"
-	       " m210 delete\n"
+	       "Download notes to a file:\n"
+	       "  m210 dump --output-file=notes\n"
+	       "\n"
+	       "Convert downloaded notes to SVG files:\n"
+	       "  m210 convert --input-file=notes\n"
+	       "\n"
+	       "Erase notes from the device's memory:\n"
+	       "  m210 delete\n"
+	       "\n"
 	       "Display device information:\n"
-	       " m210 info\n"
+	       "  m210 info\n"
 	       "\n"
 	       "Report bugs to <%s>\n"
 	       "Homepage: <%s>\n"
@@ -133,7 +138,7 @@ static int note_to_svg(FILE *input_file, char *output_mode) {
 
 	output_file = open_svg_file(head.number, output_mode);
 	if (output_file == NULL) {
-		perror("error: failed to create output file");
+		perror("error: failed to create SVG file");
 		goto out;
 	}
 

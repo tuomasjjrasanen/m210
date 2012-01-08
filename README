@@ -39,11 +39,15 @@ ownership of plugged M210 devices to plugdev.
 How to use
 ==========
 
-Download notes from the device and convert them to SVG files:
+Download notes to a file:
 
-  m210 dump | m210 convert
+  m210 dump > notes
 
-Delete notes from the device:
+Convert downloaded notes to SVG files:
+
+  m210 convert < notes
+
+Erase notes from the device's memory:
 
   m210 delete
 
