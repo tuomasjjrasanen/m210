@@ -1,3 +1,6 @@
+0.6
+	- does not depend on Python anymore, written competely in C
+
 0.5
         - Reduced functionality:
           - export notes in binary or SVG formats
