@@ -290,7 +290,7 @@ static int delete_cmd(int argc, char **argv)
 		m210_err_perror(err, "failed to delete notes");
 		goto out;
 	}
-	result = -1;
+	result = 0;
 out:
 	if (dev) {
 		err = m210_dev_disconnect(&dev);
