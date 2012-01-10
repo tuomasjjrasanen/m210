@@ -1,0 +1,46 @@
+Source: libm210
+Priority: extra
+Maintainer: Tuomas Jorma Juhani Räsänen <tuomasjjrasanen@tjjr.fi>
+Build-Depends: debhelper (>= 8.0.0), autotools-dev, libudev-dev
+Standards-Version: 3.9.2
+Section: libs
+Homepage: http://tjjr.fi/sw/libm210
+
+Package: libm210-dev
+Section: libdevel
+Architecture: any
+Depends: libm210-0 (= ${binary:Version}), ${misc:Depends}
+Description: development files for libm210
+ Pegasus Tablet Mobile NoteTaker (M210) enables users to capture
+ handwritten notes or drawings while you're away from the computer and
+ conveniently save it into the unit’s flash memory.
+ .
+ There are many M210 device manufacturers and brands:
+  - IRISnotes
+  - MVPen
+  - LogiPen
+  - Yifang
+ .
+ libm210 implements the protocol for retrieving and erasing notes
+ from M210 devices via USB.
+ .
+ This package provides development files.
+
+
+Package: libm210-0
+Section: libs
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}, libudev0
+Description: Pegasus Tablet Mobile NoteTaker protocol
+ Pegasus Tablet Mobile NoteTaker (M210) enables users to capture
+ handwritten notes or drawings while you're away from the computer and
+ conveniently save it into the unit’s flash memory.
+ .
+ There are many M210 device manufacturers and brands:
+  - IRISnotes
+  - MVPen
+  - LogiPen
+  - Yifang
+ .
+ libm210 implements the protocol for retrieving and erasing notes
+ from M210 devices via USB.
