@@ -28,7 +28,6 @@ Description: development files for libm210
 
 
 Package: libm210-0
-Section: libs
 Architecture: any
 Depends: ${shlibs:Depends}, ${misc:Depends}, libudev0
 Description: Pegasus Tablet Mobile NoteTaker protocol
