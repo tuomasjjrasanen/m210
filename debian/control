@@ -1,0 +1,28 @@
+Source: m210
+Section: utils
+Priority: extra
+Maintainer: Tuomas Jorma Juhani Räsänen <tuomasjjrasanen@tjjr.fi>
+Build-Depends: debhelper (>= 8.0.0), autotools-dev, libm210-dev
+Standards-Version: 3.9.2
+Homepage: http://tjjr.fi/sw/m210
+
+Package: m210
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}, libm210-0
+Description: control Pegasus Tablet Mobile NoteTaker
+ Pegasus Tablet Mobile NoteTaker (M210) enables users to capture
+ handwritten notes or drawings while they are away from the computer and
+ conveniently save it into the unit’s flash memory. Saved notes can
+ be downloaded afterwards via USB.
+ .
+ There are many M210 device manufacturers and brands:
+  - IRISnotes
+  - MVPen
+  - LogiPen
+  - Yifang
+ .
+ This package provides a command line tool for:
+  - downloading notes
+  - converting them to SVG files
+  - querying device info
+ .
