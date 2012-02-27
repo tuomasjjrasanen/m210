@@ -1,3 +1,9 @@
+libm210 (0.2-0~tjjr1) unstable; urgency=low
+
+  * New upstream release 0.2
+
+ -- Tuomas Jorma Juhani Räsänen <tuomasjjrasanen@tjjr.fi>  Tue, 28 Feb 2012 00:19:00 +0200
+
 libm210 (0.1-0~tjjr1) unstable; urgency=low
 
   * Initial release
