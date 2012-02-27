@@ -65,14 +65,6 @@ enum m210_err m210_note_read_head(struct m210_note_head *headp, FILE *file)
 		goto out;
 	}
 
-	if (rawhead.state != M210_RAWNOTE_STATE_EMPTY &&
-	    rawhead.state != M210_RAWNOTE_STATE_UNFINISHED &&
-	    rawhead.state != M210_RAWNOTE_STATE_FINISHED_BY_SOFTWARE &&
-	    rawhead.state != M210_RAWNOTE_STATE_FINISHED_BY_USER) {
-		err = M210_ERR_BAD_RAWNOTE_HEAD;
-		goto out;
-	}
-
 	cur_pos = ftell(file);
 	if (cur_pos == -1) {
 		err = M210_ERR_SYS;

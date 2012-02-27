@@ -2,6 +2,11 @@
  Libm210 NEWS -- history of user-visible changes
 =================================================
 
+Release 0.2
+===========
+
+- Status byte of the raw note header is ignored.
+
 Release 0.1
 ===========
 
