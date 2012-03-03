@@ -2,7 +2,7 @@ Source: libm210
 Priority: extra
 Maintainer: Tuomas Jorma Juhani Räsänen <tuomasjjrasanen@tjjr.fi>
 Build-Depends: debhelper (>= 8.0.0), autotools-dev, libudev-dev
-Standards-Version: 3.9.2
+Standards-Version: 3.9.3
 Section: libs
 Homepage: http://tjjr.fi/sw/libm210
 
