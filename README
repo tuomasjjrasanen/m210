@@ -1,5 +1,5 @@
 ==========
- M210 0.6
+ M210 0.7
 ==========
 
 M210 provides tools for using Pegasus Tablet Mobile NoteTaker (M210)
@@ -32,9 +32,10 @@ is easy. Just run the following command:
 It installs the library to /usr/local/lib and header files to
 /usr/local/include. See INSTALL for details.
 
-There is also a predefined udev rules file in etc/udev/rules.d. You
-can just copy that to /etc/udev/rules.d to allow udevd to give group
-ownership of plugged M210 devices to plugdev.
+There is also a predefined udev rules file
+udev/rules.d/40-m210.rules. You can just copy that to
+/etc/udev/rules.d to allow udevd to give group ownership of plugged
+M210 devices to plugdev.
 
 How to use
 ==========

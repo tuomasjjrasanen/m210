@@ -132,6 +132,7 @@ static int note_to_svg(FILE *input_file, char *output_mode) {
 	}
 
 	if (head.number == 0) {
+		/* End of note stream. */
 		result = 0;
 		goto out;
 	}
@@ -173,7 +174,7 @@ static int note_to_svg(FILE *input_file, char *output_mode) {
 		goto out;
 	}
 
-	result = 0;
+	result = 1;
 out:
 	if (output_file && output_file != stdout && fclose(output_file)) {
 		perror("error: failed to close output file");
