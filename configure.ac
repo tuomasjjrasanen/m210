@@ -1,6 +1,6 @@
 AC_INIT(
         [m210],
-        [0.7],
+        [0.8],
         [https://bugs.launchpad.net/m210],
         [m210],
         [http://tjjr.fi/sw/m210/])
