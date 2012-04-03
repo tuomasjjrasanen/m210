@@ -25,8 +25,8 @@
 #include <string.h>
 #include <unistd.h>
 
-#include <libm210/dev.h>
-#include <libm210/note.h>
+#include "libm210/dev.h"
+#include "libm210/note.h"
 
 extern char *program_invocation_name;
 
