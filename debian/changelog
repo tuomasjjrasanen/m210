@@ -1,3 +1,14 @@
+m210 (0.8-0~tjjr1) quantal; urgency=low
+
+  * New upstream release 0.8
+  * Fix debian/copyright format URI
+  * Dependency on libm210 removed
+  * Depend on libudev
+  * Udev rule symlink fixed
+  * Watch upstream tarball releases in Launchpad
+
+ -- Tuomas Jorma Juhani Räsänen <tuomasjjrasanen@tjjr.fi>  Sat, 26 May 2012 14:08:46 +0300
+
 m210 (0.7-0~tjjr1~precise1) precise; urgency=low
 
   * New upstream release 0.7
