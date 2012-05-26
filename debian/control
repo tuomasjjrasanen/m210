@@ -2,13 +2,13 @@ Source: m210
 Section: utils
 Priority: extra
 Maintainer: Tuomas Jorma Juhani Räsänen <tuomasjjrasanen@tjjr.fi>
-Build-Depends: debhelper (>= 8.0.0), autotools-dev
+Build-Depends: debhelper (>= 8.0.0), autotools-dev, libudev-dev
 Standards-Version: 3.9.3
 Homepage: http://tjjr.fi/sw/m210
 
 Package: m210
 Architecture: any
-Depends: ${shlibs:Depends}, ${misc:Depends}
+Depends: ${shlibs:Depends}, ${misc:Depends}, libudev0
 Description: control Pegasus Tablet Mobile NoteTaker
  Pegasus Tablet Mobile NoteTaker (M210) enables users to capture
  handwritten notes or drawings while they are away from the computer and
