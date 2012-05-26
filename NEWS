@@ -1,5 +1,5 @@
 0.8
-	- libm210 now part of this project
+	- libm210 is now part of this project
 
 0.7
 	- svg conversion converts all notes, not just the first one
