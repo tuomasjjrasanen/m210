@@ -1,1 +1,1 @@
-../etc/udev/rules.d/50-m210.rules
+../udev/rules.d/40-m210.rules
