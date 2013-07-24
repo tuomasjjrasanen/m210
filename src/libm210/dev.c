@@ -25,7 +25,7 @@
 #include <linux/input.h>  /* BUS_USB */
 #include <linux/limits.h> /* PATH_MAX */
 
-#include <libudev.h>
+#include "libudev.h"
 
 #include "dev.h"
 
