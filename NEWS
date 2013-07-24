@@ -1,11 +1,14 @@
+x.y.z
+        - re-distribute libudev.h to ease building
+
 0.8
-	- libm210 is now part of this project
+        - libm210 is now part of this project
 
 0.7
-	- svg conversion converts all notes, not just the first one
+        - svg conversion converts all notes, not just the first one
 
 0.6
-	- does not depend on Python anymore, written competely in C
+        - does not depend on Python anymore, written competely in C
 
 0.5
         - Reduced functionality:
@@ -20,5 +23,4 @@
         - tablet enabling/disabling
 
 0.3
-
         - Export notes as SVG files.
