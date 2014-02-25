@@ -5,7 +5,7 @@ AC_INIT(
         [m210],
         [http://tjjr.fi/sw/m210/])
 AC_CONFIG_AUX_DIR([build-aux])
-AM_INIT_AUTOMAKE([-Wall -Werror foreign])
+AM_INIT_AUTOMAKE([-Wall -Werror foreign -Wno-extra-portability])
 AC_CONFIG_MACRO_DIR([m4])
 AC_PROG_LIBTOOL
 AC_PROG_CC
