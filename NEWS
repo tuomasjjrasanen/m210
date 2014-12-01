@@ -1,5 +1,7 @@
 x.y.z
         - re-distribute libudev.h to ease building
+        - add support for SilverCrest DGP 1000-R (thanks Gunther Schulz)
+        - Launchpad is deprecated in favor of GitHub
 
 0.8
         - libm210 is now part of this project
