@@ -1,7 +1,7 @@
 AC_INIT(
         [m210],
         [0.8],
-        [https://bugs.launchpad.net/m210],
+        [https://github.com/tuomasjjrasanen/m210/issues],
         [m210],
         [http://tjjr.fi/sw/m210/])
 AC_CONFIG_AUX_DIR([build-aux])

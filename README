@@ -54,16 +54,12 @@ Display device information:
 How to report bugs
 ==================
 
-The bug database is hosted in Launchpad. If you have found a bug or
-have an improvement idea you want to share, please report it at
-<https://bugs.launchpad.net/m210>. However, to avoid duplicate bug
-reports, before reporting, please check if similiar or identical bug
-has already been reported. If the description of the existing bug
-report If so, you can still subscribe to the existing bug to track its
-progress.
-
-If you are unsure whether the problem you have is due to a bug, you
-can ask questions at <https://answers.launchpad.net/m210>.
+The bug database is hosted in GitHub. If you have found a bug or have an
+improvement idea you want to share, please report it at
+<https://github.com/tuomasjjrasanen/m210/issues>. However, to avoid duplicate
+bug reports, before reporting, please check if similiar or identical bug has
+already been reported. If the description of the existing bug report If so, you
+can still subscribe to the existing bug to track its progress.
 
 How to contribute
 =================
