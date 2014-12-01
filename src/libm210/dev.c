@@ -464,7 +464,7 @@ enum m210_err m210_dev_get_info(struct m210_dev *const dev_ptr,
 		/* Check that the response is correct. */
 		if (response[0] == 0x80
 		    && response[1] == 0xa9
-		    && response[2] == 0x28
+		    && (response[2] == 0x28 || response[2] == 0x42)
 		    && response[9] == 0x0e) {
 			break;
 		}
